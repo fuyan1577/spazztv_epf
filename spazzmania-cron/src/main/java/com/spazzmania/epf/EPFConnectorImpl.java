@@ -60,7 +60,7 @@ public class EPFConnectorImpl implements EPFConnector {
 		return null;
 	}
 
-	public void downloadUrl(String urlString, String destinationDir) {
+	public void downloadFileFromUrl(String urlString, String destinationDir) {
 		String fileName = getDownloadFilename(urlString);
 		if (fileName == null) {
 			throw new RuntimeException(

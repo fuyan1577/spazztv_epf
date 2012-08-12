@@ -9,6 +9,6 @@ public interface EPFConnector {
 	public void setEpfUsername(String epfUsername);
 	public void setEpfPassword(String epfPassword);
 	public Document getEpfPage(String epfPath); 
-	public void downloadUrl(String url, String toFilename);
+	public void downloadFileFromUrl(String url, String destinationDir);
 
 }

@@ -12,6 +12,8 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+
+import com.sun.xml.internal.fastinfoset.sax.Properties;
  
 /**
  * import static org.junit.Assert.assertEquals;
@@ -20,7 +22,7 @@ import org.kohsuke.args4j.Option;
  */
 public class AntOptsArgs4J {
  
-  @Argument(metaVar = "[target [target2 [target3] ...]]", usage = "targets")
+  @Argument(metaVar = "target1 target2 [target3] ...]", usage = "targets")
   private List<String> targets = new ArrayList<String>();
  
   @Option(name = "-h", aliases = "--help", usage = "print this message")
@@ -42,7 +44,8 @@ public class AntOptsArgs4J {
   private Map<String, String> properties = new HashMap<String, String>();
   @Option(name = "-D", metaVar = "<property>=<value>",
           usage = "use value for given property")
-  private void setProperty(final String property) throws CmdLineException {
+  
+  public void setProperty(final String property) throws CmdLineException {
     String[] arr = property.split("=");
     if(arr.length != 2) {
         throw new CmdLineException("Properties must be specified in the form:"+
@@ -50,14 +53,28 @@ public class AntOptsArgs4J {
     }
     properties.put(arr[0], arr[1]);
   }
- 
+  
+  public Map<String, String> getProperties() {
+	  return properties;
+  }
+  
+  public List<String> getTargets() {
+	  return targets;
+  }
+  
   public static void main(String[] args) throws CmdLineException {
     final String[] argv = { "-D", "key=value", "-f", "build.xml",
                             "-D", "key2=value2", "clean", "install", "three", "four", "five" };
     final AntOptsArgs4J options = new AntOptsArgs4J();
     final CmdLineParser parser = new CmdLineParser(options);
     parser.parseArgument(argv);
- 
+    
+    Map<String, String> properties = options.getProperties();
+    
+    for (String key : properties.keySet()) {
+    	System.out.println(String.format("%s = %s",key,properties.get(key)));
+    }
+
     // print usage
     parser.setUsageWidth(Integer.MAX_VALUE);
     parser.printUsage(System.err);

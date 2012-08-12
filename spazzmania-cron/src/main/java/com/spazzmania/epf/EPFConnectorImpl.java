@@ -16,11 +16,13 @@ import org.jsoup.nodes.Document;
 public class EPFConnectorImpl implements EPFConnector {
 	private String epfUsername;
 	private String epfPassword;
+	private String epfBaseUrl;
 	private boolean showProgress = false;
 
 	public EPFConnectorImpl() {
 		epfUsername = "D1g1talmunch";
 		epfPassword = "ad4478914af590e2d53565c910105bf3";
+		epfBaseUrl = EPF_BASE_URL;
 	}
 
 	public void setEpfUsername(String epfUsername) {
@@ -29,6 +31,10 @@ public class EPFConnectorImpl implements EPFConnector {
 
 	public void setEpfPassword(String epfPassword) {
 		this.epfPassword = epfPassword;
+	}
+
+	public void setEpfBaseUrl(String epfBaseUrl) {
+		this.epfBaseUrl = epfBaseUrl;
 	}
 
 	public void setShowProgress(boolean showProgress) {
@@ -41,7 +47,7 @@ public class EPFConnectorImpl implements EPFConnector {
 
 		Document document = null;
 		try {
-			document = Jsoup.connect(EPF_BASE_URL + epfPath)
+			document = Jsoup.connect(epfBaseUrl + epfPath)
 					.header("Authorization", "Basic " + base64login).get();
 		} catch (IOException e) {
 			// Ignore and exit with a null document

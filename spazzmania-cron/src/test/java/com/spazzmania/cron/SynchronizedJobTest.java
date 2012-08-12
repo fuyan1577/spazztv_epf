@@ -26,6 +26,8 @@ import org.quartz.SchedulerFactory;
 import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
 
+import com.spazzmania.archive.SynchronizedJob;
+
 public class SynchronizedJobTest {
 
 	private Scheduler scheduler;

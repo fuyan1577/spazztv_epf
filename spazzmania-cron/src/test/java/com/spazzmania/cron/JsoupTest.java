@@ -1,6 +1,10 @@
 package com.spazzmania.cron;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.regex.Pattern;
 
 import org.apache.commons.codec.binary.Base64;
@@ -8,7 +12,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.junit.Test;
-import org.quartz.Matcher;
 
 public class JsoupTest {
 
@@ -34,13 +37,21 @@ public class JsoupTest {
 			}
 
 			document = Jsoup
-					.connect("http://feeds.itunes.apple.com/feeds/epf/v3/full/20120801/incremental/")
+					.connect(
+							"http://feeds.itunes.apple.com/feeds/epf/v3/full/current/incremental/20120809/")
 					.header("Authorization", "Basic " + base64login).get();
 
 			Object[] shrefs = document.select("a").toArray();
 			for (Object href : shrefs) {
 				String h = ((Element) href).attr("href");
 				if (Pattern.matches("\\d+\\/", h)) {
+					System.out.println(h);
+				}
+			}
+
+			for (Object href : shrefs) {
+				String h = ((Element) href).attr("href");
+				if (Pattern.matches("[a-z]+\\d+\\.tbz", h)) {
 					System.out.println(h);
 				}
 			}
@@ -52,4 +63,16 @@ public class JsoupTest {
 		}
 	}
 
+	@Test
+	public void testDate() {
+		DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+		Date date;
+		try {
+			date = (Date) formatter.parse("20120801/");
+		} catch (ParseException e) {
+			throw new RuntimeException(e);
+		}
+		System.out.println(date.toString());
+		
+	}
 }

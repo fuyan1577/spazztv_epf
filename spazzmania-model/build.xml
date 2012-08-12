@@ -1,0 +1,26 @@
+<project>
+	<property name="projectname" value="spazzmania-model" />
+	<target name="clean">
+		<delete dir="build" />
+		<delete file="${projectname}.jar" />
+	</target>
+
+	<target name="compile" depends="clean">
+		<mkdir dir="build" />
+		<javac debug="true" includeantruntime="false" srcdir="src/main" destdir="build">
+			<classpath>
+				<pathelement path="${classpath}" />
+ 				<fileset dir="lib">
+ 					<include name="mysql-connector-java-5.1.21-bin.jar" />
+ 				</fileset>
+			</classpath>
+		</javac>
+		<copy todir="build">
+			<fileset dir="src" includes="**/*.properties" />
+		</copy>
+	</target>
+
+	<target name="dist" depends="compile">
+		<jar destfile="${projectname}.jar" basedir="build" />
+	</target>
+</project>

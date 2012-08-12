@@ -32,6 +32,10 @@ public class MockEPFConnector implements EPFConnector {
 	}
 
 	@Override
+	public void setEpfBaseUrl(String epfBaseUrl) {
+	}
+
+	@Override
 	public Document getEpfPage(String epfPath) {
 		InputStream htmlFile = getClass().getResourceAsStream(urlFiles.get(EPF_BASE_URL + epfPath));
 		//File htmlFile = new File(urlFiles.get(EPF_BASE_URL + epfPath));

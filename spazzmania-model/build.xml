@@ -10,9 +10,9 @@
 		<javac debug="true" includeantruntime="false" srcdir="src/main" destdir="build">
 			<classpath>
 				<pathelement path="${classpath}" />
- 				<fileset dir="lib">
- 					<include name="mysql-connector-java-5.1.21-bin.jar" />
- 				</fileset>
+				<fileset dir="lib">
+					<include name="mysql-connector-java-5.1.21-bin.jar" />
+				</fileset>
 			</classpath>
 		</javac>
 		<copy todir="build">
@@ -21,6 +21,10 @@
 	</target>
 
 	<target name="dist" depends="compile">
-		<jar destfile="${projectname}.jar" basedir="build" />
+		<jar destfile="build/${projectname}.jar" basedir="build">
+			<zipgroupfileset dir="lib">
+				<include name="mysql-connector-java-5.1.21-bin.jar" />
+			</zipgroupfileset>
+		</jar>
 	</target>
 </project>

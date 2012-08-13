@@ -31,13 +31,18 @@ import com.spazzmania.model.util.SpazzDBUtil;
  * @author tjbillingsley
  * 
  */
+/**
+ * @author tjbillingsley
+ * 
+ */
 public class EPFDataDownloadUtil {
 
-	public static Integer DEFAULT_TIMEOUT = 720; // 720 minutes or 12 hours
-	public static String EPF_LAST_DOWNLOAD_DATE = "epf.last_download_date";
+	public static Integer DEFAULT_TIMEOUT = 12 * 60 * 60; // defaults to 12
+															// hours
+	public static String EPF_LAST_DOWNLOAD_DATE = "epf.last_epf_import_date";
 
 	private String downloadDirectory;
-	private Integer timeOut = 0;
+	private Integer timeOut = DEFAULT_TIMEOUT;
 	private Integer sleepInterval = 300; // Defaults to 300 seconds
 	private EPFReleaseUtil epfUtil;
 	private EPFConnector epfConnector;
@@ -49,7 +54,7 @@ public class EPFDataDownloadUtil {
 	Date timeOutTime;
 
 	Logger logger;
-	
+
 	public SpazzDBUtil getDbUtil() {
 		return dbUtil;
 	}
@@ -62,6 +67,12 @@ public class EPFDataDownloadUtil {
 		return downloadDirectory;
 	}
 
+	/**
+	 * Set the directory path where the EPF files will be downloaded.
+	 * 
+	 * @param timeOut
+	 *            - time in minutes
+	 */
 	public void setDownloadDirectory(String downloadDirectory) {
 		this.downloadDirectory = downloadDirectory;
 	}
@@ -70,6 +81,13 @@ public class EPFDataDownloadUtil {
 		return timeOut;
 	}
 
+	/**
+	 * Set the timeout time in seconds for how long this utility waits for EPF
+	 * to publish the next set of files.
+	 * 
+	 * @param timeOut
+	 *            - time in seconds
+	 */
 	public void setTimeOut(Integer timeOut) {
 		this.timeOut = timeOut;
 	}
@@ -78,6 +96,34 @@ public class EPFDataDownloadUtil {
 		return sleepInterval;
 	}
 
+	/**
+	 * Returns true if the checkAndWaitForDownloadFiles successfully returned a
+	 * list of EPF Files.
+	 * 
+	 * @return the epfDownloadFilesReady
+	 */
+	public boolean isEpfDownloadFilesReady() {
+		return epfDownloadFilesReady;
+	}
+
+	/**
+	 * Returns the list of EPF File URLs representing the next set of files past
+	 * the last EPF Import Date in the Spazzmania DB.
+	 * 
+	 * @return the epfDownloadFileList
+	 */
+	public List<String> getEpfDownloadFileList() {
+		return epfDownloadFileList;
+	}
+
+	/**
+	 * Set the sleep interval in seconds between EPF Site lookups. An <i>EPF
+	 * Site Lookup</i> is done each time this program checks the availability of
+	 * the next EPF Files.
+	 * 
+	 * @param sleepInterval
+	 *            - in seconds
+	 */
 	public void setSleepInterval(Integer sleepInterval) {
 		this.sleepInterval = sleepInterval;
 	}
@@ -106,14 +152,30 @@ public class EPFDataDownloadUtil {
 		this.logger = logger;
 	}
 
+	/**
+	 * Run the utility - this si the main execution point for running this
+	 * utility. The steps are:
+	 * <ul>
+	 * <li/>jobInit() - get the last_download_date from the SpazzDB, set the
+	 * timeout time, etc.
+	 * <li/>checkAndWaitForDownloadFiles() - Check and Wait for the next
+	 * download files
+	 * <li/>downloadEpfFiles() - If we haven't timed out, download the files
+	 * </ul>
+	 */
 	public void run() {
 		jobInit();
-		waitForDownloadFiles();
+		checkAndWaitForDownloadFiles();
 		if (epfDownloadFilesReady) {
 			downloadEpfFiles();
 		}
 	}
 
+	/**
+	 * The jobInit() routine retrieves the last_download_date from the
+	 * Spazzmania DB, and calculates the time that this utility will timeout
+	 * based on the timeOut value.
+	 */
 	public void jobInit() {
 		DateFormat dateXlater = new SimpleDateFormat("yyyyMMdd");
 		String lastDateValue = dbUtil.getKeyValue(EPF_LAST_DOWNLOAD_DATE);
@@ -126,7 +188,7 @@ public class EPFDataDownloadUtil {
 
 		Calendar startDateTime = Calendar.getInstance();
 		startTime = new Date(startDateTime.getTimeInMillis());
-		startDateTime.add(Calendar.MINUTE, timeOut);
+		startDateTime.add(Calendar.SECOND, timeOut);
 		timeOutTime = new Date(startDateTime.getTimeInMillis());
 
 		// If we still don't have a date, use yesterday's date and get the file
@@ -146,16 +208,29 @@ public class EPFDataDownloadUtil {
 				+ formatter.format(timeOutTime));
 	}
 
-	public void waitForDownloadFiles() {
+	/**
+	 * Check for and possibly wait for the next set of EPF Files. Logic:
+	 * <ul>
+	 * <li/>Check the EPF site if the next set of EPF Files are ready
+	 * <li/>If they are, return the list of file URLs
+	 * <li/>If they aren't ready, repeat the process
+	 * <li/>This process times out based on the timeOut property
+	 * </ul>
+	 */
+	public void checkAndWaitForDownloadFiles() {
 		epfDownloadFilesReady = false;
 
 		while (epfDownloadFilesReady == false) {
+			logger.info("Checking EPF for the next set of Download Files");
 			epfDownloadFileList = epfUtil.getNextDownloadList(lastDownloadDate);
 			if (epfDownloadFileList.size() == 0) {
 				// Too early - we'll have to sleep and try again
-				if (jobTimedOut()) {
+				if (isJobTimedOut()) {
 					return;
 				}
+				logger.info(String.format(
+						"EPF Files Not Ready. Sleepting %s seconds",
+						sleepInterval.toString()));
 				try {
 					Thread.sleep(sleepInterval * 1000);
 				} catch (InterruptedException e) {
@@ -167,11 +242,20 @@ public class EPFDataDownloadUtil {
 		}
 	}
 
-	public boolean jobTimedOut() {
+	/**
+	 * Convenience method for annotation to check if the routine has timed out.
+	 * 
+	 * @return - true if timed out
+	 */
+	public boolean isJobTimedOut() {
 		Calendar currentTime = Calendar.getInstance();
 		return currentTime.getTimeInMillis() >= timeOutTime.getTime();
 	}
 
+	/**
+	 * Download the files in the <code>epfDownloadFileList</code> to the
+	 * directory designated in <code>downloadDirectory</code>.
+	 */
 	public void downloadEpfFiles() {
 		for (String downloadUrl : epfDownloadFileList) {
 			epfConnector.downloadFileFromUrl(downloadUrl, downloadDirectory);

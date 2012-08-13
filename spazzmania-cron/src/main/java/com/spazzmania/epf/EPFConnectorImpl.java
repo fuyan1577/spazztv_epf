@@ -78,8 +78,10 @@ public class EPFConnectorImpl implements EPFConnector {
 		FileOutputStream fout = null;
 
 		try {
-			in = new BufferedInputStream(getEpfConnection(urlString)
-					.getInputStream());
+			HttpURLConnection conn = getEpfConnection(urlString);
+			long contentLength = conn.getContentLength();
+
+			in = new BufferedInputStream(conn.getInputStream());
 			fout = new FileOutputStream(destinationDir + fileName);
 
 			System.out.println("Downloading: " + fileName);
@@ -92,9 +94,9 @@ public class EPFConnectorImpl implements EPFConnector {
 				fout.write(data, 0, count);
 				totalBytes += count;
 				if (showProgress) {
-					if ((totalBytes / 1000000) > progress) {
+					if (((totalBytes / contentLength) * 10) > progress) {
 						progress++;
-						System.out.println(String.format("Downloaded: %d megs",
+						System.out.println(String.format("Downloaded: %d\\%",
 								Integer.valueOf(progress)));
 					}
 				}

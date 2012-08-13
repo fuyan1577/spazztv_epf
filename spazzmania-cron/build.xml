@@ -5,21 +5,23 @@
 		<delete file="${projectname}.jar" />
 	</target>
 
-	<target name="compile">
+	<target name="compile" depends="clean">
 		<mkdir dir="build" />
-<!-- 		<copy file="../cgm_domain_model/cgm_domain_model.jar" tofile="lib/cgm_domain_model.jar" />
--->
-
+		<copy file="../spazzmania-model/build/spazzmania-model.jar" tofile="lib/spazzmania-model.jar" />
 		<javac debug="true" includeantruntime="false" srcdir="src/main" destdir="build">
 			<classpath>
 				<pathelement path="${classpath}" />
- 				<fileset dir="lib">
- 					<include name="quartz-2.1.5.jar" />
- 					<include name="c3p0-0.9.1.1.jar" />
- 					<include name="slf4j-api-1.6.1.jar" />
- 					<include name="slf4j-log4j12-1.6.1.jar" />
- 					<include name="log4j-1.2.16.jar" />
- 				</fileset>
+				<fileset dir="lib">
+					<include name="spazzmania-model.jar" />
+					<include name="args4j-2.0.21.jar" />
+					<include name="commons-codec-1.6.jar" />
+					<include name="json-simple-1.1.1.jar" />
+					<include name="jsoup-1.6.3.jar" />
+					<include name="log4j-1.2.16.jar" />
+					<include name="quartz-2.1.5.jar" />
+					<include name="slf4j-api-1.6.1.jar" />
+					<include name="slf4j-log4j12-1.6.1.jar" />
+				</fileset>
 			</classpath>
 		</javac>
 		<copy todir="build">
@@ -28,6 +30,18 @@
 	</target>
 
 	<target name="dist" depends="compile">
-		<jar destfile="${projectname}.jar" basedir="build" />
+		<jar destfile="build/${projectname}.jar" basedir="build">
+			<zipgroupfileset dir="lib">
+				<include name="spazzmania-model.jar" />
+				<include name="args4j-2.0.21.jar" />
+				<include name="commons-codec-1.6.jar" />
+				<include name="json-simple-1.1.1.jar" />
+				<include name="jsoup-1.6.3.jar" />
+				<include name="log4j-1.2.16.jar" />
+				<include name="quartz-2.1.5.jar" />
+				<include name="slf4j-api-1.6.1.jar" />
+				<include name="slf4j-log4j12-1.6.1.jar" />
+			</zipgroupfileset>
+		</jar>
 	</target>
 </project>

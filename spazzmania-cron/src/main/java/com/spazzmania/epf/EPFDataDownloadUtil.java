@@ -28,17 +28,12 @@ import com.spazzmania.model.util.SpazzDBUtil;
  * <i>Note:</i> This program downloads files only, it doesn't run the scripts
  * that apply the data.
  * 
- * @author tjbillingsley
- * 
- */
-/**
- * @author tjbillingsley
+ * @author Thomas Billingsley
  * 
  */
 public class EPFDataDownloadUtil {
 
-	public static Integer DEFAULT_TIMEOUT = 12 * 60 * 60; // defaults to 12
-															// hours
+	public static Integer DEFAULT_TIMEOUT = 12 * 60 * 60; // defaults to 12hrs
 	public static String EPF_LAST_DOWNLOAD_DATE = "epf.last_epf_import_date";
 
 	private String downloadDirectory;

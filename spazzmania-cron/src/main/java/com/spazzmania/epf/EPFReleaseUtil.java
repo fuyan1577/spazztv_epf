@@ -176,7 +176,7 @@ public class EPFReleaseUtil {
 			String h = ((Element) href).attr("href");
 			if (Pattern.matches("[a-z]+\\d{8}\\.tbz", h)) {
 				if (!isBlackListedItem(h)) {
-					downloadFiles.add(EPFConnector.EPF_BASE_URL + epfPath + h);
+					downloadFiles.add(EPFConnector.EPF_BASE_URL + epfPath + "/" + h);
 				}
 			}
 		}

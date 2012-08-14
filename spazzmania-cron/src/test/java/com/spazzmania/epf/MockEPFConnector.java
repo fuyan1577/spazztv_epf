@@ -21,6 +21,7 @@ public class MockEPFConnector implements EPFConnector {
 		urlFiles.put(EPF_BASE_URL + "/20120808/incremental", "EPFIncremental_20120808_Dates.html");
 		urlFiles.put(EPF_BASE_URL + "/20120801/incremental/20120802", "EPFIncremental_20120802_Files.html");
 		urlFiles.put(EPF_BASE_URL + "/20120801/incremental/20120807", "EPFIncremental_20120807_Files.html");
+		urlFiles.put(EPF_BASE_URL + "/20120801/incremental/20120808", "EPFIncremental_20120808_Files.html");
 	}
 	
 	@Override
@@ -33,6 +34,13 @@ public class MockEPFConnector implements EPFConnector {
 
 	@Override
 	public void setEpfBaseUrl(String epfBaseUrl) {
+	}
+
+	/**
+	 * @return the urlFiles
+	 */
+	public Map<String, String> getUrlFiles() {
+		return urlFiles;
 	}
 
 	@Override

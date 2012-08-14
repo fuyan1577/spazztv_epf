@@ -109,7 +109,7 @@ public class EPFDataDownloadUtilTest {
 		epfDownloadUtil.jobInit();
 		epfDownloadUtil.checkAndWaitForDownloadFiles();
 
-		List<String>returnList = epfDownloadUtil.getEpfDownloadFileList();
+		List<String> returnList = epfDownloadUtil.getEpfDownloadFileList();
 		
 		EasyMock.verify(dbUtil);
 		EasyMock.verify(epfUtil);

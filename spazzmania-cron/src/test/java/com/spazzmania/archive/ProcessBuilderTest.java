@@ -29,8 +29,9 @@ public class ProcessBuilderTest {
 	        command[0] = "/bin/sh";
 	        command[1] = "env";
 		}
-        ProcessBuilder builder = new ProcessBuilder(command);
+        ProcessBuilder builder = new ProcessBuilder();
 		builder.redirectErrorStream(true);
+		builder.command(command);
 		String line = "";
 		
 		Logger logger = LoggerFactory.getLogger(this.getClass());

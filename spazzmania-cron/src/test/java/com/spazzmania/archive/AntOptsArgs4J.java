@@ -20,28 +20,21 @@ import org.kohsuke.args4j.Option;
  */
 public class AntOptsArgs4J {
  
-  @Argument(metaVar = "target1 target2 [target3] ...]", usage = "targets")
-  private List<String> targets = new ArrayList<String>();
+  @Option(name = "--params", metaVar = "<params>",
+          usage = "parameter arguments enclosed by \"\"")
+  private File params;
  
-  @Option(name = "-h", aliases = "--help", usage = "print this message")
-  private boolean help = false;
- 
-  @Option(name = "-lib", metaVar = "<path>",
-          usage = "specifies a path to search for jars and classes")
-  private String lib;
- 
-  @Option(name = "-f", aliases = { "-file", "-buildfile" }, metaVar = "<file>",
-          usage = "use given buildfile")
-  private File buildFile;
- 
-  @Option(name = "-nice", metaVar = "number",
-          usage = "A niceness value for the main thread:\n"
-          + "1 (lowest) to 10 (highest); 5 is the default")
-  private int nice = 5;
+  @Option(name = "--executable", metaVar = "<executable>",
+          usage = "executable script or binary")
+  private File executable;
+  
+  @Option(name = "--directory", metaVar = "<directory>",
+          usage = "base directory for execution")
+  private File directory;
  
   private Map<String, String> properties = new HashMap<String, String>();
   @Option(name = "-D", metaVar = "<property>=<value>",
-          usage = "use value for given property")
+          usage = "job data map parameters")
   
   public void setProperty(final String property) throws CmdLineException {
     String[] arr = property.split("=");
@@ -56,13 +49,8 @@ public class AntOptsArgs4J {
 	  return properties;
   }
   
-  public List<String> getTargets() {
-	  return targets;
-  }
-  
   public static void main(String[] args) throws CmdLineException {
-    final String[] argv = { "-D", "key=value", "-f", "build.xml",
-                            "-D", "key2=value2", "clean", "install", "three", "four", "five" };
+    final String[] argv = { "--executable", "EPFImporter.py", "--directory","/var/www/html","--params","\"arg1 arg2 -d darg -P Parg\""};
     final AntOptsArgs4J options = new AntOptsArgs4J();
     final CmdLineParser parser = new CmdLineParser(options);
     parser.parseArgument(argv);
@@ -75,11 +63,11 @@ public class AntOptsArgs4J {
 
     // print usage
     parser.setUsageWidth(Integer.MAX_VALUE);
-    parser.printUsage(System.err);
+//    parser.printUsage(System.err);
  
     // check the options have been set correctly
-    assertEquals("build.xml", options.buildFile.getName());
-    assertEquals(2, options.targets.size());
-    assertEquals(2, options.properties.size());
+//    assertEquals("build.xml", options.buildFile.getName());
+//    assertEquals(2, options.targets.size());
+    //assertEquals(2, options.properties.size());
   }
 }

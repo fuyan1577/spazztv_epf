@@ -176,7 +176,7 @@ public class EPFDataDownloadJob implements Job {
 				|| (!dataMap.containsKey(DATABASE_PASS))
 				|| (!dataMap.containsKey(DATABASE))) {
 			throw new RuntimeException(
-					"Invalid JobDataMap Database HOST, USER, PASS, DIRECTORY, EPF_DATABASE, EPF_USERNAMWE and EPF_PASSWORD must be provided");
+					"Invalid JobDataMap Database HOST, USER, PASS, DIRECTORY, EPF_DATABASE, EPF_USERNAME and EPF_PASSWORD must be provided");
 		}
 		host = dataMap.getString(DATABASE_HOST);
 		username = dataMap.getString(DATABASE_USER);

@@ -11,7 +11,7 @@ import com.spazzmania.epf.EPFDataDownloadUtil;
 import com.spazzmania.model.util.SpazzDBUtil;
 
 /**
- * @author tjbillingsley
+ * @author Thomas Billingsley
  * 
  */
 public class SpazzDBCheck {

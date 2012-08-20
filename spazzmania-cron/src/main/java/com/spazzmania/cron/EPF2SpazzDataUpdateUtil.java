@@ -6,7 +6,10 @@ package com.spazzmania.cron;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.slf4j.Logger;
+
 import com.spazzmania.model.util.SpazzDBUtil;
+import com.spazzmania.sql.util.SQLResourceUtil;
 
 /**
  * EPF2SpazzDataUpdateUtil is a series of SQL tasks that update data from the
@@ -43,6 +46,7 @@ public class EPF2SpazzDataUpdateUtil {
 	public static String UPDATE_DEVICE_TYPES_GAMES = "updateDeviceTypesGames.sql"; 
 	public static String UPDATE_GAMES_GENRES_COLUMN = "updateGamesGenresColumn.sql";
 	private SpazzDBUtil spazzDBUtil;
+	private Logger logger;
 
 	/**
 	 * @return the spazzDBUtil
@@ -59,9 +63,24 @@ public class EPF2SpazzDataUpdateUtil {
 	}
 
 	/**
+	 * @return the logger
+	 */
+	public Logger getLogger() {
+		return logger;
+	}
+
+	/**
+	 * @param logger the logger to set
+	 */
+	public void setLogger(Logger logger) {
+		this.logger = logger;
+	}
+
+	/**
 	 * Update the games from EPF Applications
 	 */
 	public synchronized void updateGames() {
+		logger.info("Updating Games from EPF to Spazzmania DB");
 		loadAndExecuteScript(UPDATE_GAMES);
 	}
 	
@@ -69,6 +88,7 @@ public class EPF2SpazzDataUpdateUtil {
 	 * Update the Gamelist Platforms (aka devices).
 	 */
 	public synchronized void updateGamelistPlatforms() {
+		logger.info("Updating Gamelist Platforms from EPF to Spazzmania");
 		loadAndExecuteScript(UPDATE_GAMELIST_PLATFORMS);
 	}
 
@@ -76,6 +96,7 @@ public class EPF2SpazzDataUpdateUtil {
 	 * Update the Game Details from EPF Application Details.
 	 */
 	public synchronized void updateGameDetails() {
+		logger.info("Updating Game Details from EPF to Spazzmania DB");
 		loadAndExecuteScript(UPDATE_GAME_DETAILS);
 	}
 
@@ -83,6 +104,7 @@ public class EPF2SpazzDataUpdateUtil {
 	 * Update the games prices from EPF application_price
 	 */
 	public synchronized void updateGamePrices() {
+		logger.info("Updating Game Prices from EPF to Spazzmania DB");
 		loadAndExecuteScript(UPDATE_GAME_PRICES);
 	}
 
@@ -90,6 +112,7 @@ public class EPF2SpazzDataUpdateUtil {
 	 * Update the limited time offers based on text in the game description
 	 */
 	public synchronized void updateLimitedTimeOffers() {
+		logger.info("Updating Limited Time Offers from EPF to Spazzmania DB");
 		loadAndExecuteScript(UPDATE_LIMITED_TIME_OFFERS);
 	}
 
@@ -97,6 +120,7 @@ public class EPF2SpazzDataUpdateUtil {
 	 * Update the game genres from EPF genre_application
 	 */
 	public synchronized void updateGameGenres() {
+		logger.info("Updating Game Genres from EPF to Spazzmania DB");
 		loadAndExecuteScript(UPDATE_GAME_GENRES);
 	}
 
@@ -104,6 +128,7 @@ public class EPF2SpazzDataUpdateUtil {
 	 * Update the game genres from EPF master tables
 	 */
 	public synchronized void updateMasterTables() {
+		logger.info("Updating Master Tables from EPF to Spazzmania DB");
 		loadAndExecuteScript(UPDATE_MASTER_TABLES);
 	}
 
@@ -111,6 +136,7 @@ public class EPF2SpazzDataUpdateUtil {
 	 * Update the game genres from EPF application_device_types
 	 */
 	public synchronized void updateDeviceTypesGames() {
+		logger.info("Updating Device Type Games from EPF to Spazzmania DB");
 		loadAndExecuteScript(UPDATE_DEVICE_TYPES_GAMES);
 	}
 
@@ -118,6 +144,7 @@ public class EPF2SpazzDataUpdateUtil {
 	 * Update the game genres column
 	 */
 	public synchronized void updateGamesGenresColumn() {
+		logger.info("Updating the Genres columsn in Games in the Spazzmania DB");
 		loadAndExecuteScript(UPDATE_GAMES_GENRES_COLUMN);
 	}
 	
@@ -125,33 +152,7 @@ public class EPF2SpazzDataUpdateUtil {
 	 * Load a sqlScriptName from a resource and execute the script
 	 */
 	public void loadAndExecuteScript(String sqlScriptName) {
-		String sqlScript = loadSqlScript(EPF_UTIL_SQL_PATH + "/" + sqlScriptName);
+		String sqlScript = SQLResourceUtil.loadScript(EPF_UTIL_SQL_PATH + "/" + sqlScriptName);
 		spazzDBUtil.executeScript(sqlScript, EPF_SQL_DELIMITER);
 	}
-
-	/**
-	 * Load a sql script from a file and return it as an array of SQL comamnds.
-	 * 
-	 * @param sqlResourceName
-	 *            to Load
-	 * @return String[] array of SQL commands comprising the script
-	 */
-	public String loadSqlScript(String sqlResourceName) {
-		InputStream sqlFile = EPF2SpazzDataUpdateUtil.class
-				.getResourceAsStream(sqlResourceName);
-
-		byte[] buffer = null;
-		try {
-			buffer = new byte[sqlFile.available()];
-			sqlFile.read(buffer, 0, sqlFile.available());
-			sqlFile.close();
-		} catch (IOException e) {
-			// Convert into runtime exception and let the job scheduler handle
-			// report it
-			throw new RuntimeException(e);
-		}
-		
-		return new String(buffer);
-	}
-	
 }

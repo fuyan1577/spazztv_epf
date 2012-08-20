@@ -31,8 +31,7 @@ import com.spazzmania.model.util.SpazzDBUtil;
  */
 public class EPF2SpazzDataUpdateUtil {
 
-	//public static String EPF_UTIL_SQL_PATH = "com.spazzmania.epf.sql";
-	public static String EPF_UTIL_SQL_PATH = "/com/spazzmania/epf/sql";
+	public static String EPF_UTIL_SQL_PATH = "/com/spazzmania/sql/epf";
 	public static String EPF_SQL_DELIMITER = ";";
 	public static String UPDATE_GAMES = "updateGames.sql";
 	public static String UPDATE_GAMELIST_PLATFORMS = "updateGamelistPlatforms.sql";

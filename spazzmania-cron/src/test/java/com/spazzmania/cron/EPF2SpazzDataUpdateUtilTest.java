@@ -1,12 +1,5 @@
 package com.spazzmania.cron;
 
-import static org.junit.Assert.fail;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;

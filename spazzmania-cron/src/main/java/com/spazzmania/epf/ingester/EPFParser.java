@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class EPFParser {
 	private String filePath;
-	private RandomAccessFile eFile;
+	private EPFFileReader eFile;
 	private long totalRecords = 0L;
 	private String recordDelim = "\\x01";
 	private String fieldDelim = "\\x02";
@@ -147,9 +147,8 @@ public class EPFParser {
 	}
 
 	private void openInputFile() {
-		File file = new File(filePath);
 		try {
-			eFile = new RandomAccessFile(file, "r");
+			eFile.openFile(filePath);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} finally {

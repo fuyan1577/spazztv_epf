@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry including="**/*.java" kind="src" path="src/main/java"/>
-	<classpathentry including="**/*.java" kind="src" path="target/generated-sources/plugin"/>
 	<classpathentry kind="src" path="src/test/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="var" path="M2_REPO/org/apache/maven/maven-plugin-api/2.0/maven-plugin-api-2.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="C:/j2ee/spazz_serverj/trunk/spazzmania-model/lib/mysql-connector-java-5.1.21-bin.jar"/>
+	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.21-bin.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

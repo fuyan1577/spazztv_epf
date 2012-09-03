@@ -3,65 +3,146 @@
  */
 package com.spazzmania.epf.ingester;
 
-import java.io.File;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 
 /**
  * @author Thomas Billingsley
- *
+ * 
  */
 public class EPFFileReaderImpl implements EPFFileReader {
-	
-	RandomAccessFile rFile;
 
-	/* (non-Javadoc)
-	 * @see com.spazzmania.epf.ingester.EPFFileReader#openFile(java.lang.String)
-	 */
-	@Override
-	public void openFile(String filePath) throws FileNotFoundException {
-		rFile = new RandomAccessFile(filePath, "r");
+	BufferedReader bFile;
+	String filePath;
+
+	public EPFFileReaderImpl(String filePath) throws FileNotFoundException {
+		this.filePath = filePath;
+		FileInputStream fstream = new FileInputStream(filePath);
+		DataInputStream in = new DataInputStream(fstream);
+		bFile = new BufferedReader(new InputStreamReader(in));
 	}
 
 	/* (non-Javadoc)
-	 * @see com.spazzmania.epf.ingester.EPFFileReader#seek(long)
+	 * @see com.spazzmania.epf.ingester.EPFFileReader#readNextHeaderLine()
 	 */
 	@Override
-	public void seek(long pos) throws IOException {
-		rFile.seek(pos);
+	public String readNextHeaderLine() throws IOException {
+		String rec;
+		while (true) {
+			try {
+				rec = bFile.readLine();
+				if (rec.startsWith(COMMENT_PREFIX)) {
+					break;
+				}
+			} catch (IOException e) {
+				rec = null;
+				break;
+			}
+		}
+		return rec;
 	}
 
 	/* (non-Javadoc)
-	 * @see com.spazzmania.epf.ingester.EPFFileReader#readLine()
+	 * @see com.spazzmania.epf.ingester.EPFFileReader#readNextDataLine()
 	 */
 	@Override
-	public String readLine() throws IOException {
-		return rFile.readLine();
+	public String readNextDataLine() throws IOException {
+		String rec;
+		while (true) {
+			try {
+				rec = bFile.readLine();
+				if (!rec.startsWith(COMMENT_PREFIX)) {
+					break;
+				}
+			} catch (IOException e) {
+				rec = null;
+				break;
+			}
+		}
+		return rec;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.spazzmania.epf.ingester.EPFFileReader#readTotalRecordsExported()
+	 */
+	@Override
+	public String readRecordsWrittenLine(String totalRecordsPrefix)
+			throws IOException {
+		String rec;
+
+		RandomAccessFile rFile = new RandomAccessFile(filePath, "r");
+		rFile.seek(rFile.length() - 80);
+
+		while (true) {
+			try {
+				rec = rFile.readLine();
+				if (rec.startsWith(totalRecordsPrefix)) {
+					break;
+				}
+			} catch (IOException e) {
+				rec = null;
+				break;
+			}
+		}
+		rFile.close();
+		return rec;
 	}
 
 	/* (non-Javadoc)
-	 * @see com.spazzmania.epf.ingester.EPFFileReader#readChar()
+	 * @see com.spazzmania.epf.ingester.EPFFileReader#rewind()
 	 */
 	@Override
-	public char readChar() throws IOException {
-		return rFile.readChar();
+	public void rewind() throws FileNotFoundException {
+		if (bFile != null) {
+			try {
+				bFile.close();
+			} catch (IOException e) {
+				//Ignore - we're about to open it again
+			}
+		}
+		FileInputStream fstream = new FileInputStream(filePath);
+		DataInputStream in = new DataInputStream(fstream);
+		bFile = new BufferedReader(new InputStreamReader(in));
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see com.spazzmania.epf.ingester.EPFFileReader#length()
 	 */
 	@Override
 	public long length() throws IOException {
-		return rFile.length();
+		RandomAccessFile rFile = new RandomAccessFile(filePath, "r");
+		long len = rFile.length();
+		rFile.close();
+		return len;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see com.spazzmania.epf.ingester.EPFFileReader#close()
 	 */
 	@Override
 	public void close() throws IOException {
-		rFile.close();
+		bFile.close();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.spazzmania.epf.ingester.EPFFileReader#getFilePath()
+	 */
+	@Override
+	public String getFilePath() {
+		return filePath;
+	}
+	
 }

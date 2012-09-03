@@ -3,6 +3,7 @@ package com.spazzmania.epf.ingester;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,10 +43,17 @@ import java.util.Map.Entry;
  */
 public class EPFDbUtilityMySQL implements EPFDbUtility {
 
-	private Connection connection;
-
+	public static String DROP_TABLE_STMT = "DROP TABLE IF EXISTS %s";
+	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s)";
+	public static String PRIMARY_KEY_STMT = "ALTER TABLE %s ADD CONSTRAINT PRIMARY KEY (%s)";
+	public static String INSERT_SQL_STMT = "%s INTO %s %s VALUES %s";
+	
+	public static int EXECUTE_SQL_STATEMENT_RETRIES = 30;
 	public static long MERGE_THRESHOLD = 500000;
 	public static long INSERT_BUFFER_SIZE = 200;
+
+	private Connection connection;
+
 	public static Map<String, String> TRANSLATION_MAP = Collections
 			.unmodifiableMap(new HashMap<String, String>() {
 				private static final long serialVersionUID = 1L;
@@ -54,11 +62,26 @@ public class EPFDbUtilityMySQL implements EPFDbUtility {
 				}
 			});
 
+	public static List<String> UNQUOTED_TYPES = Collections
+			.unmodifiableList(new ArrayList<String>() {
+				private static final long serialVersionUID = 1L;
+				{
+					add("INTEGER");
+					add("INT");
+					add("BIGINT");
+					add("TINYINT");
+				}
+			});
+
 	private String tableName;
 	private String impTableName;
 	private String uncTableName;
-	private int insertBuffer = 0;
-	LinkedHashMap<String, String> columnsAndTypes;
+	private boolean[] quotedColumnType;
+	
+	private String columnNames;
+
+	private int insertBufferCount = 0;
+	String insertBuffer;
 
 	private enum ProcessMode {
 		IMPORT_RENAME, APPEND, MERGE_RENAME
@@ -94,54 +117,21 @@ public class EPFDbUtilityMySQL implements EPFDbUtility {
 				dropTable(uncTableName);
 			}
 		}
-		insertBuffer = 0;
+		insertBufferCount = 0;
 	}
-
-	public static int DROP_TABLE_RETRIES = 30;
 
 	private void dropTable(String tableName) {
 		String sqlDrop = String.format(DROP_TABLE_STMT, tableName);
-		boolean completed = false;
-
-		int retries = 0;
-		while (!completed) {
-			retries++;
-			Statement st;
-			try {
-				st = connection.createStatement();
-				st.execute(sqlDrop);
-			} catch (SQLException e1) {
-				e1.printStackTrace();
-				if (SQLUtil.getSQLStateCode(e1.getSQLState()) == SQLUtil.INTEGRITY_CONSTRAINT_VIOLATION) {
-					// Probably a primary key error - report the error and
-					// return
-					// Logger.logError("Error %d: %s",e1.getErrorCode(),e1.getMessage);
-					completed = true;
-					break;
-				} else if ((e1.getErrorCode() != MySQLErrorCodes.ER_LOCK_WAIT_TIMEOUT)
-						|| (retries >= DROP_TABLE_RETRIES)) {
-					// Raise the error
-					throw new RuntimeException(e1.getMessage());
-				}
-			}
-
-			try {
-				Thread.sleep(60);
-			} catch (InterruptedException e1) {
-				// Ignore and interrupted sleep error
-			}
-		}
+		executeSQLStatement(sqlDrop);
 	}
-
-	public static String DROP_TABLE_STMT = "DROP TABLE IF EXISTS %s";
-	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s)";
 
 	@Override
 	public void createTable(LinkedHashMap<String, String> columnsAndTypes) {
-		this.columnsAndTypes = columnsAndTypes;
-
-		String columnNames = "";
+		columnNames = "";
 		String columnTypes = "";
+
+		quotedColumnType = new boolean[columnsAndTypes.size()];
+		int col = 0;
 
 		Iterator<Entry<String, String>> entrySet = columnsAndTypes.entrySet()
 				.iterator();
@@ -149,6 +139,7 @@ public class EPFDbUtilityMySQL implements EPFDbUtility {
 			Entry<String, String> colNType = entrySet.next();
 			columnNames += "`" + colNType.getKey() + "`";
 			columnTypes += translateColumnType(colNType.getValue());
+			quotedColumnType[col++] = isQuotedColumnType(colNType.getValue());
 
 			if (entrySet.hasNext()) {
 				columnNames += ",";
@@ -166,6 +157,13 @@ public class EPFDbUtilityMySQL implements EPFDbUtility {
 		}
 	}
 
+	private boolean isQuotedColumnType(String columnType) {
+		if (UNQUOTED_TYPES.contains(columnType)) {
+			return false;
+		}
+		return true;
+	}
+
 	private String translateColumnType(String columnType) {
 		if (TRANSLATION_MAP.containsKey(columnType)) {
 			return TRANSLATION_MAP.get(columnType);
@@ -175,43 +173,95 @@ public class EPFDbUtilityMySQL implements EPFDbUtility {
 
 	@Override
 	public void setPrimaryKey(String[] columnName) {
-		// TODO Auto-generated method stub
-
+		String primaryKeyColumns = "";
+		for (int i = 0; i < columnName.length; i++) {
+			primaryKeyColumns += columnName[i];
+			if (i + 1 < columnName.length) {
+				primaryKeyColumns += ",";
+			}
+		}
+		String sqlAlterTable = String.format(PRIMARY_KEY_STMT,
+				primaryKeyColumns);
+		executeSQLStatement(sqlAlterTable);
 	}
 
 	@Override
 	public void insertRow(String[] rowData) {
-		// TODO Auto-generated method stub
-
+		if (insertBufferCount <= 0) {
+			insertBuffer = "";
+		}
+		if (insertBuffer.length() > 0) {
+			insertBuffer += ",";
+		}
+		insertBuffer += "(" + formatInsertRow(rowData) + ")";
+		if (insertBufferCount++ >= INSERT_BUFFER_SIZE) {
+			flushInsertBuffer();
+		}
+	}
+	
+	public void flushInsertBuffer() {
+//        commandString = ("REPLACE" if isIncremental else "INSERT")
+//        exStrTemplate = """%s %s INTO %s %s VALUES %s"""
+//        colNamesStr = "(%s)" % (", ".join(self.parser.columnNames))
+//        colVals = unicode(", ".join(stringList), 'utf-8')
+//        exStr = exStrTemplate % (commandString, ignoreString, tableName, colNamesStr, colVals)
+		String commandString = "INSERT";
+		
+		if (processMode == ProcessMode.APPEND) {
+			commandString = "REPLACE";
+		}
+		
+		executeSQLStatement(String.format(INSERT_SQL_STMT,commandString,impTableName,columnNames,insertBuffer));
 	}
 
-	private int executeSQLStatement(String sqlStmt,
-			List<Integer> ignoreSQLErrors) {
+	public String formatInsertRow(String[] rowData) {
+		String row = "";
+		for (int i = 0; i < rowData.length; i++) {
+			if (quotedColumnType[i]) {
+				row += "'" + rowData[i] + "'";
+			} else {
+				row += rowData[i];
+			}
+		}
+		return row;
+	}
+
+	private void executeSQLStatement(String sqlStmt) {
 		boolean completed = false;
-		int sqlError = 0;
-		while (completed) {
-			Statement st = null;
+
+		int retries = 0;
+		while (!completed) {
+			retries++;
+			Statement st;
 			try {
 				st = connection.createStatement();
 				st.execute(sqlStmt);
-				completed = true;
-			} catch (SQLException e) {
-				sqlError = e.getErrorCode();
-				// First - check if the code returned is something to ignore
-				if (ignoreSQLErrors.contains(sqlError)) {
-					// Ignore the error and return
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+				if (SQLUtil.getSQLStateCode(e1.getSQLState()) == SQLUtil.INTEGRITY_CONSTRAINT_VIOLATION) {
+					// Probably a primary key error - report the error and
+					// return
+					// Logger.logError("Error %d: %s",e1.getErrorCode(),e1.getMessage);
 					completed = true;
-					sqlError = 0;
+					break;
+				} else if ((e1.getErrorCode() != MySQLErrorCodes.ER_LOCK_WAIT_TIMEOUT)
+						|| (retries >= EXECUTE_SQL_STATEMENT_RETRIES)) {
+					// Raise the error
+					throw new RuntimeException(e1.getMessage());
 				}
 			}
+
+			try {
+				Thread.sleep(60);
+			} catch (InterruptedException e1) {
+				// Ignore and interrupted sleep error
+			}
 		}
-		return sqlError;
 	}
 
 	@Override
 	public void finalizeImport() {
-		// TODO Auto-generated method stub
-
+		flushInsertBuffer();
 	}
 
 }

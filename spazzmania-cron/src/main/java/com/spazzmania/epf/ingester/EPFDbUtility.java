@@ -77,7 +77,7 @@ public interface EPFDbUtility {
 	 * 
 	 * @param columnName
 	 */
-	public void setPrimaryKey(String columnName);
+	public void setPrimaryKey(String[] columnName);
 
 	/**
 	 * Insert a row of data from the input String[] array. The field types are

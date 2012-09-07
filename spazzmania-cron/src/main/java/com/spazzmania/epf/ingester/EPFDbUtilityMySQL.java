@@ -1,6 +1,8 @@
 package com.spazzmania.epf.ingester;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -41,7 +43,7 @@ import java.util.Map.Entry;
  * @author Thomas Billingsley
  * 
  */
-public class EPFDbUtilityMySQL implements EPFDbUtility {
+public class EPFDbUtilityMySQL extends EPFDbUtility {
 
 	public static String DROP_TABLE_STMT = "DROP TABLE IF EXISTS %s";
 	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s)";
@@ -53,6 +55,10 @@ public class EPFDbUtilityMySQL implements EPFDbUtility {
 	public static long INSERT_BUFFER_SIZE = 200;
 
 	private Connection connection;
+
+	public EPFDbUtilityMySQL(Connection connection, String schema) {
+		super(connection, schema);
+	}
 
 	public static Map<String, String> TRANSLATION_MAP = Collections
 			.unmodifiableMap(new HashMap<String, String>() {
@@ -264,4 +270,35 @@ public class EPFDbUtilityMySQL implements EPFDbUtility {
 		flushInsertBuffer();
 	}
 
+	@Override
+	public boolean isTableInDatabase(String tableName) {
+		DatabaseMetaData dbm;
+		try {
+			dbm = connection.getMetaData();
+			String types[] = { "TABLE" };
+			ResultSet tables = dbm.getTables(null, null, tableName, types);
+			tables.beforeFirst();
+			if (tables.next()) {
+				return true;
+			}		
+		} catch (SQLException e) {
+			//IGNORE - an error will occur when the table doesn't exist
+		}
+		return false;
+	}
+
+	@Override
+	public int getTableColumnCount(String tableName) {
+		DatabaseMetaData dbm;
+		try {
+			dbm = connection.getMetaData();
+			//Get the list of table columns as a SQL Result Set
+			ResultSet columns = dbm.getColumns(null, null, tableName, null);
+			columns.last(); //Move to the last row of the result set
+			return columns.getRow(); //return the row number as the column count
+		} catch (SQLException e) {
+			//IGNORE - an error will occur when the table doesn't exist
+		}
+		return 0;
+	}
 }

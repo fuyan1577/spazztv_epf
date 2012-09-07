@@ -3,10 +3,14 @@
  */
 package com.spazzmania.epf.ingester;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 
 /**
- * Interface for creating, dropping, merging and updating an EPF Database.
+ * Abstract class for creating, dropping, merging and updating an EPF Database.
  * <p/>
  * The methods defined here are based on the original Apple EPF Python scripts
  * intended for a MySQL MyISAM database. To understand the methods defined here,
@@ -28,8 +32,8 @@ import java.util.LinkedHashMap;
  * </ul>
  * 
  * <p>
- * Because the original script followed this logic, this interface requires the
- * following methods:
+ * Because the original script followed this logic, the importing logic requires
+ * the following abstract methods to be implemented:
  * <p>
  * <ul>
  * <li/>public void initImport(EPFImportType importType, String tableName, long
@@ -44,7 +48,15 @@ import java.util.LinkedHashMap;
  * @author Thomas Billingsley
  * 
  */
-public interface EPFDbUtility {
+public abstract class EPFDbUtility {
+
+	private Connection connection;
+	private String schema;
+
+	public EPFDbUtility(Connection connection, String schema) {
+		this.connection = connection;
+		this.schema = schema;
+	}
 
 	public enum EPFImportType {
 		FULL, INCREMENTAL
@@ -61,7 +73,7 @@ public interface EPFDbUtility {
 	 * @param numberOfRows
 	 *            - Number of rows in the import file
 	 */
-	public void initImport(EPFImportType importType, String tableName,
+	public abstract void initImport(EPFImportType importType, String tableName,
 			long numberOfRows);
 
 	/**
@@ -69,7 +81,8 @@ public interface EPFDbUtility {
 	 * 
 	 * @param columnsAndTypes
 	 */
-	public void createTable(LinkedHashMap<String, String> columnsAndTypes);
+	public abstract void createTable(
+			LinkedHashMap<String, String> columnsAndTypes);
 
 	/**
 	 * Set the column that is the Primary Key. Single column primary keys are
@@ -77,7 +90,7 @@ public interface EPFDbUtility {
 	 * 
 	 * @param columnName
 	 */
-	public void setPrimaryKey(String[] columnName);
+	public abstract void setPrimaryKey(String[] columnName);
 
 	/**
 	 * Insert a row of data from the input String[] array. The field types are
@@ -91,12 +104,61 @@ public interface EPFDbUtility {
 	 * @param rowData
 	 *            - a String[] array of column data comprising one row
 	 */
-	public void insertRow(String[] rowData);
+	public abstract void insertRow(String[] rowData);
 
 	/**
 	 * Finalize any table insert optimization. The original EPF Python script
 	 * logic would insert any remaining queued rows and possibly merge, drop and
 	 * rename tables.
 	 */
-	public void finalizeImport();
+	public abstract void finalizeImport();
+
+	/**
+	 * Returns whether or not the table exists in the database.
+	 * <p/>
+	 * Used for <i>INCREMENTAL</i> imports when determining whether to continue
+	 * with the import.
+	 * 
+	 * @param tableName
+	 * @return true if the table exists
+	 */
+	public boolean isTableInDatabase(String tableName) {
+		DatabaseMetaData dbm;
+		try {
+			dbm = connection.getMetaData();
+			String types[] = { "TABLE" };
+			ResultSet tables = dbm.getTables(null, schema, tableName, types);
+			tables.beforeFirst();
+			if (tables.next()) {
+				return true;
+			}
+		} catch (SQLException e) {
+			// IGNORE - an error will occur when the table doesn't exist
+		}
+		return false;
+	}
+
+	/**
+	 * Returns the number of columns for <i>tableName</i>.
+	 * <p/>
+	 * Used for <i>INCREMENTAL</i> imports when determining whether to continue
+	 * with the imports.
+	 * 
+	 * @param tableName
+	 * @return the number of columns
+	 */
+	public int getTableColumnCount(String tableName) {
+		DatabaseMetaData dbm;
+		try {
+			dbm = connection.getMetaData();
+			// Get the list of table columns as a SQL Result Set
+			ResultSet columns = dbm.getColumns(null, schema, tableName, null);
+			columns.last(); // Move to the last row of the result set
+			return columns.getRow(); // return the row number as the column
+										// count
+		} catch (SQLException e) {
+			// IGNORE - an error will occur when the table doesn't exist
+		}
+		return 0;
+	}
 }

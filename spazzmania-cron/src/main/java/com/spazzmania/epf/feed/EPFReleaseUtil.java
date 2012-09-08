@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2012, Spazzmania, Inc. All rights reserved.
  */
-package com.spazzmania.epf;
+package com.spazzmania.epf.feed;
 
 import java.text.DateFormat;
 import java.text.ParseException;

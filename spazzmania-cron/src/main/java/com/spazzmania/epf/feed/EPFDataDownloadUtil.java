@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.spazzmania.epf;
+package com.spazzmania.epf.feed;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -148,7 +148,7 @@ public class EPFDataDownloadUtil {
 	}
 
 	/**
-	 * Run the utility - this si the main execution point for running this
+	 * Run the utility - this is the main execution point for running this
 	 * utility. The steps are:
 	 * <ul>
 	 * <li/>jobInit() - get the last_download_date from the SpazzDB, set the

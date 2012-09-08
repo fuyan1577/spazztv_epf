@@ -1,4 +1,4 @@
-package com.spazzmania.epf;
+package com.spazzmania.epf.feed;
 
 import java.io.BufferedInputStream;
 import java.io.FileOutputStream;

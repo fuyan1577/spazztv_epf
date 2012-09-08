@@ -1,4 +1,4 @@
-package com.spazzmania.epf;
+package com.spazzmania.epf.feed;
 
 import org.jsoup.nodes.Document;
 

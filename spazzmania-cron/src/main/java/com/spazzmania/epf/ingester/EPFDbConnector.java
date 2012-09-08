@@ -13,11 +13,12 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.jolbox.bonecp.BoneCP;
-import com.jolbox.bonecp.BoneCPConfig;
-
 /**
- * This is a singleton object which provides two functionalities:
+ * This is an abstract object for wrapping a JDBC Connection Pool. The defined
+ * methods load the JSON formatted configuration.
+ * 
+ * <p/>
+ * The logic is broken into the two following steps:
  * <ol>
  * <li/>Load the JSON Configuration for the database connection pool
  * <li/>Return Connection object from the database connection pool
@@ -30,16 +31,17 @@ import com.jolbox.bonecp.BoneCPConfig;
  * pool.
  * 
  * <p/>
- * The second function of this object is to work as a connection factory
- * accessed by the <i>getConnection()</i> method.
+ * The second function of this object is to open the database connection pool
+ * and return connections through the <i>getConnection()</i> method.
+ * 
+ * <p/>
+ * Implementing classes which extend this class load the actual database
+ * connection pool object.
  * 
  * @author Thomas Billingsley
  * 
  */
-public class EPFDbConnector {
-
-	private static EPFDbConnector connector;
-	private BoneCP connectionPool;
+public abstract class EPFDbConnector {
 
 	public static String CONNECTION_POOL = "connection-pool";
 	public static String JDBC_DRIVER_CLASS = "jdbc-driver-class";
@@ -52,7 +54,7 @@ public class EPFDbConnector {
 	public static Integer DEFAULT_MIN_CONNECTIONS = 5;
 	public static Integer DEFAULT_MAX_CONNECTIONS = 20;
 
-	private static class DBConfig {
+	public static class DBConfig {
 		static String jdbcDriverClass;
 		static String defaultCatalog;
 		static String jdbcUrl;
@@ -62,35 +64,18 @@ public class EPFDbConnector {
 		static int maxConnections;
 	}
 
-	private EPFDbConnector() {
-	}
-
-	public static EPFDbConnector getInstance() {
-		if (connector == null) {
-			connector = new EPFDbConnector();
-		}
-
-		return connector;
-	}
-
-	public void openConnectionPool(String configPath) throws IOException, ClassNotFoundException, SQLException {
+	public EPFDbConnector(String configPath) throws IOException {
 		String configJson = loadConfigFile(configPath);
 		parseConfiguration(configJson);
-		
-		BoneCPConfig config = new BoneCPConfig();
-		Class.forName(DBConfig.jdbcDriverClass);
-		config.setJdbcUrl(DBConfig.jdbcUrl);
-		config.setDefaultCatalog(DBConfig.defaultCatalog);
-		config.setUsername(DBConfig.username);
-		config.setPassword(DBConfig.password);
-		
-		connectionPool = new BoneCP(config);
 	}
-	
-	public void closeConnectionPool() {
-		connectionPool.close();
-	}
-	
+
+	public abstract void openConnectionPool(String configPath)
+			throws IOException, ClassNotFoundException, SQLException;
+
+	public abstract void closeConnectionPool();
+
+	public abstract Connection getConnection() throws SQLException;
+
 	public void parseConfiguration(String configJson) {
 		JSONParser parser = new JSONParser();
 		JSONObject connPoolObject;
@@ -99,14 +84,18 @@ public class EPFDbConnector {
 		} catch (ParseException e) {
 			throw new RuntimeException(e);
 		}
-		
-		DBConfig.jdbcDriverClass = (String)connPoolObject.get(JDBC_DRIVER_CLASS);
-		DBConfig.defaultCatalog = (String)connPoolObject.get(JDBC_DEFAULT_CATALOG);
-		DBConfig.jdbcUrl = (String)connPoolObject.get(JDBC_URL);
-		DBConfig.username = (String)connPoolObject.get(JDBC_USERNAME);
-		DBConfig.password = (String)connPoolObject.get(JDBC_PASSWORD);
-		DBConfig.minConnections = (Integer)connPoolObject.get(JDBC_MIN_CONNECTIONS);
-		DBConfig.maxConnections = (Integer)connPoolObject.get(JDBC_MAX_CONNECTIONS);
+
+		DBConfig.jdbcDriverClass = (String) connPoolObject
+				.get(JDBC_DRIVER_CLASS);
+		DBConfig.defaultCatalog = (String) connPoolObject
+				.get(JDBC_DEFAULT_CATALOG);
+		DBConfig.jdbcUrl = (String) connPoolObject.get(JDBC_URL);
+		DBConfig.username = (String) connPoolObject.get(JDBC_USERNAME);
+		DBConfig.password = (String) connPoolObject.get(JDBC_PASSWORD);
+		DBConfig.minConnections = (Integer) connPoolObject
+				.get(JDBC_MIN_CONNECTIONS);
+		DBConfig.maxConnections = (Integer) connPoolObject
+				.get(JDBC_MAX_CONNECTIONS);
 		if (DBConfig.minConnections <= 0) {
 			DBConfig.minConnections = DEFAULT_MIN_CONNECTIONS;
 		}
@@ -128,7 +117,4 @@ public class EPFDbConnector {
 		}
 	}
 
-	public Connection getConnection() throws SQLException {
-		return connectionPool.getConnection();
-	}
 }

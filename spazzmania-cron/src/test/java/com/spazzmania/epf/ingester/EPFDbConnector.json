@@ -1,0 +1,9 @@
+"connection-pool" : {
+	"jdbc-driver-class": "com.lang.Object",
+	"default-catalog": "mockcatalog",
+	"min-connections": "6",
+	"max-connections": "21",
+	"jdbc-url": "jdbc:mockdb://localhost/mockdb",
+	"username": "mockusername",
+	"password": "mockpassword"	
+}

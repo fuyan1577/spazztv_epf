@@ -20,12 +20,12 @@ import org.json.simple.parser.ParseException;
  * <p/>
  * The logic is broken into the two following steps:
  * <ol>
- * <li/>Load the JSON Configuration for the database connection pool
- * <li/>Return Connection object from the database connection pool
+ * <li/>Load the JSON Configuration for the database connection pool - <i>Implemented in this class</i>
+ * <li/>Return Connection object from the database connection pool - <i>Implemented by child classes</i>
  * </ol>
  * 
  * <p/>
- * The configuration is loaded from an EPFDBConnector.json configuration file
+ * The configuration is loaded from an EPFDbConnector.json configuration file
  * located in the local config path. The configuration file designates the JDBC
  * Class, schema, username and password to be used by the database connection
  * pool.
@@ -62,6 +62,9 @@ public abstract class EPFDbConnector {
 		static String password;
 		static int minConnections;
 		static int maxConnections;
+	}
+	
+	public EPFDbConnector() {
 	}
 
 	public EPFDbConnector(String configPath) throws IOException {
@@ -116,5 +119,4 @@ public abstract class EPFDbConnector {
 			stream.close();
 		}
 	}
-
 }

@@ -1,14 +1,8 @@
 package com.spazzmania.epf.ingester;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -17,11 +11,14 @@ import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.spazzmania.epf.ingester.EPFDbConnector.DBConfig;
+
 public class EPFDbConnectorTest {
 
 	private EPFDbConnector connector;
 	private String epfDbConfigJson;
 	private String epfDbConfigJson2;
+	private String epfDbConfigPath;
 
 	class EPFDbConnectorMock extends EPFDbConnector {
 
@@ -50,45 +47,71 @@ public class EPFDbConnectorTest {
 	@Before
 	public void setUp() {
 		connector = new EPFDbConnectorMock();
-		epfDbConfigJson = "{	\"connection-pool\" : {"
-				+ "	\"jdbc-driver-class\": \"com.lang.Object\","
-				+ "	\"default-catalog\": \"mockcatalog\","
-				+ "	\"min-connections\": 6," + "	\"max-connections\": 21,"
-				+ "	\"jdbc-url\": \"jdbc:mockdb://localhost/mockdb\","
-				+ "	\"username\": \"mockusername\","
-				+ "	\"password\": \"mockpassword\"	" + "	}" + "}";
-		epfDbConfigJson2 = "{	\"connection-pool\" : {"
-				+ "	\"jdbc-driver-class\": \"com.lang.Object\","
-				+ "	\"default-catalog\": \"mockcatalog\","
-				+ "	\"jdbc-url\": \"jdbc:mockdb://localhost/mockdb\","
-				+ "	\"username\": \"mockusername\","
-				+ "	\"password\": \"mockpassword\"	" + "	}" + "}";
-	}
+		epfDbConfigJson = "{" + "	\"dbConnectionPool\": {"
+				+ "		\"dbJdbcDriverClass\":\"com.mysql.jdbc.Driver\","
+				+ "		\"dbDefaultCatalog\":\"mockcatalog\","
+				+ "		\"dbMinConnections\":6," + "		\"dbMaxConnections\":21,"
+				+ "		\"dbJdbcUrl\": \"jdbc:mysql://localhost/mockdb\", "
+				+ "		\"dbUser\": \"mockusername\","
+				+ "		\"dbPassword\": \"mockpassword\"" + "	}" + "}";
+		epfDbConfigJson2 = "{" + "	\"dbConnectionPool\": {"
+				+ "		\"dbJdbcDriverClass\":\"com.mysql.jdbc.Driver\","
+				+ "		\"dbDefaultCatalog\":\"mockcatalog\","
+				+ "		\"dbJdbcUrl\": \"jdbc:mysql://localhost/mockdb\", "
+				+ "		\"dbUser\": \"mockusername\","
+				+ "		\"dbPassword\": \"mockpassword\"" + "	}" + "}";
 
-	// @Test
-	// public void testEPFDbConnector() {
-	// fail("Not yet implemented");
-	// }
+		URL epfDbConfigURL = EPFDbConnectorTest.class
+				.getResource("EPFDbConfig.json");
+		if (epfDbConfigURL != null) {
+			try {
+				epfDbConfigPath = epfDbConfigURL.toURI().toString();
+				epfDbConfigPath = epfDbConfigPath.replaceFirst("file:/", "");
+			} catch (URISyntaxException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
 	@Test
 	public void testParseConfiguration() {
 		connector.parseConfiguration(epfDbConfigJson);
 		EPFDbConnector.DBConfig config = connector.getDBConfig();
-		Assert.assertTrue("Invalid jdbcDriverClass", config.jdbcDriverClass.equals("com.lang.Object"));
-		Assert.assertTrue("Invalid jdbcUrl", config.jdbcUrl.equals("jdbc:mockdb://localhost/mockdb"));
-		Assert.assertTrue("Invalid defaultCatalog", config.defaultCatalog.equals("mockcatalog"));
-		Assert.assertTrue("Invalid config username", config.username.equals("mockusername"));
-		Assert.assertTrue("Invalid config password", config.password.equals("mockpassword"));
+		Assert.assertTrue("Invalid jdbcDriverClass",
+				config.jdbcDriverClass.equals("com.mysql.jdbc.Driver"));
+		Assert.assertTrue("Invalid jdbcUrl",
+				config.jdbcUrl.equals("jdbc:mysql://localhost/mockdb"));
+		Assert.assertTrue("Invalid defaultCatalog",
+				config.defaultCatalog.equals("mockcatalog"));
+		Assert.assertTrue("Invalid config username",
+				config.username.equals("mockusername"));
+		Assert.assertTrue("Invalid config password",
+				config.password.equals("mockpassword"));
 		Assert.assertTrue("Invalid minConnections", config.minConnections == 6);
 		Assert.assertTrue("Invalid maxConnections", config.maxConnections == 21);
 	}
-	
+
 	@Test
 	public void testParseConfigurationWithDefaults() {
 		connector.parseConfiguration(epfDbConfigJson2);
 		EPFDbConnector.DBConfig config = connector.getDBConfig();
-		//Test for the default min & max connection values
+		// Test for the default min & max connection values
 		Assert.assertTrue("Invalid minConnections", config.minConnections == 5);
 		Assert.assertTrue("Invalid maxConnections", config.maxConnections == 20);
+	}
+
+	@Test
+	public void testEPFDbConnector() throws IOException {
+		Assert.assertNotNull("EPFDbConfig.json not found for JUnit test",
+				epfDbConfigPath);
+		connector = new EPFDbConnectorMock(epfDbConfigPath);
+		DBConfig config = connector.getDBConfig();
+		Assert.assertNotNull("Invalid dbJdbcDriverClass",config.jdbcDriverClass);
+		Assert.assertNotNull("Invalid dbJdbcUrl",config.jdbcUrl);
+		Assert.assertNotNull("Invalid dbDefaultCatalog",config.defaultCatalog);
+		Assert.assertNotNull("Invalid dbUser",config.username);
+		Assert.assertNotNull("Invalid dbPassword",config.password);
+		Assert.assertNotNull("Invalid dbMinConnections",config.minConnections);
+		Assert.assertNotNull("Invalid dbMaxConnections",config.maxConnections);
 	}
 }

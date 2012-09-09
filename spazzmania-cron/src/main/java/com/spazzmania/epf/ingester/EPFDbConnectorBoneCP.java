@@ -30,13 +30,13 @@ public class EPFDbConnectorBoneCP extends EPFDbConnector {
 
 	public void openConnectionPool(String configPath) throws IOException,
 			ClassNotFoundException, SQLException {
+		DBConfig dbConfig = this.getDBConfig();
 		BoneCPConfig config = new BoneCPConfig();
-		Class.forName(DBConfig.jdbcDriverClass);
-		config.setJdbcUrl(DBConfig.jdbcUrl);
-		config.setDefaultCatalog(DBConfig.defaultCatalog);
-		config.setUsername(DBConfig.username);
-		config.setPassword(DBConfig.password);
-
+		Class.forName(dbConfig.jdbcDriverClass);
+		config.setJdbcUrl(dbConfig.jdbcUrl);
+		config.setDefaultCatalog(dbConfig.defaultCatalog);
+		config.setUsername(dbConfig.username);
+		config.setPassword(dbConfig.password);
 		connectionPool = new BoneCP(config);
 	}
 

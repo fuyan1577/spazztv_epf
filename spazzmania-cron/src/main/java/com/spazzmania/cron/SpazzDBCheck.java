@@ -7,7 +7,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
-import com.spazzmania.epf.EPFDataDownloadUtil;
+import com.spazzmania.epf.feed.EPFDataDownloadUtil;
 import com.spazzmania.model.util.SpazzDBUtil;
 
 /**

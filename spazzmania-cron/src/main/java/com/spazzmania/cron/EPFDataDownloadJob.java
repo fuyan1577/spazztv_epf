@@ -11,10 +11,10 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.spazzmania.epf.EPFConnector;
-import com.spazzmania.epf.EPFConnectorImpl;
-import com.spazzmania.epf.EPFDataDownloadUtil;
-import com.spazzmania.epf.EPFReleaseUtil;
+import com.spazzmania.epf.feed.EPFConnector;
+import com.spazzmania.epf.feed.EPFConnectorImpl;
+import com.spazzmania.epf.feed.EPFDataDownloadUtil;
+import com.spazzmania.epf.feed.EPFReleaseUtil;
 import com.spazzmania.model.util.SpazzDBUtil;
 
 /**

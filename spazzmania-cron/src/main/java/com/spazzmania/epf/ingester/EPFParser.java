@@ -1,6 +1,3 @@
-/**
- * 
- */
 package com.spazzmania.epf.ingester;
 
 import java.io.FileNotFoundException;
@@ -37,7 +34,7 @@ public class EPFParser {
 
 	private List<String> columnNames;
 	private List<String> dataTypes;
-	private ExportMode exportMode;
+	private EPFExportType exportType;
 	private List<String> primaryKey;
 
 	private long lastRecordNum = 0;
@@ -49,10 +46,6 @@ public class EPFParser {
 	public static String DATA_TYPES_TAG = "dbTypes:";
 	public static String EXPORT_MODE_TAG = "exportMode:";
 	public static String RECORDS_WRITTEN_TAG = "recordsWritten:";
-
-	public enum ExportMode {
-		FULL, INCREMENTAL
-	}
 
 	// (eFile, recordDelim='\x02\n',
 	// fieldDelim='\x01')
@@ -135,8 +128,8 @@ public class EPFParser {
 	 * 
 	 * @return
 	 */
-	public ExportMode getExportMode() {
-		return exportMode;
+	public EPFExportType getExportType() {
+		return exportType;
 	}
 
 	/**
@@ -319,9 +312,9 @@ public class EPFParser {
 	private void parseExportMode(String row) {
 		List<String> dTypes = splitRow(row, COMMENT_CHAR + EXPORT_MODE_TAG);
 		String eMode = dTypes.get(0);
-		exportMode = ExportMode.FULL;
-		if (eMode == ExportMode.INCREMENTAL.toString()) {
-			exportMode = ExportMode.INCREMENTAL;
+		exportType = EPFExportType.FULL;
+		if (eMode == EPFExportType.INCREMENTAL.toString()) {
+			exportType = EPFExportType.INCREMENTAL;
 		}
 	}
 }

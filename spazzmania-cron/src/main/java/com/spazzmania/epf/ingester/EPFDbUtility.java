@@ -9,6 +9,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 
+import com.jolbox.bonecp.BoneCP;
+
 /**
  * Abstract class for creating, dropping, merging and updating an EPF Database.
  * <p/>
@@ -44,23 +46,23 @@ import java.util.LinkedHashMap;
  * <li/>public void finalizeImport();
  * </ul>
  * 
+ * <p/>
+ * <i>Note:</i> A Database Connection Pool is used to optimize the processing of
+ * multiple threads. The implementing classes should call the method
+ * <code>getConnection()</code> and <code>releaseConnection()</code> at the
+ * beginning and end of each method that executes SQL statements.
  * 
  * @author Thomas Billingsley
- * 
  */
 public abstract class EPFDbUtility {
 
-	private Connection connection;
+	private BoneCP connector;
 	private String schema;
 
-	public EPFDbUtility(Connection connection, String schema) {
-		this.connection = connection;
+	public EPFDbUtility(BoneCP connector, String schema) {
+		this.connector = connector;
 		this.schema = schema;
 	}
-
-	public enum EPFImportType {
-		FULL, INCREMENTAL
-	};
 
 	/**
 	 * Initialize the table to be imported based on the importType and number of
@@ -73,7 +75,7 @@ public abstract class EPFDbUtility {
 	 * @param numberOfRows
 	 *            - Number of rows in the import file
 	 */
-	public abstract void initImport(EPFImportType importType, String tableName,
+	public abstract void initImport(EPFExportType exportType, String tableName,
 			long numberOfRows);
 
 	/**
@@ -112,6 +114,10 @@ public abstract class EPFDbUtility {
 	 * rename tables.
 	 */
 	public abstract void finalizeImport();
+	
+	public Connection getConnection() throws SQLException {
+		return connector.getConnection();
+	}
 
 	/**
 	 * Returns whether or not the table exists in the database.
@@ -125,6 +131,7 @@ public abstract class EPFDbUtility {
 	public boolean isTableInDatabase(String tableName) {
 		DatabaseMetaData dbm;
 		try {
+			Connection connection = getConnection();
 			dbm = connection.getMetaData();
 			String types[] = { "TABLE" };
 			ResultSet tables = dbm.getTables(null, schema, tableName, types);
@@ -132,6 +139,7 @@ public abstract class EPFDbUtility {
 			if (tables.next()) {
 				return true;
 			}
+			connection.close();
 		} catch (SQLException e) {
 			// IGNORE - an error will occur when the table doesn't exist
 		}
@@ -150,12 +158,14 @@ public abstract class EPFDbUtility {
 	public int getTableColumnCount(String tableName) {
 		DatabaseMetaData dbm;
 		try {
+			Connection connection = getConnection();
 			dbm = connection.getMetaData();
 			// Get the list of table columns as a SQL Result Set
 			ResultSet columns = dbm.getColumns(null, schema, tableName, null);
 			columns.last(); // Move to the last row of the result set
-			return columns.getRow(); // return the row number as the column
-										// count
+			int columnCount = columns.getRow();
+			connection.close();
+			return columnCount; // return the row number as the column count
 		} catch (SQLException e) {
 			// IGNORE - an error will occur when the table doesn't exist
 		}

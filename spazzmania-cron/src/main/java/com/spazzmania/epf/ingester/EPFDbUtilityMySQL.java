@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.jolbox.bonecp.BoneCP;
+
 /**
  * EPFDbUtilityMySQL - a MySQL Implementation of the EPFDbUtility interface.
  * <p>
@@ -49,15 +51,13 @@ public class EPFDbUtilityMySQL extends EPFDbUtility {
 	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s)";
 	public static String PRIMARY_KEY_STMT = "ALTER TABLE %s ADD CONSTRAINT PRIMARY KEY (%s)";
 	public static String INSERT_SQL_STMT = "%s INTO %s %s VALUES %s";
-	
+
 	public static int EXECUTE_SQL_STATEMENT_RETRIES = 30;
 	public static long MERGE_THRESHOLD = 500000;
 	public static long INSERT_BUFFER_SIZE = 200;
 
-	private Connection connection;
-
-	public EPFDbUtilityMySQL(Connection connection, String schema) {
-		super(connection, schema);
+	public EPFDbUtilityMySQL(BoneCP connector, String schema) {
+		super(connector, schema);
 	}
 
 	public static Map<String, String> TRANSLATION_MAP = Collections
@@ -83,7 +83,7 @@ public class EPFDbUtilityMySQL extends EPFDbUtility {
 	private String impTableName;
 	private String uncTableName;
 	private boolean[] quotedColumnType;
-	
+
 	private String columnNames;
 
 	private int insertBufferCount = 0;
@@ -95,21 +95,13 @@ public class EPFDbUtilityMySQL extends EPFDbUtility {
 
 	private ProcessMode processMode;
 
-	public Connection getConnection() {
-		return connection;
-	}
-
-	public void setConnection(Connection connection) {
-		this.connection = connection;
-	}
-
 	@Override
-	public void initImport(EPFImportType importType, String tableName,
+	public void initImport(EPFExportType exportType, String tableName,
 			long numberOfRows) {
 		this.tableName = tableName;
 		this.impTableName = null;
 		this.uncTableName = null;
-		if (importType == EPFImportType.FULL) {
+		if (exportType == EPFExportType.FULL) {
 			processMode = ProcessMode.IMPORT_RENAME;
 			dropTable(tableName);
 			impTableName = this.tableName;
@@ -153,14 +145,9 @@ public class EPFDbUtilityMySQL extends EPFDbUtility {
 			}
 		}
 
-		try {
-			Statement st = connection.createStatement();
-			st.execute(String.format(DROP_TABLE_STMT, impTableName));
-			st.execute(String.format(CREATE_TABLE_STMT, columnNames,
-					columnTypes));
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+		dropTable(impTableName);
+		executeSQLStatement(String.format(CREATE_TABLE_STMT, columnNames,
+				columnTypes));
 	}
 
 	private boolean isQuotedColumnType(String columnType) {
@@ -204,20 +191,22 @@ public class EPFDbUtilityMySQL extends EPFDbUtility {
 			flushInsertBuffer();
 		}
 	}
-	
+
 	public void flushInsertBuffer() {
-//        commandString = ("REPLACE" if isIncremental else "INSERT")
-//        exStrTemplate = """%s %s INTO %s %s VALUES %s"""
-//        colNamesStr = "(%s)" % (", ".join(self.parser.columnNames))
-//        colVals = unicode(", ".join(stringList), 'utf-8')
-//        exStr = exStrTemplate % (commandString, ignoreString, tableName, colNamesStr, colVals)
+		// commandString = ("REPLACE" if isIncremental else "INSERT")
+		// exStrTemplate = """%s %s INTO %s %s VALUES %s"""
+		// colNamesStr = "(%s)" % (", ".join(self.parser.columnNames))
+		// colVals = unicode(", ".join(stringList), 'utf-8')
+		// exStr = exStrTemplate % (commandString, ignoreString, tableName,
+		// colNamesStr, colVals)
 		String commandString = "INSERT";
-		
+
 		if (processMode == ProcessMode.APPEND) {
 			commandString = "REPLACE";
 		}
-		
-		executeSQLStatement(String.format(INSERT_SQL_STMT,commandString,impTableName,columnNames,insertBuffer));
+
+		executeSQLStatement(String.format(INSERT_SQL_STMT, commandString,
+				impTableName, columnNames, insertBuffer));
 	}
 
 	public String formatInsertRow(String[] rowData) {
@@ -239,7 +228,9 @@ public class EPFDbUtilityMySQL extends EPFDbUtility {
 		while (!completed) {
 			retries++;
 			Statement st;
+			Connection connection = null;
 			try {
+				connection = getConnection();
 				st = connection.createStatement();
 				st.execute(sqlStmt);
 			} catch (SQLException e1) {
@@ -254,6 +245,12 @@ public class EPFDbUtilityMySQL extends EPFDbUtility {
 						|| (retries >= EXECUTE_SQL_STATEMENT_RETRIES)) {
 					// Raise the error
 					throw new RuntimeException(e1.getMessage());
+				}
+			} finally {
+				try {
+					connection.close();
+				} catch (SQLException e) {
+					// Ignore - may be attempting to close a failed connection
 				}
 			}
 
@@ -273,32 +270,51 @@ public class EPFDbUtilityMySQL extends EPFDbUtility {
 	@Override
 	public boolean isTableInDatabase(String tableName) {
 		DatabaseMetaData dbm;
+		Connection connection = null;
 		try {
+			connection = getConnection();
 			dbm = connection.getMetaData();
 			String types[] = { "TABLE" };
 			ResultSet tables = dbm.getTables(null, null, tableName, types);
 			tables.beforeFirst();
 			if (tables.next()) {
 				return true;
-			}		
+			}
 		} catch (SQLException e) {
-			//IGNORE - an error will occur when the table doesn't exist
+			// IGNORE - an error will occur when the table doesn't exist
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				//Ignore - this may attempting to close a failed connection
+			}
 		}
+		
 		return false;
 	}
 
 	@Override
 	public int getTableColumnCount(String tableName) {
 		DatabaseMetaData dbm;
+		Connection connection = null;
 		try {
+			connection = getConnection();
 			dbm = connection.getMetaData();
-			//Get the list of table columns as a SQL Result Set
+			// Get the list of table columns as a SQL Result Set
 			ResultSet columns = dbm.getColumns(null, null, tableName, null);
-			columns.last(); //Move to the last row of the result set
-			return columns.getRow(); //return the row number as the column count
+			columns.last(); // Move to the last row of the result set
+			return columns.getRow(); // return the row number as the column
+										// count
 		} catch (SQLException e) {
-			//IGNORE - an error will occur when the table doesn't exist
+			// IGNORE - an error will occur when the table doesn't exist
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				//Ignore - this may attempting to close a failed connection
+			}
 		}
+		
 		return 0;
 	}
 }

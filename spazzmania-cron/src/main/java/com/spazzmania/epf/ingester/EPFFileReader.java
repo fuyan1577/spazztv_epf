@@ -1,7 +1,12 @@
 package com.spazzmania.epf.ingester;
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 
 /**
  * This is an interface which consolidates the random and buffered access of the EPF
@@ -10,9 +15,19 @@ import java.io.IOException;
  * @author Thomas Billingsley
  * 
  */
-public interface EPFFileReader {
+public class EPFFileReader {
 
 	public static String COMMENT_PREFIX = "#";
+
+	BufferedReader bFile;
+	String filePath;
+
+	public EPFFileReader(String filePath) throws FileNotFoundException {
+		this.filePath = filePath;
+		FileInputStream fstream = new FileInputStream(filePath);
+		DataInputStream in = new DataInputStream(fstream);
+		bFile = new BufferedReader(new InputStreamReader(in));
+	}
 
 	/**
 	 * Read the next header line of data that begins with an
@@ -29,7 +44,22 @@ public interface EPFFileReader {
 	 * @return String of data read
 	 * @throws IOException
 	 */
-	public String readNextHeaderLine() throws IOException;
+	public String readNextHeaderLine() throws IOException {
+		String rec;
+		while (true) {
+			try {
+				rec = bFile.readLine();
+				if (rec.startsWith(COMMENT_PREFIX)) {
+					break;
+				}
+			} catch (IOException e) {
+				rec = null;
+				break;
+			}
+		}
+		return rec;
+	}
+
 
 	/**
 	 * Read the next line of data starting at the current record position
@@ -41,7 +71,22 @@ public interface EPFFileReader {
 	 * @return String of data read
 	 * @throws IOException
 	 */
-	public String readNextDataLine() throws IOException;
+	public String readNextDataLine() throws IOException {
+		String rec;
+		while (true) {
+			try {
+				rec = bFile.readLine();
+				if (!rec.startsWith(COMMENT_PREFIX)) {
+					break;
+				}
+			} catch (IOException e) {
+				rec = null;
+				break;
+			}
+		}
+		return rec;
+	}
+
 
 	/**
 	 * Read the total records line from the end of the EPF Import File.
@@ -58,13 +103,43 @@ public interface EPFFileReader {
 	 * @throws IOException
 	 */
 	public String readRecordsWrittenLine(String totalRecordsPrefix)
-			throws IOException;
+			throws IOException {
+		String rec;
+
+		RandomAccessFile rFile = new RandomAccessFile(filePath, "r");
+		rFile.seek(rFile.length() - 80);
+
+		while (true) {
+			try {
+				rec = rFile.readLine();
+				if (rec.startsWith(totalRecordsPrefix)) {
+					break;
+				}
+			} catch (IOException e) {
+				rec = null;
+				break;
+			}
+		}
+		rFile.close();
+		return rec;
+	}
 
 	/**
 	 * Rewind the file pointer to the beginning of the file. This is intended to
 	 * be used immediately after reading all the header rows.
 	 */
-	public void rewind() throws FileNotFoundException;
+	public void rewind() throws FileNotFoundException {
+		if (bFile != null) {
+			try {
+				bFile.close();
+			} catch (IOException e) {
+				//Ignore - we're about to open it again
+			}
+		}
+		FileInputStream fstream = new FileInputStream(filePath);
+		DataInputStream in = new DataInputStream(fstream);
+		bFile = new BufferedReader(new InputStreamReader(in));
+	}
 
 	/**
 	 * Returns the length or <i>size</i> of the file.
@@ -74,7 +149,12 @@ public interface EPFFileReader {
 	 * @return the length of this file, measured in bytes.
 	 * @throws IOException
 	 */
-	public long length() throws IOException;
+	public long length() throws IOException {
+		RandomAccessFile rFile = new RandomAccessFile(filePath, "r");
+		long len = rFile.length();
+		rFile.close();
+		return len;
+	}
 
 	/**
 	 * Closes the input file.
@@ -83,13 +163,17 @@ public interface EPFFileReader {
 	 * 
 	 * @throws IOException
 	 */
-	public void close() throws IOException;
+	public void close() throws IOException {
+		bFile.close();
+	}
 
 	/**
 	 * Return the filePath provided on instantiation
 	 * 
 	 * @return filePath of the input file
 	 */
-	public String getFilePath();
+	public String getFilePath() {
+		return filePath;
+	}
 
 }

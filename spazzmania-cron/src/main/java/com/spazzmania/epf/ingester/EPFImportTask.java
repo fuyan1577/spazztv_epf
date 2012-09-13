@@ -10,7 +10,7 @@ package com.spazzmania.epf.ingester;
  */
 public class EPFImportTask implements Runnable {
 
-	public EPFImportTask(EPFParser parser, EPFDbConnector connector) {
+	public EPFImportTask(EPFImportXlator parser, EPFDbConnector connector) {
 	}
 	
 	@Override

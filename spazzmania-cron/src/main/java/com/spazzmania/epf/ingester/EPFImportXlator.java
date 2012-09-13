@@ -26,7 +26,7 @@ import java.util.List;
  * @author Thomas Billingsley
  * 
  */
-public class EPFParser {
+public class EPFImportXlator {
 	private EPFFileReader eFile;
 	private long totalRecords = 0L;
 	private String recordDelim = "\\x01";
@@ -68,7 +68,7 @@ public class EPFParser {
 	 * @param fieldDelim
 	 *            - <i>usually either '\x01' or '\t'</i>
 	 */
-	public EPFParser(EPFFileReader eFile, String recordDelim, String fieldDelim) {
+	public EPFImportXlator(EPFFileReader eFile, String recordDelim, String fieldDelim) {
 		this.eFile = eFile;
 		this.recordDelim = recordDelim;
 		this.fieldDelim = fieldDelim;

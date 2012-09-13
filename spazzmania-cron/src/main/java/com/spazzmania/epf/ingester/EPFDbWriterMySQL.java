@@ -45,7 +45,7 @@ import com.jolbox.bonecp.BoneCP;
  * @author Thomas Billingsley
  * 
  */
-public class EPFDbUtilityMySQL extends EPFDbUtility {
+public class EPFDbWriterMySQL extends EPFDbWriter {
 
 	public static String DROP_TABLE_STMT = "DROP TABLE IF EXISTS %s";
 	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s)";
@@ -56,8 +56,8 @@ public class EPFDbUtilityMySQL extends EPFDbUtility {
 	public static long MERGE_THRESHOLD = 500000;
 	public static long INSERT_BUFFER_SIZE = 200;
 
-	public EPFDbUtilityMySQL(BoneCP connector, String schema) {
-		super(connector, schema);
+	public EPFDbWriterMySQL(String schema) {
+		super(schema);
 	}
 
 	public static Map<String, String> TRANSLATION_MAP = Collections

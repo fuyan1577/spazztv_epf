@@ -54,13 +54,12 @@ import com.jolbox.bonecp.BoneCP;
  * 
  * @author Thomas Billingsley
  */
-public abstract class EPFDbUtility {
+public abstract class EPFDbWriter {
 
 	private BoneCP connector;
 	private String schema;
 
-	public EPFDbUtility(BoneCP connector, String schema) {
-		this.connector = connector;
+	public EPFDbWriter(String schema) {
 		this.schema = schema;
 	}
 
@@ -114,8 +113,23 @@ public abstract class EPFDbUtility {
 	 * rename tables.
 	 */
 	public abstract void finalizeImport();
-	
-	public Connection getConnection() throws SQLException {
+
+	/**
+	 * Set connection pool connector. For use by the EPFConnectorAspect.
+	 * 
+	 * @param connector
+	 */
+	public final void setConnector(BoneCP connector) {
+		this.connector = connector;
+	}
+
+	/**
+	 * Retrieve SQL Connection. For use by implementing classes.
+	 * 
+	 * @return
+	 * @throws SQLException
+	 */
+	public final Connection getConnection() throws SQLException {
 		return connector.getConnection();
 	}
 

@@ -31,8 +31,10 @@ public class EPFFileReaderTest {
 	@Test
 	public void testReadRecordsWrittenLine() throws IOException {
 		String recordsWrittenLine = fileReader.readRecordsWrittenLine();
-		Assert.assertTrue("Invalid recordsWritten line", recordsWrittenLine != null);
-		Assert.assertTrue("Invalid recordsWritten line", recordsWrittenLine.matches(".+recordsWritten:\\d+.+"));
+		Assert.assertTrue("Invalid recordsWritten line",
+				recordsWrittenLine != null);
+		Assert.assertTrue("Invalid recordsWritten line",
+				recordsWrittenLine.matches(".+recordsWritten:\\d+.+"));
 	}
 
 	@Test
@@ -40,7 +42,8 @@ public class EPFFileReaderTest {
 		fileReader.rewind();
 		String nextHeaderLine = fileReader.readNextHeaderLine();
 		Assert.assertTrue("Invalid record after rewind", nextHeaderLine != null);
-		Assert.assertTrue("Invalid record after rewind", nextHeaderLine.startsWith("#export_date"));
+		Assert.assertTrue("Invalid record after rewind",
+				nextHeaderLine.startsWith("#export_date"));
 	}
 
 	@Test
@@ -48,13 +51,30 @@ public class EPFFileReaderTest {
 		fileReader.rewind();
 		String nextHeaderLine = fileReader.readNextHeaderLine();
 		Assert.assertTrue("Invalid record after rewind", nextHeaderLine != null);
-		Assert.assertTrue("Invalid record after rewind", nextHeaderLine.startsWith("#export_date"));
+		Assert.assertTrue("Invalid record after rewind",
+				nextHeaderLine.startsWith("#export_date"));
 	}
 
 	@Test
 	public void testReadNextDataLine() throws IOException {
 		fileReader.rewind();
-		String nextDataLine = fileReader.readNextDataLine();
+
+		String recordsWrittenLine = fileReader.readRecordsWrittenLine();
+		long recordsWritten = Long.decode(recordsWrittenLine.replaceAll(
+				".+recordsWritten:(\\d+).+", "$1"));
 		
+		fileReader.rewind();
+		int t = 0;
+		for (long i = 0; i < recordsWritten; i++) {
+			String nextDataLine = fileReader.readNextDataLine();
+			if (nextDataLine != null) {
+				t++;
+			}
+			Assert.assertTrue("Invalid data record",
+					nextDataLine != null);
+			Assert.assertTrue("Invalid data record",
+					nextDataLine.matches("^\\d+\\x01.+$"));
+		}
+		Assert.assertTrue(String.format("Incorrect total records. Expected %d, Found %d",recordsWritten,t),(t == recordsWritten));
 	}
 }

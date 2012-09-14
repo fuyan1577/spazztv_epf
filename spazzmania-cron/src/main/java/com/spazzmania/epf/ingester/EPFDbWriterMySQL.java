@@ -14,10 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.jolbox.bonecp.BoneCP;
-
 /**
- * EPFDbUtilityMySQL - a MySQL Implementation of the EPFDbUtility interface.
+ * A MySQL Implementation of the EPFDbWriter interface.
  * <p>
  * This implementation matches the original EPF Python scripts and creates a
  * MyISAM table based on the import file definition and data.
@@ -223,12 +221,13 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 
 	private void executeSQLStatement(String sqlStmt) {
 		boolean completed = false;
-
+		
 		int retries = 0;
+		Connection connection = null;
+		
 		while (!completed) {
 			retries++;
 			Statement st;
-			Connection connection = null;
 			try {
 				connection = getConnection();
 				st = connection.createStatement();
@@ -260,6 +259,7 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 				// Ignore and interrupted sleep error
 			}
 		}
+		releaseConnection(connection);
 	}
 
 	@Override

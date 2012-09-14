@@ -16,8 +16,8 @@ import com.jolbox.bonecp.BoneCP;
  * <p/>
  * The methods defined here are based on the original Apple EPF Python scripts
  * intended for a MySQL MyISAM database. To understand the methods defined here,
- * a description of the original Python scrips is necessary. The following logic
- * was employed:
+ * a description of the original Python scripts is necessary. The following
+ * logic was employed:
  * <p>
  * <ul>
  * <li/><i>Full Ingest</i>: All previous tables were dropped and new ones are
@@ -56,7 +56,7 @@ import com.jolbox.bonecp.BoneCP;
  */
 public abstract class EPFDbWriter {
 
-	private BoneCP connector;
+	private BoneCP connectionPool;
 	private String schema;
 
 	public EPFDbWriter(String schema) {
@@ -115,22 +115,42 @@ public abstract class EPFDbWriter {
 	public abstract void finalizeImport();
 
 	/**
-	 * Set connection pool connector. For use by the EPFConnectorAspect.
+	 * Sets the connection pool connector.
+	 * 
+	 * <p/>
+	 * Used by the instantiating class to set the connection pool.
 	 * 
 	 * @param connector
+	 *            the connector to set
 	 */
-	public final void setConnector(BoneCP connector) {
-		this.connector = connector;
+	public final void setConnectionPool(BoneCP connector) {
+		this.connectionPool = connector;
 	}
 
 	/**
-	 * Retrieve SQL Connection. For use by implementing classes.
+	 * Provide access to the connection pool connector for the implementing
+	 * classes.
 	 * 
 	 * @return
 	 * @throws SQLException
 	 */
 	public final Connection getConnection() throws SQLException {
-		return connector.getConnection();
+		return connectionPool.getConnection();
+	}
+
+	/**
+	 * Release the connection to the Connection Pool.
+	 * 
+	 * @param connection
+	 */
+	public final void releaseConnection(Connection connection) {
+		if (connection != null) {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				// TODO Should Log a Message
+			}
+		}
 	}
 
 	/**

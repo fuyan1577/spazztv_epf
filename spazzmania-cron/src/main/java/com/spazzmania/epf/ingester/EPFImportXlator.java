@@ -208,7 +208,7 @@ public class EPFImportXlator {
 	 */
 	private void loadTotalRecords() {
 		try {
-			String buff = eFile.readRecordsWrittenLine(RECORDS_WRITTEN_TAG);
+			String buff = eFile.readRecordsWrittenLine();
 			buff = buff.replaceAll(".+" + RECORDS_WRITTEN_TAG, "");
 			buff = buff.replaceAll(String.valueOf(recordDelim), "");
 			totalRecords = Long.parseLong(buff);

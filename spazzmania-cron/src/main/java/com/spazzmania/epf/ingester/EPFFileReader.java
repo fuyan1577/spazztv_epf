@@ -102,7 +102,7 @@ public class EPFFileReader {
 	 * @return
 	 * @throws IOException
 	 */
-	public String readRecordsWrittenLine(String totalRecordsPrefix)
+	public String readRecordsWrittenLine()
 			throws IOException {
 		String rec;
 
@@ -112,7 +112,7 @@ public class EPFFileReader {
 		while (true) {
 			try {
 				rec = rFile.readLine();
-				if (rec.startsWith(totalRecordsPrefix)) {
+				if (rec.startsWith(COMMENT_PREFIX)) {
 					break;
 				}
 			} catch (IOException e) {
@@ -175,5 +175,4 @@ public class EPFFileReader {
 	public String getFilePath() {
 		return filePath;
 	}
-
 }

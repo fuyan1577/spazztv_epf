@@ -29,8 +29,8 @@ import java.util.List;
 public class EPFImportXlator {
 	private EPFFileReader eFile;
 	private long totalRecords = 0L;
-	private String recordDelim = "\\x01";
-	private String fieldDelim = "\\x02";
+	private String recordDelim = DEFAULT_ROW_SEPARATOR;
+	private String fieldDelim = DEFAULT_FIELD_SEPARATOR;
 
 	private List<String> columnNames;
 	private List<String> dataTypes;
@@ -46,6 +46,8 @@ public class EPFImportXlator {
 	public static String DATA_TYPES_TAG = "dbTypes:";
 	public static String EXPORT_MODE_TAG = "exportMode:";
 	public static String RECORDS_WRITTEN_TAG = "recordsWritten:";
+	public static String DEFAULT_FIELD_SEPARATOR = "\\x01";
+	public static String DEFAULT_ROW_SEPARATOR = "\\x02";
 
 	// (eFile, recordDelim='\x02\n',
 	// fieldDelim='\x01')
@@ -209,9 +211,8 @@ public class EPFImportXlator {
 	private void loadTotalRecords() {
 		try {
 			String buff = eFile.readRecordsWrittenLine();
-			buff = buff.replaceAll(".+" + RECORDS_WRITTEN_TAG, "");
-			buff = buff.replaceAll(String.valueOf(recordDelim), "");
-			totalRecords = Long.parseLong(buff);
+			buff = buff.replaceAll(".+" + RECORDS_WRITTEN_TAG + "(\\d+).+", "$1");
+			totalRecords = Long.decode(buff);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -232,11 +233,11 @@ public class EPFImportXlator {
 
 			for (int i = 0; i < 6; i++) {
 				String nextRow = eFile.readNextHeaderLine();
-				if (nextRow.startsWith(PRIMARY_KEY_TAG)) {
+				if (nextRow.startsWith(COMMENT_CHAR + PRIMARY_KEY_TAG)) {
 					parsePrimaryKey(nextRow);
-				} else if (nextRow.startsWith(DATA_TYPES_TAG)) {
+				} else if (nextRow.startsWith(COMMENT_CHAR + DATA_TYPES_TAG)) {
 					parseDataTypes(nextRow);
-				} else if (nextRow.startsWith(EXPORT_MODE_TAG)) {
+				} else if (nextRow.startsWith(COMMENT_CHAR + EXPORT_MODE_TAG)) {
 					parseExportMode(nextRow);
 				}
 			}
@@ -267,7 +268,7 @@ public class EPFImportXlator {
 				throw new RuntimeException("Row from " + eFile.getFilePath()
 						+ "does not have requiredPrefix: " + requiredPrefix);
 			}
-			r = row.replaceFirst(".*" + requiredPrefix, "");
+			r = r.replaceFirst(".*" + requiredPrefix, "");
 		}
 
 		return Arrays.asList(r.split(fieldDelim));

@@ -27,8 +27,7 @@ import java.util.List;
  * 
  */
 public class EPFImportXlator {
-	private EPFFileReader eFile;
-	private long totalRecords = 0L;
+	private EPFFileReader epfFileReader;
 	private String recordDelim = DEFAULT_ROW_SEPARATOR;
 	private String fieldDelim = DEFAULT_FIELD_SEPARATOR;
 
@@ -45,7 +44,6 @@ public class EPFImportXlator {
 	public static String PRIMARY_KEY_TAG = "primaryKey:";
 	public static String DATA_TYPES_TAG = "dbTypes:";
 	public static String EXPORT_MODE_TAG = "exportMode:";
-	public static String RECORDS_WRITTEN_TAG = "recordsWritten:";
 	public static String DEFAULT_FIELD_SEPARATOR = "\\x01";
 	public static String DEFAULT_ROW_SEPARATOR = "\\x02";
 
@@ -71,7 +69,7 @@ public class EPFImportXlator {
 	 *            - <i>usually either '\x01' or '\t'</i>
 	 */
 	public EPFImportXlator(EPFFileReader eFile, String recordDelim, String fieldDelim) {
-		this.eFile = eFile;
+		this.epfFileReader = eFile;
 		this.recordDelim = recordDelim;
 		this.fieldDelim = fieldDelim;
 
@@ -85,7 +83,7 @@ public class EPFImportXlator {
 	 * @return total records expected
 	 */
 	public long getTotalRecordsExpected() {
-		return totalRecords;
+		return epfFileReader.getRecordsWritten();
 	}
 
 	/**
@@ -144,7 +142,8 @@ public class EPFImportXlator {
 	 * @return - List&lt;String&gt of column values for the row
 	 */
 	public List<String> nextDataRecord() {
-		List<String> rec = splitRow(nextDataRowString(), fieldDelim);
+		//Data rows have no prefix...
+		List<String> rec = splitRow(nextDataRowString(), null);
 		return rec;
 	}
 
@@ -186,9 +185,12 @@ public class EPFImportXlator {
 	 * @return the next row of data or null on end of file
 	 */
 	private String nextDataRowString() {
+		if (!epfFileReader.hasNextDataRecord()) {
+			return null;
+		}
 		String nextRow = null;
 		try {
-			nextRow = eFile.readNextDataLine();
+			nextRow = epfFileReader.nextDataLine();
 			lastRecordNum++;
 		} catch (IOException e) {
 			endOfFile = true;
@@ -200,24 +202,7 @@ public class EPFImportXlator {
 	 * Initialize the import loading the total records and record definitions.
 	 */
 	private void init() {
-		loadTotalRecords();
 		loadRecordDefinitions();
-	}
-
-	/**
-	 * Load the total records designated in the EPF Import file. The last row of
-	 * data in the import file indicates the total records.
-	 */
-	private void loadTotalRecords() {
-		try {
-			String buff = eFile.readRecordsWrittenLine();
-			buff = buff.replaceAll(".+" + RECORDS_WRITTEN_TAG + "(\\d+).+", "$1");
-			totalRecords = Long.decode(buff);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -228,11 +213,11 @@ public class EPFImportXlator {
 	 */
 	private void loadRecordDefinitions() {
 		try {
-			eFile.rewind();
-			parseColumnNames(eFile.readNextHeaderLine());
+			epfFileReader.rewind();
+			parseColumnNames(epfFileReader.nextHeaderLine());
 
 			for (int i = 0; i < 6; i++) {
-				String nextRow = eFile.readNextHeaderLine();
+				String nextRow = epfFileReader.nextHeaderLine();
 				if (nextRow.startsWith(COMMENT_CHAR + PRIMARY_KEY_TAG)) {
 					parsePrimaryKey(nextRow);
 				} else if (nextRow.startsWith(COMMENT_CHAR + DATA_TYPES_TAG)) {
@@ -241,7 +226,7 @@ public class EPFImportXlator {
 					parseExportMode(nextRow);
 				}
 			}
-			eFile.rewind();
+			epfFileReader.rewind();
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -262,10 +247,13 @@ public class EPFImportXlator {
 	 * @return parsed data list
 	 */
 	private List<String> splitRow(String row, String requiredPrefix) {
+		if (row == null) {
+			return null;
+		}
 		String r = row.split(recordDelim)[0];
 		if (requiredPrefix != null) {
 			if (!r.contains(requiredPrefix)) {
-				throw new RuntimeException("Row from " + eFile.getFilePath()
+				throw new RuntimeException("Row from " + epfFileReader.getFilePath()
 						+ "does not have requiredPrefix: " + requiredPrefix);
 			}
 			r = r.replaceFirst(".*" + requiredPrefix, "");

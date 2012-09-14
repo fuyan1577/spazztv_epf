@@ -9,8 +9,8 @@ import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 
 /**
- * This is an interface which consolidates the random and buffered access of the EPF
- * Import file.
+ * This is an interface which consolidates the random and buffered access of the
+ * EPF Import file.
  * 
  * @author Thomas Billingsley
  * 
@@ -18,15 +18,19 @@ import java.io.RandomAccessFile;
 public class EPFFileReader {
 
 	public static String COMMENT_PREFIX = "#";
+	public static String RECORDS_WRITTEN_TAG = "recordsWritten:";
 
 	BufferedReader bFile;
 	String filePath;
+	long recordsWritten = 0;
+	long lastDataRecord = 0;
 
 	public EPFFileReader(String filePath) throws FileNotFoundException {
 		this.filePath = filePath;
 		FileInputStream fstream = new FileInputStream(filePath);
 		DataInputStream in = new DataInputStream(fstream);
 		bFile = new BufferedReader(new InputStreamReader(in));
+		loadRecordsWritten();
 	}
 
 	/**
@@ -44,7 +48,7 @@ public class EPFFileReader {
 	 * @return String of data read
 	 * @throws IOException
 	 */
-	public String readNextHeaderLine() throws IOException {
+	public String nextHeaderLine() throws IOException {
 		String rec;
 		while (true) {
 			try {
@@ -60,7 +64,6 @@ public class EPFFileReader {
 		return rec;
 	}
 
-
 	/**
 	 * Read the next line of data starting at the current record position
 	 * reading to the end of the line or the end of file and return the data as
@@ -71,11 +74,14 @@ public class EPFFileReader {
 	 * @return String of data read
 	 * @throws IOException
 	 */
-	public String readNextDataLine() throws IOException {
+	public String nextDataLine() throws IOException {
 		String rec;
 		while (true) {
 			try {
 				rec = bFile.readLine();
+				if (rec == null) {
+					break;
+				}
 				if (!rec.startsWith(COMMENT_PREFIX)) {
 					break;
 				}
@@ -84,9 +90,11 @@ public class EPFFileReader {
 				break;
 			}
 		}
+		if (rec != null) {
+			lastDataRecord++;
+		}
 		return rec;
 	}
-
 
 	/**
 	 * Read the total records line from the end of the EPF Import File.
@@ -102,26 +110,44 @@ public class EPFFileReader {
 	 * @return
 	 * @throws IOException
 	 */
-	public String readRecordsWrittenLine()
-			throws IOException {
-		String rec;
+	private String getRecordsWrittenLine() {
+		String row;
+		recordsWritten = 0L;
+		RandomAccessFile rFile = null;
 
-		RandomAccessFile rFile = new RandomAccessFile(filePath, "r");
-		rFile.seek(rFile.length() - 80);
+		try {
+			rFile = new RandomAccessFile(filePath, "r");
+			rFile.seek(rFile.length() - 80);
+		} catch (IOException e1) {
+			throw new RuntimeException(
+					"Error reading the recordsWritten row of the EPF Input File: "
+							+ filePath);
+		}
 
 		while (true) {
 			try {
-				rec = rFile.readLine();
-				if (rec.startsWith(COMMENT_PREFIX)) {
+				row = rFile.readLine();
+				if (row.startsWith(COMMENT_PREFIX)) {
 					break;
 				}
 			} catch (IOException e) {
-				rec = null;
+				row = null;
 				break;
 			}
 		}
-		rFile.close();
-		return rec;
+
+		return row;
+	}
+
+	private void loadRecordsWritten() {
+		recordsWritten = 0L;
+		String row = getRecordsWrittenLine();
+		recordsWritten = Long.decode(row.replaceAll("^" + COMMENT_PREFIX
+				+ RECORDS_WRITTEN_TAG + "(\\d+).+", "$1"));
+	}
+
+	public long getRecordsWritten() {
+		return recordsWritten;
 	}
 
 	/**
@@ -133,12 +159,17 @@ public class EPFFileReader {
 			try {
 				bFile.close();
 			} catch (IOException e) {
-				//Ignore - we're about to open it again
+				// Ignore - we're about to open it again
 			}
 		}
 		FileInputStream fstream = new FileInputStream(filePath);
 		DataInputStream in = new DataInputStream(fstream);
 		bFile = new BufferedReader(new InputStreamReader(in));
+		lastDataRecord = 0;
+	}
+
+	public boolean hasNextDataRecord() {
+		return lastDataRecord < recordsWritten;
 	}
 
 	/**

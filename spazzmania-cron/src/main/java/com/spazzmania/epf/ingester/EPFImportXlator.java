@@ -1,6 +1,5 @@
 package com.spazzmania.epf.ingester;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +30,7 @@ public class EPFImportXlator {
 	private String recordDelim = DEFAULT_ROW_SEPARATOR;
 	private String fieldDelim = DEFAULT_FIELD_SEPARATOR;
 
+	private String tableName;
 	private List<String> columnNames;
 	private List<String> dataTypes;
 	private EPFExportType exportType;
@@ -46,6 +46,7 @@ public class EPFImportXlator {
 	public static String EXPORT_MODE_TAG = "exportMode:";
 	public static String DEFAULT_FIELD_SEPARATOR = "\\x01";
 	public static String DEFAULT_ROW_SEPARATOR = "\\x02";
+	public static String DEFAULT_FLAT_SEPARATOR = "\\t";
 
 	// (eFile, recordDelim='\x02\n',
 	// fieldDelim='\x01')
@@ -61,28 +62,32 @@ public class EPFImportXlator {
 	 * The record delimiter and field delimiter values are configurable in the
 	 * EPFConfig.json and EPFFlatConfig.json.
 	 * 
-	 * @param eFile
+	 * @param epfFileReader
 	 *            - EPFFileReader for a given EPF Import File
-	 * @param recordDelim
-	 *            - <i>usually either '\x02' or '\n'</i>
-	 * @param fieldDelim
-	 *            - <i>usually either '\x01' or '\t'</i>
 	 */
-	public EPFImportXlator(EPFFileReader eFile, String recordDelim, String fieldDelim) {
-		this.epfFileReader = eFile;
-		this.recordDelim = recordDelim;
-		this.fieldDelim = fieldDelim;
+	public EPFImportXlator(EPFFileReader epfFileReader)
+			throws EPFFileFormatException {
+		this.epfFileReader = epfFileReader;
 
 		init();
+	}
+
+	/**
+	 * Return the table name. Table names are based on the input file name.
+	 * 
+	 * @return
+	 */
+	public String getTableName() {
+		return tableName;
 	}
 
 	/**
 	 * Return the total number of records expected. This is the number of
 	 * records designated on the last line of the EPF Import file.
 	 * 
-	 * @return total records expected
+	 * @return total data records
 	 */
-	public long getTotalRecordsExpected() {
+	public long getTotalDataRecords() {
 		return epfFileReader.getRecordsWritten();
 	}
 
@@ -133,6 +138,16 @@ public class EPFImportXlator {
 	}
 
 	/**
+	 * Returns true if there are more data record in the input EPFFileReader
+	 * object
+	 * 
+	 * @return true if there are more data records
+	 */
+	public boolean hasNextRecord() {
+		return epfFileReader.hasNextDataRecord();
+	}
+
+	/**
 	 * Return the next data row from the import file as a List&ltString&gt of
 	 * column values.
 	 * 
@@ -141,37 +156,9 @@ public class EPFImportXlator {
 	 * 
 	 * @return - List&lt;String&gt of column values for the row
 	 */
-	public List<String> nextDataRecord() {
-		//Data rows have no prefix...
-		List<String> rec = splitRow(nextDataRowString(), null);
-		return rec;
-	}
-
-	/**
-	 * Returns the next <i>n</i> data records from the import file as a List of
-	 * List&ltString&gt; values.
-	 * 
-	 * <p>
-	 * This method wraps many calls to nextRecord().
-	 * 
-	 * <p>
-	 * If the end of the file is reached, only those records read before the end
-	 * file are returned.
-	 * 
-	 * @param records
-	 *            - The number of records to retrieve
-	 * @return - the next group of records
-	 */
-	public List<List<String>> nextRecords(int records) {
-		List<List<String>> recList = new ArrayList<List<String>>();
-		for (int i = 0; i < records; i++) {
-			if (endOfFile) {
-				break;
-			}
-			recList.add(nextDataRecord());
-		}
-
-		return recList;
+	public String[] nextRecord() {
+		// Data rows have no prefix...
+		return splitRow(nextDataRowString(), null);
 	}
 
 	/**
@@ -201,8 +188,29 @@ public class EPFImportXlator {
 	/**
 	 * Initialize the import loading the total records and record definitions.
 	 */
-	private void init() {
+	private void init() throws EPFFileFormatException {
 		loadRecordDefinitions();
+		loadTableName();
+	}
+
+	private void loadTableName() {
+		// Start with the filename without the extension
+		String wrkName = epfFileReader.getFilePath().replaceAll("\\\\", "/");
+		wrkName = wrkName.replaceAll(".+/([^/]+)", "$1");
+		if (wrkName.matches("^.+\\..*$")) {
+			wrkName = wrkName.replaceAll("^(.+)\\..*$", "$1");
+		}
+		// Convert any hyphens (-) to underscores (_)
+		wrkName = wrkName.replaceAll("-", "_");
+
+		// Convert camel case abcDef to abc_Def
+		while (wrkName.matches(".*[a-z][A-Z].*")) {
+			wrkName = wrkName.replaceAll("([a-z])([A-Z])", "$1_$2");
+		}
+		// Convert all to lower case
+		wrkName = wrkName.toLowerCase();
+
+		tableName = wrkName;
 	}
 
 	/**
@@ -210,26 +218,37 @@ public class EPFImportXlator {
 	 * Export Mode from the beginning of the import file.
 	 * <p>
 	 * Rewind setting the file pointer to the beginning of the import file.
+	 * 
+	 * @throws EPFFileFormatException
 	 */
-	private void loadRecordDefinitions() {
+	private void loadRecordDefinitions() throws EPFFileFormatException {
 		try {
 			epfFileReader.rewind();
-			parseColumnNames(epfFileReader.nextHeaderLine());
+			String nextRow = epfFileReader.nextHeaderLine();
+			if (nextRow.matches(".+\\t.+")) {
+				exportType = EPFExportType.FLAT;
+			}
+			parseColumnNames(nextRow);
 
 			for (int i = 0; i < 6; i++) {
-				String nextRow = epfFileReader.nextHeaderLine();
+				nextRow = epfFileReader.nextHeaderLine();
 				if (nextRow.startsWith(COMMENT_CHAR + PRIMARY_KEY_TAG)) {
 					parsePrimaryKey(nextRow);
 				} else if (nextRow.startsWith(COMMENT_CHAR + DATA_TYPES_TAG)) {
 					parseDataTypes(nextRow);
 				} else if (nextRow.startsWith(COMMENT_CHAR + EXPORT_MODE_TAG)) {
-					parseExportMode(nextRow);
+					parseExportType(nextRow);
 				}
 			}
 			epfFileReader.rewind();
 
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+		if (exportType == null) {
+			throw new EPFFileFormatException(String.format(
+					"Invalid EPF File Format in file: %s",
+					epfFileReader.getFilePath()));
 		}
 	}
 
@@ -246,20 +265,21 @@ public class EPFImportXlator {
 	 *            optional required prefix string
 	 * @return parsed data list
 	 */
-	private List<String> splitRow(String row, String requiredPrefix) {
+	private String[] splitRow(String row, String requiredPrefix) {
 		if (row == null) {
 			return null;
 		}
 		String r = row.split(recordDelim)[0];
 		if (requiredPrefix != null) {
 			if (!r.contains(requiredPrefix)) {
-				throw new RuntimeException("Row from " + epfFileReader.getFilePath()
+				throw new RuntimeException("Row from "
+						+ epfFileReader.getFilePath()
 						+ "does not have requiredPrefix: " + requiredPrefix);
 			}
 			r = r.replaceFirst(".*" + requiredPrefix, "");
 		}
-
-		return Arrays.asList(r.split(fieldDelim));
+		
+		return r.split(fieldDelim);
 	}
 
 	/**
@@ -269,7 +289,7 @@ public class EPFImportXlator {
 	 * @param row
 	 */
 	private void parseColumnNames(String row) {
-		columnNames = splitRow(row, COMMENT_CHAR);
+		columnNames = Arrays.asList(splitRow(row, COMMENT_CHAR));
 	}
 
 	/**
@@ -279,7 +299,7 @@ public class EPFImportXlator {
 	 * @param row
 	 */
 	private void parsePrimaryKey(String row) {
-		primaryKey = splitRow(row, PRIMARY_KEY_TAG);
+		primaryKey = Arrays.asList(splitRow(row, PRIMARY_KEY_TAG));
 	}
 
 	/**
@@ -289,7 +309,7 @@ public class EPFImportXlator {
 	 * @param row
 	 */
 	private void parseDataTypes(String row) {
-		dataTypes = splitRow(row, COMMENT_CHAR + DATA_TYPES_TAG);
+		dataTypes = Arrays.asList(splitRow(row, COMMENT_CHAR + DATA_TYPES_TAG));
 	}
 
 	/**
@@ -298,9 +318,9 @@ public class EPFImportXlator {
 	 * 
 	 * @param row
 	 */
-	private void parseExportMode(String row) {
-		List<String> dTypes = splitRow(row, COMMENT_CHAR + EXPORT_MODE_TAG);
-		String eMode = dTypes.get(0);
+	private void parseExportType(String row) {
+		String[] dTypes = splitRow(row, COMMENT_CHAR + EXPORT_MODE_TAG);
+		String eMode = dTypes[0];
 		exportType = EPFExportType.FULL;
 		if (eMode == EPFExportType.INCREMENTAL.toString()) {
 			exportType = EPFExportType.INCREMENTAL;

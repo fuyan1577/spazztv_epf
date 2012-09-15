@@ -95,7 +95,8 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 
 	@Override
 	public void initImport(EPFExportType exportType, String tableName,
-			long numberOfRows) {
+			LinkedHashMap<String, String> columnsAndTypes, long numberOfRows) throws EPFImporterException {
+		
 		this.tableName = tableName;
 		this.impTableName = null;
 		this.uncTableName = null;
@@ -113,16 +114,16 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 				dropTable(uncTableName);
 			}
 		}
+		createTable(columnsAndTypes);
 		insertBufferCount = 0;
 	}
 
-	private void dropTable(String tableName) {
+	private void dropTable(String tableName) throws EPFImporterException {
 		String sqlDrop = String.format(DROP_TABLE_STMT, tableName);
 		executeSQLStatement(sqlDrop);
 	}
 
-	@Override
-	public void createTable(LinkedHashMap<String, String> columnsAndTypes) {
+	private void createTable(LinkedHashMap<String, String> columnsAndTypes) throws EPFImporterException {
 		columnNames = "";
 		String columnTypes = "";
 
@@ -163,7 +164,7 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 	}
 
 	@Override
-	public void setPrimaryKey(String[] columnName) {
+	public void setPrimaryKey(String[] columnName) throws EPFImporterException {
 		String primaryKeyColumns = "";
 		for (int i = 0; i < columnName.length; i++) {
 			primaryKeyColumns += columnName[i];
@@ -177,7 +178,7 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 	}
 
 	@Override
-	public void insertRow(String[] rowData) {
+	public void insertRow(String[] rowData) throws EPFImporterException {
 		if (insertBufferCount <= 0) {
 			insertBuffer = "";
 		}
@@ -190,7 +191,7 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 		}
 	}
 
-	public void flushInsertBuffer() {
+	public void flushInsertBuffer() throws EPFImporterException {
 		// commandString = ("REPLACE" if isIncremental else "INSERT")
 		// exStrTemplate = """%s %s INTO %s %s VALUES %s"""
 		// colNamesStr = "(%s)" % (", ".join(self.parser.columnNames))
@@ -219,7 +220,7 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 		return row;
 	}
 
-	private void executeSQLStatement(String sqlStmt) {
+	private void executeSQLStatement(String sqlStmt) throws EPFImporterException {
 		boolean completed = false;
 		
 		int retries = 0;
@@ -263,12 +264,12 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 	}
 
 	@Override
-	public void finalizeImport() {
+	public void finalizeImport() throws EPFImporterException {
 		flushInsertBuffer();
 	}
 
 	@Override
-	public boolean isTableInDatabase(String tableName) {
+	public boolean isTableInDatabase(String tableName) throws EPFImporterException {
 		DatabaseMetaData dbm;
 		Connection connection = null;
 		try {
@@ -294,7 +295,7 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 	}
 
 	@Override
-	public int getTableColumnCount(String tableName) {
+	public int getTableColumnCount(String tableName) throws EPFImporterException {
 		DatabaseMetaData dbm;
 		Connection connection = null;
 		try {

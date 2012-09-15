@@ -4,8 +4,6 @@
 package com.spazzmania.epf.ingester;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 
@@ -64,26 +62,30 @@ public abstract class EPFDbWriter {
 	}
 
 	/**
+	 * Get the schema designated on instantiation.
+	 * 
+	 * @return the schema
+	 */
+	public String getSchema() {
+		return schema;
+	}
+
+	/**
 	 * Initialize the table to be imported based on the importType and number of
 	 * records.
 	 * 
 	 * @param importType
-	 *            - Enum <i>FULL</i> or <i>INCREMENTAL</i>
+	 *            Enum <i>FULL</i> or <i>INCREMENTAL</i>
 	 * @param tableName
-	 *            - Name of the table to be created from the import
+	 *            Name of the table to be created from the import
+	 * @param columnsAndTypes
+	 *            Column Names and Data Types for the table
 	 * @param numberOfRows
-	 *            - Number of rows in the import file
+	 *            Number of rows in the import file
 	 */
 	public abstract void initImport(EPFExportType exportType, String tableName,
-			long numberOfRows);
-
-	/**
-	 * A LinkedHashMap of Column Name & Column Type pairs.
-	 * 
-	 * @param columnsAndTypes
-	 */
-	public abstract void createTable(
-			LinkedHashMap<String, String> columnsAndTypes);
+			LinkedHashMap<String, String> columnsAndTypes, long numberOfRows)
+			throws EPFImporterException;
 
 	/**
 	 * Set the column that is the Primary Key. Single column primary keys are
@@ -91,7 +93,8 @@ public abstract class EPFDbWriter {
 	 * 
 	 * @param columnName
 	 */
-	public abstract void setPrimaryKey(String[] columnName);
+	public abstract void setPrimaryKey(String[] columnName)
+			throws EPFImporterException;
 
 	/**
 	 * Insert a row of data from the input String[] array. The field types are
@@ -105,14 +108,15 @@ public abstract class EPFDbWriter {
 	 * @param rowData
 	 *            - a String[] array of column data comprising one row
 	 */
-	public abstract void insertRow(String[] rowData);
+	public abstract void insertRow(String[] rowData)
+			throws EPFImporterException;
 
 	/**
 	 * Finalize any table insert optimization. The original EPF Python script
 	 * logic would insert any remaining queued rows and possibly merge, drop and
 	 * rename tables.
 	 */
-	public abstract void finalizeImport();
+	public abstract void finalizeImport() throws EPFImporterException;
 
 	/**
 	 * Sets the connection pool connector.
@@ -134,8 +138,14 @@ public abstract class EPFDbWriter {
 	 * @return
 	 * @throws SQLException
 	 */
-	public final Connection getConnection() throws SQLException {
-		return connectionPool.getConnection();
+	public final Connection getConnection() throws EPFImporterException {
+		Connection conn;
+		try {
+			conn = connectionPool.getConnection();
+		} catch (SQLException e) {
+			throw new EPFImporterException(e.getMessage());
+		}
+		return conn;
 	}
 
 	/**
@@ -143,12 +153,13 @@ public abstract class EPFDbWriter {
 	 * 
 	 * @param connection
 	 */
-	public final void releaseConnection(Connection connection) {
+	public final void releaseConnection(Connection connection)
+			throws EPFImporterException {
 		if (connection != null) {
 			try {
 				connection.close();
 			} catch (SQLException e) {
-				// TODO Should Log a Message
+				throw new EPFImporterException(e.getMessage());
 			}
 		}
 	}
@@ -162,23 +173,8 @@ public abstract class EPFDbWriter {
 	 * @param tableName
 	 * @return true if the table exists
 	 */
-	public boolean isTableInDatabase(String tableName) {
-		DatabaseMetaData dbm;
-		try {
-			Connection connection = getConnection();
-			dbm = connection.getMetaData();
-			String types[] = { "TABLE" };
-			ResultSet tables = dbm.getTables(null, schema, tableName, types);
-			tables.beforeFirst();
-			if (tables.next()) {
-				return true;
-			}
-			connection.close();
-		} catch (SQLException e) {
-			// IGNORE - an error will occur when the table doesn't exist
-		}
-		return false;
-	}
+	public abstract boolean isTableInDatabase(String tableName)
+			throws EPFImporterException;
 
 	/**
 	 * Returns the number of columns for <i>tableName</i>.
@@ -189,20 +185,5 @@ public abstract class EPFDbWriter {
 	 * @param tableName
 	 * @return the number of columns
 	 */
-	public int getTableColumnCount(String tableName) {
-		DatabaseMetaData dbm;
-		try {
-			Connection connection = getConnection();
-			dbm = connection.getMetaData();
-			// Get the list of table columns as a SQL Result Set
-			ResultSet columns = dbm.getColumns(null, schema, tableName, null);
-			columns.last(); // Move to the last row of the result set
-			int columnCount = columns.getRow();
-			connection.close();
-			return columnCount; // return the row number as the column count
-		} catch (SQLException e) {
-			// IGNORE - an error will occur when the table doesn't exist
-		}
-		return 0;
-	}
+	public abstract int getTableColumnCount(String tableName) throws EPFImporterException;
 }

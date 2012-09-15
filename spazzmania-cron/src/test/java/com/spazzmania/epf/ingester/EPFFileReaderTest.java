@@ -1,7 +1,5 @@
 package com.spazzmania.epf.ingester;
 
-import static org.junit.Assert.fail;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
@@ -14,15 +12,29 @@ public class EPFFileReaderTest {
 
 	EPFFileReader fileReader;
 	String genreEpfFile = "testdata/epf_files/genre";
-	String storefrontEpfFile = "testdata/epf_files/storefront";
+	String epfEPFInvalidFormatFile = "testdata/epf_files/invalid_epf_file";
 
 	@Before
 	public void setUp() throws Exception {
 		fileReader = new EPFFileReader(genreEpfFile);
 	}
-
+	
 	@Test
-	public void testEPFFileReader() throws FileNotFoundException {
+	public void testEPFFileFormatException() throws FileNotFoundException {
+		boolean exceptionThrown = false;
+		try {
+			@SuppressWarnings("unused")
+			EPFFileReader localReader = new EPFFileReader(epfEPFInvalidFormatFile);
+			@SuppressWarnings("unused")
+			EPFImportXlator localXlator = new EPFImportXlator(fileReader);
+		} catch (EPFFileFormatException e) {
+			exceptionThrown = true;
+		}
+		Assert.assertTrue("Expecting an EPFFileFormatException, exception was not thrown on an invalid file", exceptionThrown == true);
+	}
+	
+	@Test
+	public void testEPFFileReader() throws FileNotFoundException, EPFFileFormatException {
 		EPFFileReader fileReader = new EPFFileReader(genreEpfFile);
 		Assert.assertTrue("getFilePath returned the wrong value",
 				genreEpfFile.equals(fileReader.getFilePath()));

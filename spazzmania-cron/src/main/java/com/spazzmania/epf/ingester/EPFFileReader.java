@@ -25,7 +25,7 @@ public class EPFFileReader {
 	long recordsWritten = 0;
 	long lastDataRecord = 0;
 
-	public EPFFileReader(String filePath) throws FileNotFoundException {
+	public EPFFileReader(String filePath) throws FileNotFoundException, EPFFileFormatException {
 		this.filePath = filePath;
 		FileInputStream fstream = new FileInputStream(filePath);
 		DataInputStream in = new DataInputStream(fstream);
@@ -108,9 +108,9 @@ public class EPFFileReader {
 	 * @param totalRecordsPrefix
 	 *            the prefix of the totalRecords line
 	 * @return
-	 * @throws IOException
+	 * @throws EPFFileFormatException 
 	 */
-	private String getRecordsWrittenLine() {
+	private String getRecordsWrittenLine() throws EPFFileFormatException {
 		String row;
 		recordsWritten = 0L;
 		RandomAccessFile rFile = null;
@@ -119,8 +119,8 @@ public class EPFFileReader {
 			rFile = new RandomAccessFile(filePath, "r");
 			rFile.seek(rFile.length() - 80);
 		} catch (IOException e1) {
-			throw new RuntimeException(
-					"Error reading the recordsWritten row of the EPF Input File: "
+			throw new EPFFileFormatException(
+					"Invalid EPF File - missing recordsWritten row: "
 							+ filePath);
 		}
 
@@ -139,7 +139,7 @@ public class EPFFileReader {
 		return row;
 	}
 
-	private void loadRecordsWritten() {
+	private void loadRecordsWritten() throws EPFFileFormatException {
 		recordsWritten = 0L;
 		String row = getRecordsWrittenLine();
 		recordsWritten = Long.decode(row.replaceAll("^" + COMMENT_PREFIX

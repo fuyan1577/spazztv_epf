@@ -1,9 +1,6 @@
 package com.spazzmania.epf.ingester;
 
-import static org.junit.Assert.fail;
-
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,31 +14,45 @@ public class EPFImportXlatorTest {
 	EPFImportXlator importXlator;
 	EPFFileReader fileReader;
 	String genreEpfFile = "testdata/epf_files/genre";
-	String storefrontEpfFile = "testdata/epf_files/storefront";
+	String tvEpisodeGuide = "testdata/epf_flat_files/tvEpisode-usa.txt";
 
 	@Before
 	public void setUp() throws Exception {
 		fileReader = new EPFFileReader(genreEpfFile);
-		importXlator = new EPFImportXlator(fileReader,
-				EPFImportXlator.DEFAULT_ROW_SEPARATOR, EPFImportXlator.DEFAULT_FIELD_SEPARATOR);
+		importXlator = new EPFImportXlator(fileReader);
 	}
-
+	
 	@Test
 	public void testGetTotalRecordsExpected() {
-		long recordsExpected = importXlator.getTotalRecordsExpected();
+		long recordsExpected = importXlator.getTotalDataRecords();
 		Assert.assertTrue(String.format("Invalid records expected. Expecting %d, received %s",1299L,recordsExpected), recordsExpected == 1299L);
 	}
 
 	@Test
 	public void testGetLastRecordRead() {
-		List<String> row = null;
+		String[] row = null;
 		for (int i = 0; i < 10; i++) {
-			row = importXlator.nextDataRecord();
+			row = importXlator.nextRecord();
 			Assert.assertTrue("Invalid record returned", row != null);
 		}
 		long recordsExpected = 10L;
 		long lastRecord = importXlator.getLastRecordRead();
 		Assert.assertTrue(String.format("Invalid last record read. Expecting %d, found %d",recordsExpected,lastRecord),lastRecord == recordsExpected);
+	}
+	
+	@Test
+	public void testGetTableName() throws Exception {
+		EPFFileReader localReader = new EPFFileReader(genreEpfFile);
+		EPFImportXlator localXlator = new EPFImportXlator(localReader);
+		String expectedTableName = "genre";
+		String foundTableName = localXlator.getTableName();
+		Assert.assertTrue(String.format("Invalid table name, expecting %s, found %s",expectedTableName,foundTableName),expectedTableName.equals(foundTableName));
+		
+		localReader = new EPFFileReader(tvEpisodeGuide);
+		localXlator = new EPFImportXlator(localReader);
+		expectedTableName = "tv_episode_usa";
+		foundTableName = localXlator.getTableName();
+		Assert.assertTrue(String.format("Invalid table name, expecting %s, found %s",expectedTableName,foundTableName),expectedTableName.equals(foundTableName));
 	}
 
 	@Test
@@ -77,21 +88,20 @@ public class EPFImportXlatorTest {
 	@Test
 	public void testNextDataRecord() {
 		//Testing the first 10 records to make sure they match the data patterns
-		long recordsExported = importXlator.getTotalRecordsExpected();
+		long recordsExported = importXlator.getTotalDataRecords();
 		long foundRecords = 0;
 		while (true) {
-			List<String> row = importXlator.nextDataRecord();
+			String[] row = importXlator.nextRecord();
 			if (row == null) {
 				break;
 			}
 			foundRecords++;
 			//Genre test data fields
 			//{export_date=BIGINT, genre_id=INTEGER, parent_id=INTEGER, name=VARCHAR(200)}
-			Iterator<String> ri = row.iterator();
-			String exportDate = ri.next();
-			String genreId = ri.next();
-			String parentId = ri.next(); 
-			String genreName = ri.next();
+			String exportDate = row[0];
+			String genreId = row[1];
+			String parentId = row[2]; 
+			String genreName = row[3];
 			Assert.assertTrue(String.format("Invalid data returned for exportDate, expecting \\d+, found %s",exportDate),exportDate.matches("\\d+"));
 			Assert.assertTrue(String.format("Invalid data returned for genreId, expecting \\d+, found %s",genreId),genreId.matches("\\d+"));
 			if (parentId.length() > 0) {

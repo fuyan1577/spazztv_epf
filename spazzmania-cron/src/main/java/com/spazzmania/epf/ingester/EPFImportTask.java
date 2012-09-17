@@ -10,12 +10,12 @@ package com.spazzmania.epf.ingester;
  */
 public class EPFImportTask implements Runnable {
 
-	EPFImportXlator importXlator;
+	EPFImportTranslator importTranslator;
 	EPFDbWriter dbWriter;
 	long recordCount = 0;
 
-	public EPFImportTask(EPFImportXlator importXlator, EPFDbWriter dbWriter) {
-		this.importXlator = importXlator;
+	public EPFImportTask(EPFImportTranslator importTranslator, EPFDbWriter dbWriter) {
+		this.importTranslator = importTranslator;
 		this.dbWriter = dbWriter;
 	}
 
@@ -31,21 +31,21 @@ public class EPFImportTask implements Runnable {
 	}
 
 	public void setupImportDataStore() throws EPFImporterException {
-		dbWriter.initImport(importXlator.getExportType(),
-				importXlator.getTableName(), importXlator.getColumnAndTypes(),
-				importXlator.getTotalDataRecords());
+		dbWriter.initImport(importTranslator.getExportType(),
+				importTranslator.getTableName(), importTranslator.getColumnAndTypes(),
+				importTranslator.getTotalDataRecords());
 	}
 
 	public void importData() throws EPFImporterException {
-		while (importXlator.hasNextRecord()) {
+		while (importTranslator.hasNextRecord()) {
 			recordCount++;
-			dbWriter.insertRow(importXlator.nextRecord());
+			dbWriter.insertRow(importTranslator.nextRecord());
 		}
-		if (recordCount != importXlator.getTotalDataRecords()) {
+		if (recordCount != importTranslator.getTotalDataRecords()) {
 			throw new EPFImporterException(
 					String.format(
 							"Incorrect number of import records. Expecting %d, found %d",
-							importXlator.getTotalDataRecords(), recordCount));
+							importTranslator.getTotalDataRecords(), recordCount));
 		}
 	}
 

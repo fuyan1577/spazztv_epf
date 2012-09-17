@@ -18,30 +18,27 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 /**
- * A simple pojo to hold the EPF Import configuration values.
+ * A simple object to parse the EPFConfig.json file and hold the values.
  * 
  * Save my values this time.
  * @author Thomas Billingsley
  * @version 1.0
- * @updated 09-Sep-2012 9:46:39 PM
  */
 public class EPFConfig {
 	
 	public static String EPF_BLACKLIST = "blackList";
 	public static String EPF_WHITELIST = "whiteList";
-	public static String EPF_FIELD_SEPARATOR = "fieldSeparator";
-	public static String EPF_ROW_SEPARATOR = "rowSeparator";
 	public static String EPF_TABLE_PREFIX = "tablePrefix";
 	public static String EPF_DIRECTORY_PATH = "directoryPath";
 	public static String EPF_MAX_THREADS = "maxThreads";
+	public static String EPF_ALLOW_EXTENSIONS = "allowExtensions";
 	
-	private char fieldSeparator;
-	private char rowSeparator;
 	private List<String> whiteList;
 	private List<String> blackList;
 	private String tablePrefix; 
 	private String directoryPath;
 	private int maxThreads;
+	private boolean allowExtensions;
 	
 	public EPFConfig(String configFilePath) throws IOException {
 		whiteList = new ArrayList<String>();
@@ -60,14 +57,14 @@ public class EPFConfig {
 		}
 
 		// Required Values
-		fieldSeparator = verifyChar(configObj,
-				EPF_FIELD_SEPARATOR);
-		rowSeparator = verifyChar(configObj,
-				EPF_ROW_SEPARATOR);
 		directoryPath = verifyString(configObj, EPF_DIRECTORY_PATH);
 
 		// Optional values
 		tablePrefix = (String)configObj.get(EPF_TABLE_PREFIX);
+		
+		if (configObj.get(EPF_ALLOW_EXTENSIONS) != null) {
+			allowExtensions = Boolean.getBoolean((String)configObj.get(EPF_ALLOW_EXTENSIONS));
+		}
 		
 		checkWhiteList(configObj);
 		checkBlackList(configObj);
@@ -93,14 +90,6 @@ public class EPFConfig {
 		}
 	}
 
-	private char verifyChar(JSONObject configObject, String key) {
-		if (configObject.get(key) == null) {
-			throw new RuntimeException(String.format(
-					"Missing EPFDbConnector Parameter: %s", key));
-		}
-		return ((String) configObject.get(key)).charAt(0);
-	}
-
 	private String verifyString(JSONObject connPoolObject, String key) {
 		if (connPoolObject.get(key) == null) {
 			throw new RuntimeException(String.format(
@@ -122,18 +111,6 @@ public class EPFConfig {
 		}
 	}
 	
-	public char getFieldSeparator() {
-		return fieldSeparator;
-	}
-	public void setFieldSeparator(char fieldSeparator) {
-		this.fieldSeparator = fieldSeparator;
-	}
-	public char getRowSeparator() {
-		return rowSeparator;
-	}
-	public void setRowSeparator(char rowSeparator) {
-		this.rowSeparator = rowSeparator;
-	}
 	public List<String> getWhiteList() {
 		return whiteList;
 	}
@@ -169,5 +146,11 @@ public class EPFConfig {
 	}
 	public void setMaxThreads(int maxThreads) {
 		this.maxThreads = maxThreads;
+	}
+	public boolean isAllowExtensions() {
+		return allowExtensions;
+	}
+	public void setAllowExtensions(boolean allowExtensions) {
+		this.allowExtensions = allowExtensions;
 	}
 }

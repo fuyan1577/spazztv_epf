@@ -26,7 +26,7 @@ public class EPFFileReaderTest {
 			@SuppressWarnings("unused")
 			EPFFileReader localReader = new EPFFileReader(epfEPFInvalidFormatFile);
 			@SuppressWarnings("unused")
-			EPFImportXlator localXlator = new EPFImportXlator(fileReader);
+			EPFImportTranslator localXlator = new EPFImportTranslator(fileReader);
 		} catch (EPFFileFormatException e) {
 			exceptionThrown = true;
 		}

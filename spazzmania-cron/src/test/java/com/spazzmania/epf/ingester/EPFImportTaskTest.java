@@ -1,7 +1,5 @@
 package com.spazzmania.epf.ingester;
 
-import static org.junit.Assert.fail;
-
 import java.io.FileNotFoundException;
 import java.util.LinkedHashMap;
 
@@ -13,7 +11,7 @@ public class EPFImportTaskTest {
 
 	String storefrontEpfFiles = "testdata/epf_files/storefront";
 	EPFImportTask importTask;
-	EPFImportXlator importXlator;
+	EPFImportTranslator importXlator;
 	EPFDbWriter dbWriter;
 	long recordsExpected = 0;
 	
@@ -21,16 +19,12 @@ public class EPFImportTaskTest {
 	String tableName;
 	LinkedHashMap<String,String> columnsAndTypes;
 	
-//	dbWriter.initImport(importXlator.getExportType(),
-//			importXlator.getTableName(), importXlator.getColumnAndTypes(),
-//			importXlator.getTotalDataRecords());
-	
 	@Before
 	public void setUp() throws FileNotFoundException, EPFFileFormatException {
 		//Setting up importXlator to read the storefront data file
 		//Setting up dbWriter as a mock object
 		EPFFileReader fileReader = new EPFFileReader(storefrontEpfFiles);
-		importXlator = new EPFImportXlator(fileReader);
+		importXlator = new EPFImportTranslator(fileReader);
 		recordsExpected = importXlator.getTotalDataRecords();
 		dbWriter = EasyMock.createMock(EPFDbWriter.class);
 		
@@ -41,6 +35,9 @@ public class EPFImportTaskTest {
 		columnsAndTypes = importXlator.getColumnAndTypes();
 	}
 
+//	dbWriter.initImport(importXlator.getExportType(),
+//	importXlator.getTableName(), importXlator.getColumnAndTypes(),
+//	importXlator.getTotalDataRecords());
 	@Test
 	public void testSetupImportDataStore() throws EPFImporterException {
 		EasyMock.reset(dbWriter);
@@ -52,13 +49,23 @@ public class EPFImportTaskTest {
 	}
 
 	@Test
-	public void testImportData() {
-		fail("Not yet implemented");
+	public void testImportData() throws EPFImporterException  {
+		EasyMock.reset(dbWriter);
+		dbWriter.insertRow(EasyMock.anyObject(String[].class));
+		EasyMock.expectLastCall().times((int)importXlator.getTotalDataRecords());
+		EasyMock.replay(dbWriter);
+		importTask.importData();
+		EasyMock.verify(dbWriter);
 	}
 
 	@Test
-	public void testFinalizeImport() {
-		fail("Not yet implemented");
+	public void testFinalizeImport() throws EPFImporterException {
+		EasyMock.reset(dbWriter);
+		dbWriter.finalizeImport();
+		EasyMock.expectLastCall().times(1);
+		EasyMock.replay(dbWriter);
+		importTask.finalizeImport();
+		EasyMock.verify(dbWriter);
 	}
 
 }

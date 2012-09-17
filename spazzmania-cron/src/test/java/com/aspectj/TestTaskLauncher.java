@@ -8,7 +8,7 @@ public class TestTaskLauncher {
 	public static void main(String[] args) {
 		String[] taskNames = {"A","B","C","D","E","F","G","H","I","J"};
 		for (int i = 0; i < 10; i++) {
-			TestTaskThread tt = new TestTaskThread(taskNames[i]);
+			TestTaskThread tt = new TestTaskThreadImpl(taskNames[i]);
 			Thread t = new Thread(tt);
 			t.start();
 		}

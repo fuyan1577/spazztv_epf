@@ -1,11 +1,22 @@
 {
-	"dbConnectionPool": {
-		"dbJdbcDriverClass":"com.mysql.jdbc.Driver",
-		"dbDefaultCatalog":"mockcatalog",
-		"dbMinConnections":5,
-		"dbMaxConnections":20,
-		"dbJdbcUrl": "jdbc:mysql://localhost/epfdatabase", 
-		"dbUser": "mockusername",
-		"dbPassword": "mockpassword"
-	}
+	"dbConnections": [
+		"conn1" : {
+			"dbJdbcDriverClass":"com.mysql.jdbc.Driver",
+			"dbDefaultCatalog":"mockcatalog",
+			"dbMinConnections":5,
+			"dbMaxConnections":20,
+			"dbJdbcUrl": "jdbc:mysql://localhost/epfdatabase", 
+			"dbUser": "mockusername",
+			"dbPassword": "mockpassword"
+		},
+		"conn2" : {
+			"dbJdbcDriverClass":"com.mysql.jdbc.Driver",
+			"dbDefaultCatalog":"mockcatalog",
+			"dbMinConnections":5,
+			"dbMaxConnections":20,
+			"dbJdbcUrl": "jdbc:mysql://localhost/epfdatabase", 
+			"dbUser": "mockusername",
+			"dbPassword": "mockpassword"
+		}
+	]
 }

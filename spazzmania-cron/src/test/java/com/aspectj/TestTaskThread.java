@@ -3,20 +3,21 @@ package com.aspectj;
 import java.util.Date;
 import java.util.Random;
 
-public class TestTaskThread implements Runnable {
-	private String threadName;
+public abstract class TestTaskThread implements Runnable {
+//	private String threadName;
 	
-	public TestTaskThread(String threadName) {
-		this.threadName = threadName;
-	}
+//	public TestTaskThread<T t>() {
+//	{
+//		this.threadName = threadName;
+//	}
 	
-	public String getThreadName() {
-		return threadName;
-	}
+//	public String getThreadName() {
+//		return threadName;
+//	}
 	
-	public void test(int i) { 
-		System.out.printf("TestTaskThread %s: %d%n",threadName,i);
-	}
+	public abstract String getThreadName();
+	
+	public abstract void test(int i);
 	
 	@Override
 	public void run() {

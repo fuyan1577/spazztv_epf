@@ -4,6 +4,7 @@
 package com.spazzmania.epf.ingester;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -17,21 +18,17 @@ import java.util.concurrent.Executors;
  * 
  */
 public class EPFImportManager {
-	private EPFDbConnector connector;
-	private EPFConfig config;
 	private ExecutorService service;
 	private List<String> fileList;
 	private String whiteListRegex;
 	private String blackListRegex;
 
 	public EPFImportManager(EPFConfig config, EPFDbConfig dbConfig) {
-		this.config = config;
-		connector = new EPFDbConnector(dbConfig);
 		service = Executors.newFixedThreadPool(config.getMaxThreads());
 		whiteListRegex = createRegexPattern(config.getWhiteList());
 		blackListRegex = createRegexPattern(config.getBlackList());
-		loadImportFileList();
-		loadImportThreads();
+		loadImportFileList(config.getDirectoryPath());
+		loadImportThreads(dbConfig);
 	}
 
 	private String createRegexPattern(List<String> list) {
@@ -50,9 +47,9 @@ public class EPFImportManager {
 		return "^" + regexPattern + "$";
 	}
 
-	public void loadImportFileList() {
+	public void loadImportFileList(String directoryPath) {
 		fileList = new ArrayList<String>();
-		File dir = new File(config.getDirectoryPath());
+		File dir = new File(directoryPath);
 
 		String[] children = dir.list();
 		if (children != null) {
@@ -99,8 +96,26 @@ public class EPFImportManager {
 		return valid;
 	}
 
-	public void loadImportThreads() {
+	public void loadImportThreads(EPFDbConfig dbConfig) {
 		for (String filePath : fileList) {
+			EPFFileReader fileReader;
+			EPFImportTranslator importTranslator;
+			EPFDbWriter dbWriter;
+			EPFImportTask importTask;
+			try {
+				fileReader = new EPFFileReader(filePath);
+				importTranslator = new EPFImportTranslator(fileReader);
+				dbWriter = EPFDbWriterFactory.getDbWriter(dbConfig);
+				importTask = new EPFImportTask(importTranslator,dbWriter);
+				service.execute(importTask);
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (EPFFileFormatException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			service.submit(new EPFImportTask(null,null));
 		}
 	}

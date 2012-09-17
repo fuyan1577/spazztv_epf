@@ -9,9 +9,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class EPFImportXlatorTest {
+public class EPFImportTranslatorTest {
 
-	EPFImportXlator importXlator;
+	EPFImportTranslator importTranslator;
 	EPFFileReader fileReader;
 	String genreEpfFile = "testdata/epf_files/genre";
 	String tvEpisodeGuide = "testdata/epf_flat_files/tvEpisode-usa.txt";
@@ -19,12 +19,12 @@ public class EPFImportXlatorTest {
 	@Before
 	public void setUp() throws Exception {
 		fileReader = new EPFFileReader(genreEpfFile);
-		importXlator = new EPFImportXlator(fileReader);
+		importTranslator = new EPFImportTranslator(fileReader);
 	}
 	
 	@Test
 	public void testGetTotalRecordsExpected() {
-		long recordsExpected = importXlator.getTotalDataRecords();
+		long recordsExpected = importTranslator.getTotalDataRecords();
 		Assert.assertTrue(String.format("Invalid records expected. Expecting %d, received %s",1299L,recordsExpected), recordsExpected == 1299L);
 	}
 
@@ -32,24 +32,24 @@ public class EPFImportXlatorTest {
 	public void testGetLastRecordRead() {
 		String[] row = null;
 		for (int i = 0; i < 10; i++) {
-			row = importXlator.nextRecord();
+			row = importTranslator.nextRecord();
 			Assert.assertTrue("Invalid record returned", row != null);
 		}
 		long recordsExpected = 10L;
-		long lastRecord = importXlator.getLastRecordRead();
+		long lastRecord = importTranslator.getLastRecordRead();
 		Assert.assertTrue(String.format("Invalid last record read. Expecting %d, found %d",recordsExpected,lastRecord),lastRecord == recordsExpected);
 	}
 	
 	@Test
 	public void testGetTableName() throws Exception {
 		EPFFileReader localReader = new EPFFileReader(genreEpfFile);
-		EPFImportXlator localXlator = new EPFImportXlator(localReader);
+		EPFImportTranslator localXlator = new EPFImportTranslator(localReader);
 		String expectedTableName = "genre";
 		String foundTableName = localXlator.getTableName();
 		Assert.assertTrue(String.format("Invalid table name, expecting %s, found %s",expectedTableName,foundTableName),expectedTableName.equals(foundTableName));
 		
 		localReader = new EPFFileReader(tvEpisodeGuide);
-		localXlator = new EPFImportXlator(localReader);
+		localXlator = new EPFImportTranslator(localReader);
 		expectedTableName = "tv_episode_usa";
 		foundTableName = localXlator.getTableName();
 		Assert.assertTrue(String.format("Invalid table name, expecting %s, found %s",expectedTableName,foundTableName),expectedTableName.equals(foundTableName));
@@ -57,7 +57,7 @@ public class EPFImportXlatorTest {
 
 	@Test
 	public void testGetColumnAndTypes() {
-		Map<String,String> columnsAndTypes = importXlator.getColumnAndTypes();
+		Map<String,String> columnsAndTypes = importTranslator.getColumnAndTypes();
 		Assert.assertTrue("Invalid value from getColumnsAndTypes()",columnsAndTypes != null);
 		Entry<String,String> firstColumn = columnsAndTypes.entrySet().iterator().next();
 		String expectedType = "BIGINT";
@@ -70,7 +70,7 @@ public class EPFImportXlatorTest {
 		List<String>expectedPrimaryKey = new ArrayList<String>();
 
 		expectedPrimaryKey.add("genre_id");
-		List<String>foundPrimaryKey = importXlator.getPrimaryKey();
+		List<String>foundPrimaryKey = importTranslator.getPrimaryKey();
 		Assert.assertTrue(String.format("Invalid number of primary key fields, expecting %d, found %d",expectedPrimaryKey.size(),foundPrimaryKey.size()), expectedPrimaryKey.size() == foundPrimaryKey.size());
 		
 		String expectedColumn = expectedPrimaryKey.iterator().next();
@@ -80,7 +80,7 @@ public class EPFImportXlatorTest {
 
 	@Test
 	public void testGetExportType() {
-		EPFExportType foundExportType = importXlator.getExportType();
+		EPFExportType foundExportType = importTranslator.getExportType();
 		EPFExportType expectedExportType = EPFExportType.FULL;
 		Assert.assertTrue(String.format("Invalid getExportType() - expecting %s, found %s",expectedExportType.toString(),foundExportType.toString()),expectedExportType == foundExportType);
 	}
@@ -88,10 +88,10 @@ public class EPFImportXlatorTest {
 	@Test
 	public void testNextDataRecord() {
 		//Testing the first 10 records to make sure they match the data patterns
-		long recordsExported = importXlator.getTotalDataRecords();
+		long recordsExported = importTranslator.getTotalDataRecords();
 		long foundRecords = 0;
 		while (true) {
-			String[] row = importXlator.nextRecord();
+			String[] row = importTranslator.nextRecord();
 			if (row == null) {
 				break;
 			}

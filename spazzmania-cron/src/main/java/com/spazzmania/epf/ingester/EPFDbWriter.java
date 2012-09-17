@@ -38,7 +38,6 @@ import com.jolbox.bonecp.BoneCP;
  * <ul>
  * <li/>public void initImport(EPFImportType importType, String tableName, long
  * numberOfRows);
- * <li/>public void createTable(List<String,String> columnsAndTypes);
  * <li/>public void setPrimaryKey(String columnName);
  * <li/>public void insertRow(String[] rowData);
  * <li/>public void finalizeImport();
@@ -55,19 +54,20 @@ import com.jolbox.bonecp.BoneCP;
 public abstract class EPFDbWriter {
 
 	private BoneCP connectionPool;
-	private String schema;
+	private String tablePrefix;
 
-	public EPFDbWriter(String schema) {
-		this.schema = schema;
+	public EPFDbWriter(String tablePrefix, BoneCP connectionPool) {
+		this.tablePrefix = tablePrefix;
+		this.connectionPool = connectionPool;
 	}
 
 	/**
-	 * Get the schema designated on instantiation.
+	 * Get the tablePrefix to prepend to the EPF Table Names.
 	 * 
-	 * @return the schema
+	 * @return the tablePrefix
 	 */
-	public String getSchema() {
-		return schema;
+	public String tablePrefix() {
+		return tablePrefix;
 	}
 
 	/**

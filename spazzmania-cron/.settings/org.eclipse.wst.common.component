@@ -5,6 +5,5 @@
     <wb-resource deploy-path="/" source-path="target/generated-sources/plugin"/>
         <wb-resource deploy-path="/" source-path="/src/test/java"/>
         <wb-resource deploy-path="/" source-path="/src/main/sql"/>
-        <wb-resource deploy-path="/" source-path="/src/test/config"/>
   </wb-module>
 </project-modules>

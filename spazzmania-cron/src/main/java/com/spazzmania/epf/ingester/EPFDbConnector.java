@@ -8,55 +8,71 @@ import com.jolbox.bonecp.BoneCP;
 import com.jolbox.bonecp.BoneCPConfig;
 
 /**
- * This is an object for wrapping a JDBC Connection Pool. The current
- * implementation uses BoneCP.
+ * This is an object for wrapping a JDBC or NoSQL DB Connection Pool. The
+ * current implementation uses BoneCP.
  * 
  * <p/>
  * The provided EPFDbConfig object is used to set up the Connection Pool object.
  * 
  * <p/>
  * Classes call the <i>getConnection()</i> method to retrieve a connection. The
- * connections are released back into the pool by calling the <i>connection.close()</i>
- * method.
+ * connections are released back into the pool by calling the
+ * <i>connection.close()</i> method.
  * <p/>
- * A call should be made to <i>closeConnectionPool()</i> at the end of database processing.
+ * A call should be made to <i>closeConnectionPool()</i> at the end of database
+ * processing.
  * 
  * @author Thomas Billingsley
  * 
  */
-public class EPFDbConnector {
+public class EPFDbConnector<T> {
+	private BoneCP connectionPool;
 
 	public static Long DEFAULT_MIN_CONNECTIONS = 5L;
 	public static Long DEFAULT_MAX_CONNECTIONS = 20L;
 
-	private BoneCP connectionPool;
 	private EPFDbConfig dbConfig;
 
 	public EPFDbConnector(EPFDbConfig dbConfig) {
 		this.dbConfig = dbConfig;
 	}
 
-	public EPFDbConfig getEPFDbConfig() {
+	public final EPFDbConfig getEPFDbConfig() {
 		return dbConfig;
 	}
 
-	public void openConnectionPool(String configPath) throws IOException,
-			ClassNotFoundException, SQLException {
-		EPFDbConfig dbConfig = this.getEPFDbConfig();
+	public void openConnectionPool() throws EPFDbException {
+		EPFDbConfig dbConfig = getEPFDbConfig();
 		BoneCPConfig config = new BoneCPConfig();
-		Class.forName(dbConfig.getJdbcDriverClass());
-		config.setJdbcUrl(dbConfig.getJdbcUrl());
-		config.setDefaultCatalog(dbConfig.getDefaultCatalog());
-		config.setUsername(dbConfig.getUsername());
-		config.setPassword(dbConfig.getPassword());
-		connectionPool = new BoneCP(config);
+		try {
+			Class.forName(dbConfig.getJdbcDriverClass());
+			config.setJdbcUrl(dbConfig.getJdbcUrl());
+			config.setDefaultCatalog(dbConfig.getDefaultCatalog());
+			config.setUsername(dbConfig.getUsername());
+			config.setPassword(dbConfig.getPassword());
+			connectionPool = new BoneCP(config);
+		} catch (Exception e) {
+			throw new EPFDbException(e.getMessage());
+		}
 	}
 
-	public void closeConnectionPool() {
+	public void closeConnectionPool() throws EPFDbException {
 		connectionPool.close();
 	}
 
-	public Connection getConnection() throws SQLException {
-		return connectionPool.getConnection();
+	public Connection getConnection() throws EPFDbException {
+		try {
+			return connectionPool.getConnection();
+		} catch (SQLException e) {
+			throw new EPFDbException(e.getMessage());
+		}
+	}
+
+	public void releaseConnection(Object connection) throws EPFDbException {
+		try {
+			((Connection) connection).close();
+		} catch (SQLException e) {
+			throw new EPFDbException(e.getMessage());
+		}
 	}
 }

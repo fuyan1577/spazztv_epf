@@ -1,7 +1,6 @@
 package com.spazzmania.epf.ingester;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,7 +24,7 @@ import java.util.List;
  * @author Thomas Billingsley
  * 
  */
-public class EPFImportXlator {
+public class EPFImportTranslator {
 	private EPFFileReader epfFileReader;
 	private String recordDelim = DEFAULT_ROW_SEPARATOR;
 	private String fieldDelim = DEFAULT_FIELD_SEPARATOR;
@@ -37,8 +36,6 @@ public class EPFImportXlator {
 	private List<String> primaryKey;
 
 	private long lastRecordNum = 0;
-
-	private boolean endOfFile = false;
 
 	public static String COMMENT_CHAR = "#";
 	public static String PRIMARY_KEY_TAG = "primaryKey:";
@@ -65,7 +62,7 @@ public class EPFImportXlator {
 	 * @param epfFileReader
 	 *            - EPFFileReader for a given EPF Import File
 	 */
-	public EPFImportXlator(EPFFileReader epfFileReader)
+	public EPFImportTranslator(EPFFileReader epfFileReader)
 			throws EPFFileFormatException {
 		this.epfFileReader = epfFileReader;
 
@@ -180,7 +177,6 @@ public class EPFImportXlator {
 			nextRow = epfFileReader.nextDataLine();
 			lastRecordNum++;
 		} catch (IOException e) {
-			endOfFile = true;
 		}
 		return nextRow;
 	}

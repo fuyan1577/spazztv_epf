@@ -1,6 +1,5 @@
 package com.spazzmania.epf.ingester;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -25,7 +24,7 @@ import com.jolbox.bonecp.BoneCPConfig;
  * @author Thomas Billingsley
  * 
  */
-public class EPFDbConnector<T> {
+public class EPFDbConnector {
 	private BoneCP connectionPool;
 
 	public static Long DEFAULT_MIN_CONNECTIONS = 5L;
@@ -45,7 +44,7 @@ public class EPFDbConnector<T> {
 		EPFDbConfig dbConfig = getEPFDbConfig();
 		BoneCPConfig config = new BoneCPConfig();
 		try {
-			Class.forName(dbConfig.getJdbcDriverClass());
+			Class.forName(dbConfig.getDbDriverClass());
 			config.setJdbcUrl(dbConfig.getJdbcUrl());
 			config.setDefaultCatalog(dbConfig.getDefaultCatalog());
 			config.setUsername(dbConfig.getUsername());
@@ -60,12 +59,8 @@ public class EPFDbConnector<T> {
 		connectionPool.close();
 	}
 
-	public Connection getConnection() throws EPFDbException {
-		try {
-			return connectionPool.getConnection();
-		} catch (SQLException e) {
-			throw new EPFDbException(e.getMessage());
-		}
+	public Connection getConnection() throws SQLException {
+		return connectionPool.getConnection();
 	}
 
 	public void releaseConnection(Object connection) throws EPFDbException {

@@ -20,21 +20,22 @@ import org.json.simple.parser.ParseException;
  */
 public class EPFDbConfig {
 	public static String CONNECTION_POOL = "dbConnectionPool";
-	public static String JDBC_DRIVER_CLASS = "dbJdbcDriverClass";
-	public static String JDBC_DEFAULT_CATALOG = "dbDefaultCatalog";
-	public static String JDBC_MIN_CONNECTIONS = "dbMinConnections";
-	public static String JDBC_MAX_CONNECTIONS = "dbMaxConnections";
-	public static String JDBC_URL = "dbJdbcUrl";
-	public static String JDBC_USER = "dbUser";
-	public static String JDBC_PASSWORD = "dbPassword";
+	public static String DB_DRIVER_CLASS = "dbDriverClass";
+	public static String DB_DEFAULT_CATALOG = "dbDefaultCatalog";
+	public static String DB_MIN_CONNECTIONS = "dbMinConnections";
+	public static String DB_MAX_CONNECTIONS = "dbMaxConnections";
+	public static String DB_URL = "dbJdbcUrl";
+	public static String DB_USER = "dbUser";
+	public static String DB_PASSWORD = "dbPassword";
 	
-	private String jdbcDriverClass;
+	private String dbDriverClass;
 	private String defaultCatalog;
 	private String jdbcUrl;
 	private String username;
 	private String password;
 	private Long minConnections;
 	private Long maxConnections;
+	private String tablePrefix;
 	
 	public EPFDbConfig() {
 	}
@@ -56,19 +57,19 @@ public class EPFDbConfig {
 		}
 
 		// Required Values
-		jdbcDriverClass = verifyString(connPoolObject,
-				JDBC_DRIVER_CLASS);
-		jdbcUrl = verifyString(connPoolObject, JDBC_URL);
-		username = verifyString(connPoolObject, JDBC_USER);
-		password = verifyString(connPoolObject, JDBC_PASSWORD);
+		dbDriverClass = verifyString(connPoolObject,
+				DB_DRIVER_CLASS);
+		jdbcUrl = verifyString(connPoolObject, DB_URL);
+		username = verifyString(connPoolObject, DB_USER);
+		password = verifyString(connPoolObject, DB_PASSWORD);
 
 		// Optional values
 		defaultCatalog = (String) connPoolObject
-				.get(JDBC_DEFAULT_CATALOG);
+				.get(DB_DEFAULT_CATALOG);
 		minConnections = verifyLongDefault(connPoolObject,
-				JDBC_MIN_CONNECTIONS, EPFDbConnector.DEFAULT_MIN_CONNECTIONS);
+				DB_MIN_CONNECTIONS, EPFDbConnector.DEFAULT_MIN_CONNECTIONS);
 		maxConnections = verifyLongDefault(connPoolObject,
-				JDBC_MAX_CONNECTIONS, EPFDbConnector.DEFAULT_MAX_CONNECTIONS);
+				DB_MAX_CONNECTIONS, EPFDbConnector.DEFAULT_MAX_CONNECTIONS);
 	}
 
 	private String verifyString(JSONObject connPoolObject, String key) {
@@ -101,11 +102,11 @@ public class EPFDbConfig {
 	}
 	
 	
-	public String getJdbcDriverClass() {
-		return jdbcDriverClass;
+	public String getDbDriverClass() {
+		return dbDriverClass;
 	}
-	public void setJdbcDriverClass(String jdbcDriverClass) {
-		this.jdbcDriverClass = jdbcDriverClass;
+	public void setJdbcDriverClass(String dbDriverClass) {
+		this.dbDriverClass = dbDriverClass;
 	}
 	public String getDefaultCatalog() {
 		return defaultCatalog;
@@ -143,6 +144,10 @@ public class EPFDbConfig {
 	public void setMaxConnections(Long maxConnections) {
 		this.maxConnections = maxConnections;
 	}
-	
-	
+	public String getTablePrefix() {
+		return tablePrefix;
+	}
+	public void setTablePrefix(String tablePrefix) {
+		this.tablePrefix = tablePrefix;
+	}
 }

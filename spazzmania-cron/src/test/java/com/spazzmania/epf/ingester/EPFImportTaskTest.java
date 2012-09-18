@@ -39,7 +39,7 @@ public class EPFImportTaskTest {
 //	importXlator.getTableName(), importXlator.getColumnAndTypes(),
 //	importXlator.getTotalDataRecords());
 	@Test
-	public void testSetupImportDataStore() throws EPFImporterException {
+	public void testSetupImportDataStore() throws EPFDbException {
 		EasyMock.reset(dbWriter);
 		dbWriter.initImport(exportType, tableName, columnsAndTypes, recordsExpected);
 		EasyMock.expectLastCall().times(1);
@@ -49,7 +49,7 @@ public class EPFImportTaskTest {
 	}
 
 	@Test
-	public void testImportData() throws EPFImporterException  {
+	public void testImportData() throws EPFDbException  {
 		EasyMock.reset(dbWriter);
 		dbWriter.insertRow(EasyMock.anyObject(String[].class));
 		EasyMock.expectLastCall().times((int)importXlator.getTotalDataRecords());
@@ -59,7 +59,7 @@ public class EPFImportTaskTest {
 	}
 
 	@Test
-	public void testFinalizeImport() throws EPFImporterException {
+	public void testFinalizeImport() throws EPFDbException {
 		EasyMock.reset(dbWriter);
 		dbWriter.finalizeImport();
 		EasyMock.expectLastCall().times(1);

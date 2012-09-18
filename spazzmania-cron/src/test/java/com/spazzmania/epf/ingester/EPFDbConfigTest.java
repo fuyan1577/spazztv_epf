@@ -49,7 +49,7 @@ public class EPFDbConfigTest {
 	public void testParseConfiguration() {
 		dbConfig.parseConfiguration(epfDbConfigJson);
 		Assert.assertTrue("Invalid jdbcDriverClass",
-				dbConfig.getJdbcDriverClass().equals("com.mysql.jdbc.Driver"));
+				dbConfig.getDbDriverClass().equals("com.mysql.jdbc.Driver"));
 		Assert.assertTrue("Invalid jdbcUrl",
 				dbConfig.getJdbcUrl().equals("jdbc:mysql://localhost/mockdb"));
 		Assert.assertTrue("Invalid defaultCatalog",
@@ -75,7 +75,7 @@ public class EPFDbConfigTest {
 		Assert.assertNotNull("EPFDbConfig.json not found for JUnit test",
 				epfDbConfigPath);
 		EPFDbConfig config = new EPFDbConfig(epfDbConfigPath);
-		Assert.assertNotNull("Invalid dbJdbcDriverClass",config.getJdbcDriverClass());
+		Assert.assertNotNull("Invalid dbJdbcDriverClass",config.getDbDriverClass());
 		Assert.assertNotNull("Invalid dbJdbcUrl",config.getJdbcUrl());
 		Assert.assertNotNull("Invalid dbDefaultCatalog",config.getDefaultCatalog());
 		Assert.assertNotNull("Invalid dbUser",config.getUsername());

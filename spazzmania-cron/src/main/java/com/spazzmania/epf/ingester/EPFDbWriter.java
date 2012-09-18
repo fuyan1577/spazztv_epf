@@ -7,8 +7,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 
-import com.jolbox.bonecp.BoneCP;
-
 /**
  * Abstract class for creating, dropping, merging and updating an EPF Database.
  * <p/>
@@ -53,12 +51,10 @@ import com.jolbox.bonecp.BoneCP;
  */
 public abstract class EPFDbWriter {
 
-	private BoneCP connectionPool;
+	private EPFDbConnector connector;
 	private String tablePrefix;
 
-	public EPFDbWriter(String tablePrefix, BoneCP connectionPool) {
-		this.tablePrefix = tablePrefix;
-		this.connectionPool = connectionPool;
+	public EPFDbWriter() {
 	}
 
 	/**
@@ -66,8 +62,12 @@ public abstract class EPFDbWriter {
 	 * 
 	 * @return the tablePrefix
 	 */
-	public String tablePrefix() {
+	public final String getTablePrefix() {
 		return tablePrefix;
+	}
+
+	public final void setTablePrefix(String tablePrefix) {
+		this.tablePrefix = tablePrefix;
 	}
 
 	/**
@@ -85,7 +85,7 @@ public abstract class EPFDbWriter {
 	 */
 	public abstract void initImport(EPFExportType exportType, String tableName,
 			LinkedHashMap<String, String> columnsAndTypes, long numberOfRows)
-			throws EPFImporterException;
+			throws EPFDbException;
 
 	/**
 	 * Set the column that is the Primary Key. Single column primary keys are
@@ -94,7 +94,7 @@ public abstract class EPFDbWriter {
 	 * @param columnName
 	 */
 	public abstract void setPrimaryKey(String[] columnName)
-			throws EPFImporterException;
+			throws EPFDbException;
 
 	/**
 	 * Insert a row of data from the input String[] array. The field types are
@@ -109,14 +109,14 @@ public abstract class EPFDbWriter {
 	 *            - a String[] array of column data comprising one row
 	 */
 	public abstract void insertRow(String[] rowData)
-			throws EPFImporterException;
+			throws EPFDbException;
 
 	/**
 	 * Finalize any table insert optimization. The original EPF Python script
 	 * logic would insert any remaining queued rows and possibly merge, drop and
 	 * rename tables.
 	 */
-	public abstract void finalizeImport() throws EPFImporterException;
+	public abstract void finalizeImport() throws EPFDbException;
 
 	/**
 	 * Sets the connection pool connector.
@@ -127,8 +127,8 @@ public abstract class EPFDbWriter {
 	 * @param connector
 	 *            the connector to set
 	 */
-	public final void setConnectionPool(BoneCP connector) {
-		this.connectionPool = connector;
+	public final void setConnector(EPFDbConnector connector) {
+		this.connector = connector;
 	}
 
 	/**
@@ -138,14 +138,8 @@ public abstract class EPFDbWriter {
 	 * @return
 	 * @throws SQLException
 	 */
-	public final Connection getConnection() throws EPFImporterException {
-		Connection conn;
-		try {
-			conn = connectionPool.getConnection();
-		} catch (SQLException e) {
-			throw new EPFImporterException(e.getMessage());
-		}
-		return conn;
+	public final Connection getConnection() throws SQLException {
+		return connector.getConnection();
 	}
 
 	/**
@@ -154,12 +148,12 @@ public abstract class EPFDbWriter {
 	 * @param connection
 	 */
 	public final void releaseConnection(Connection connection)
-			throws EPFImporterException {
+			throws EPFDbException {
 		if (connection != null) {
 			try {
 				connection.close();
 			} catch (SQLException e) {
-				throw new EPFImporterException(e.getMessage());
+				throw new EPFDbException(e.getMessage());
 			}
 		}
 	}
@@ -174,7 +168,7 @@ public abstract class EPFDbWriter {
 	 * @return true if the table exists
 	 */
 	public abstract boolean isTableInDatabase(String tableName)
-			throws EPFImporterException;
+			throws EPFDbException;
 
 	/**
 	 * Returns the number of columns for <i>tableName</i>.
@@ -185,5 +179,6 @@ public abstract class EPFDbWriter {
 	 * @param tableName
 	 * @return the number of columns
 	 */
-	public abstract int getTableColumnCount(String tableName) throws EPFImporterException;
+	public abstract int getTableColumnCount(String tableName)
+			throws EPFDbException;
 }

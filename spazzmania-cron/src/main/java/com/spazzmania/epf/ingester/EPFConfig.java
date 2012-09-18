@@ -21,33 +21,59 @@ import org.json.simple.parser.ParseException;
  * A simple object to parse the EPFConfig.json file and hold the values.
  * 
  * Save my values this time.
+ * 
  * @author Thomas Billingsley
  * @version 1.0
  */
 public class EPFConfig {
-	
+
 	public static String EPF_BLACKLIST = "blackList";
 	public static String EPF_WHITELIST = "whiteList";
-	public static String EPF_TABLE_PREFIX = "tablePrefix";
 	public static String EPF_DIRECTORY_PATH = "directoryPath";
 	public static String EPF_MAX_THREADS = "maxThreads";
 	public static String EPF_ALLOW_EXTENSIONS = "allowExtensions";
-	
+
 	private List<String> whiteList;
 	private List<String> blackList;
-	private String tablePrefix; 
 	private String directoryPath;
 	private int maxThreads;
 	private boolean allowExtensions;
-	
-	public EPFConfig(String configFilePath) throws IOException {
+
+	public EPFConfig() {
 		whiteList = new ArrayList<String>();
 		blackList = new ArrayList<String>();
-		String configJson = loadConfigFile(configFilePath);
+	}
+
+	public EPFConfig(File configFile) throws IOException, EPFImporterException {
+		this();
+		String configJson = loadConfigFile(configFile);
 		parseConfiguration(configJson);
 	}
-	
-	public void parseConfiguration(String configJson) {
+
+	private void checkConfiguration(JSONObject configObj)
+			throws EPFImporterException {
+		for (Object key : configObj.keySet()) {
+			if (!isValidConfigKey((String)key)) {
+				throw new EPFImporterException("Invalid EPFConfig key: " + key);
+			}
+			if (JSONObject.class
+					.isAssignableFrom(configObj.get(key).getClass())) {
+				checkConfiguration((JSONObject) configObj.get(key));
+			}
+		}
+	}
+
+	private boolean isValidConfigKey(String key) {
+		if (key.equals(EPF_ALLOW_EXTENSIONS) || key.equals(EPF_BLACKLIST)
+				|| key.equals(EPF_DIRECTORY_PATH)
+				|| key.equals(EPF_MAX_THREADS) || key.equals(EPF_WHITELIST)) {
+			return true;
+		}
+		return false;
+	}
+
+	public void parseConfiguration(String configJson)
+			throws EPFImporterException {
 		JSONParser parser = new JSONParser();
 		JSONObject configObj;
 		try {
@@ -56,37 +82,36 @@ public class EPFConfig {
 			throw new RuntimeException(e);
 		}
 
+		checkConfiguration(configObj);
+
 		// Required Values
 		directoryPath = verifyString(configObj, EPF_DIRECTORY_PATH);
 
-		// Optional values
-		tablePrefix = (String)configObj.get(EPF_TABLE_PREFIX);
-		
 		if (configObj.get(EPF_ALLOW_EXTENSIONS) != null) {
-			allowExtensions = Boolean.getBoolean((String)configObj.get(EPF_ALLOW_EXTENSIONS));
+			allowExtensions = (Boolean) configObj.get(EPF_ALLOW_EXTENSIONS);
 		}
-		
+
 		checkWhiteList(configObj);
 		checkBlackList(configObj);
 	}
-	
+
 	private void checkWhiteList(JSONObject configObj) {
-		JSONArray wList = (JSONArray)configObj.get(EPF_WHITELIST);
+		JSONArray wList = (JSONArray) configObj.get(EPF_WHITELIST);
 		if (wList == null) {
 			return;
 		}
 		for (int i = 0; i < wList.size(); i++) {
-			whiteList.add((String)wList.get(i));
+			whiteList.add((String) wList.get(i));
 		}
 	}
-	
+
 	private void checkBlackList(JSONObject configObj) {
-		JSONArray bList = (JSONArray)configObj.get(EPF_BLACKLIST);
+		JSONArray bList = (JSONArray) configObj.get(EPF_BLACKLIST);
 		if (bList == null) {
 			return;
 		}
 		for (int i = 0; i < bList.size(); i++) {
-			blackList.add((String)bList.get(i));
+			blackList.add((String) bList.get(i));
 		}
 	}
 
@@ -98,8 +123,8 @@ public class EPFConfig {
 		return (String) connPoolObject.get(key);
 	}
 
-	private String loadConfigFile(String configFilePath) throws IOException {
-		FileInputStream stream = new FileInputStream(new File(configFilePath));
+	private String loadConfigFile(File configFile) throws IOException {
+		FileInputStream stream = new FileInputStream(configFile);
 		try {
 			FileChannel fc = stream.getChannel();
 			MappedByteBuffer bb = fc.map(FileChannel.MapMode.READ_ONLY, 0,
@@ -110,46 +135,51 @@ public class EPFConfig {
 			stream.close();
 		}
 	}
-	
+
 	public List<String> getWhiteList() {
 		return whiteList;
 	}
+
 	public void addWhiteList(String whiteListItem) {
 		blackList.add(whiteListItem);
 	}
+
 	public void setWhiteList(List<String> whiteList) {
 		this.whiteList = whiteList;
 	}
+
 	public List<String> getBlackList() {
 		return blackList;
 	}
+
 	public void addBlackList(String blackListItem) {
 		blackList.add(blackListItem);
 	}
+
 	public void setBlackList(List<String> blackList) {
 		this.blackList = blackList;
 	}
-	public String getTablePrefix() {
-		return tablePrefix;
-	}
-	public void setTablePrefix(String tablePrefix) {
-		this.tablePrefix = tablePrefix;
-	}
+
 	public String getDirectoryPath() {
 		return directoryPath;
 	}
+
 	public void setDirectoryPath(String directoryPath) {
 		this.directoryPath = directoryPath;
 	}
+
 	public int getMaxThreads() {
 		return maxThreads;
 	}
+
 	public void setMaxThreads(int maxThreads) {
 		this.maxThreads = maxThreads;
 	}
+
 	public boolean isAllowExtensions() {
 		return allowExtensions;
 	}
+
 	public void setAllowExtensions(boolean allowExtensions) {
 		this.allowExtensions = allowExtensions;
 	}

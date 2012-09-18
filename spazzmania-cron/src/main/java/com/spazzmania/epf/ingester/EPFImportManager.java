@@ -12,7 +12,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * This is the work manager class of the EPFImport process that
+ * This is the work manager class of the EPFImport process that queues all
+ * EPFImportTasks.
  * 
  * @author Thomas Billingsley
  * 
@@ -106,7 +107,7 @@ public class EPFImportManager {
 				fileReader = new EPFFileReader(filePath);
 				importTranslator = new EPFImportTranslator(fileReader);
 				dbWriter = EPFDbWriterFactory.getDbWriter(dbConfig);
-				importTask = new EPFImportTask(importTranslator,dbWriter);
+				importTask = new EPFImportTask(importTranslator, dbWriter);
 				service.execute(importTask);
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
@@ -114,9 +115,12 @@ public class EPFImportManager {
 			} catch (EPFFileFormatException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			} catch (EPFDbException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			
-			service.submit(new EPFImportTask(null,null));
+
+			service.submit(new EPFImportTask(null, null));
 		}
 	}
 }

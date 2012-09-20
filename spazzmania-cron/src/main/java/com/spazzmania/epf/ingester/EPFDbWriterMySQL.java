@@ -97,24 +97,21 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 	public void initImport(EPFExportType exportType, String tableName,
 			LinkedHashMap<String, String> columnsAndTypes, long numberOfRows) throws EPFDbException {
 		
-		this.tableName = tableName;
-		this.impTableName = null;
+		this.tableName = getTablePrefix() + tableName;
+		this.impTableName = this.tableName + "_tmp";
 		this.uncTableName = null;
+		dropTable(impTableName);
 		if (exportType == EPFExportType.FULL) {
 			processMode = ProcessMode.IMPORT_RENAME;
-			dropTable(tableName);
-			impTableName = this.tableName;
 		} else {
 			processMode = ProcessMode.APPEND;
-			impTableName = this.tableName + "_tmp";
-			dropTable(impTableName);
 			if (numberOfRows >= MERGE_THRESHOLD) {
 				processMode = ProcessMode.MERGE_RENAME;
 				uncTableName = this.tableName + "_unc";
 				dropTable(uncTableName);
 			}
 		}
-		createTable(columnsAndTypes);
+		createTable(impTableName, columnsAndTypes);
 		insertBufferCount = 0;
 	}
 
@@ -123,9 +120,9 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 		executeSQLStatement(sqlDrop);
 	}
 
-	private void createTable(LinkedHashMap<String, String> columnsAndTypes) throws EPFDbException {
+	private void createTable(String tableName, LinkedHashMap<String, String> columnsAndTypes) throws EPFDbException {
 		columnNames = "";
-		String columnTypes = "";
+		String columnsToCreate = "";
 
 		quotedColumnType = new boolean[columnsAndTypes.size()];
 		int col = 0;
@@ -135,18 +132,17 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 		while (entrySet.hasNext()) {
 			Entry<String, String> colNType = entrySet.next();
 			columnNames += "`" + colNType.getKey() + "`";
-			columnTypes += translateColumnType(colNType.getValue());
+			columnsToCreate += "`" + colNType.getKey() + "` " + translateColumnType(colNType.getValue());
 			quotedColumnType[col++] = isQuotedColumnType(colNType.getValue());
 
 			if (entrySet.hasNext()) {
 				columnNames += ",";
-				columnTypes += ",";
+				columnsToCreate += ", ";
 			}
 		}
 
-		dropTable(impTableName);
-		executeSQLStatement(String.format(CREATE_TABLE_STMT, columnNames,
-				columnTypes));
+		executeSQLStatement(String.format(CREATE_TABLE_STMT, tableName,
+				columnsToCreate));
 	}
 
 	private boolean isQuotedColumnType(String columnType) {
@@ -233,6 +229,7 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 				connection = getConnection();
 				st = connection.createStatement();
 				st.execute(sqlStmt);
+				completed = true;
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 				if (SQLUtil.getSQLStateCode(e1.getSQLState()) == SQLUtil.INTEGRITY_CONSTRAINT_VIOLATION) {
@@ -246,18 +243,14 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 					// Raise the error
 					throw new RuntimeException(e1.getMessage());
 				}
-			} finally {
+				releaseConnection(connection);
+			} catch (Error e) {
 				try {
-					connection.close();
-				} catch (SQLException e) {
-					// Ignore - may be attempting to close a failed connection
+					releaseConnection(connection);
+					Thread.sleep(60);
+				} catch (InterruptedException ie) {
+					// Ignore and interrupted sleep error
 				}
-			}
-
-			try {
-				Thread.sleep(60);
-			} catch (InterruptedException e1) {
-				// Ignore and interrupted sleep error
 			}
 		}
 		releaseConnection(connection);

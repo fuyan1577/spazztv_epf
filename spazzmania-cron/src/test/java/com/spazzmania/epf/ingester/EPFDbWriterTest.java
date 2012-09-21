@@ -22,7 +22,7 @@ public class EPFDbWriterTest {
 		}
 
 		@Override
-		public void setPrimaryKey(String[] columnName)
+		public void setPrimaryKey(String tableName, String[] columnName)
 				throws EPFDbException {
 		}
 

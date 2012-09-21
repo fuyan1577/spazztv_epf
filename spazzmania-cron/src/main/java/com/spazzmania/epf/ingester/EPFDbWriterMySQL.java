@@ -160,15 +160,15 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 	}
 
 	@Override
-	public void setPrimaryKey(String[] columnName) throws EPFDbException {
+	public void setPrimaryKey(String tableName, String[] columnName) throws EPFDbException {
 		String primaryKeyColumns = "";
 		for (int i = 0; i < columnName.length; i++) {
-			primaryKeyColumns += columnName[i];
+			primaryKeyColumns += "`" + columnName[i] + "`";
 			if (i + 1 < columnName.length) {
 				primaryKeyColumns += ",";
 			}
 		}
-		String sqlAlterTable = String.format(PRIMARY_KEY_STMT,
+		String sqlAlterTable = String.format(PRIMARY_KEY_STMT,tableName,
 				primaryKeyColumns);
 		executeSQLStatement(sqlAlterTable);
 	}

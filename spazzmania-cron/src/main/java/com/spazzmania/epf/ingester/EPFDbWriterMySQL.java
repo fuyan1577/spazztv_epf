@@ -3,6 +3,7 @@ package com.spazzmania.epf.ingester;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -48,11 +49,13 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 	public static String DROP_TABLE_STMT = "DROP TABLE IF EXISTS %s";
 	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s)";
 	public static String PRIMARY_KEY_STMT = "ALTER TABLE %s ADD CONSTRAINT PRIMARY KEY (%s)";
-	public static String INSERT_SQL_STMT = "%s INTO %s %s VALUES %s";
+	public static String INSERT_SQL_STMT = "%s INTO %s (%s) VALUES %s";
+	public static String COLUMN_NAMES_SQL = "SELECT * FROM `%s` LIMIT 1";
 
 	public static int EXECUTE_SQL_STATEMENT_RETRIES = 30;
 	public static long MERGE_THRESHOLD = 500000;
 	public static long INSERT_BUFFER_SIZE = 200;
+	public static int MAX_SQL_RETRIES = 3;
 
 	public EPFDbWriterMySQL() {
 		super();
@@ -83,6 +86,7 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 	private boolean[] quotedColumnType;
 
 	private String columnNames;
+	private Map<String, Integer> columnMap;
 
 	private int insertBufferCount = 0;
 	String insertBuffer;
@@ -95,8 +99,9 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 
 	@Override
 	public void initImport(EPFExportType exportType, String tableName,
-			LinkedHashMap<String, String> columnsAndTypes, long numberOfRows) throws EPFDbException {
-		
+			LinkedHashMap<String, String> columnsAndTypes, long numberOfRows)
+			throws EPFDbException {
+
 		this.tableName = getTablePrefix() + tableName;
 		this.impTableName = this.tableName + "_tmp";
 		this.uncTableName = null;
@@ -111,6 +116,7 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 				dropTable(uncTableName);
 			}
 		}
+		setupColumnMap(columnsAndTypes);
 		createTable(impTableName, columnsAndTypes);
 		insertBufferCount = 0;
 	}
@@ -120,7 +126,9 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 		executeSQLStatement(sqlDrop);
 	}
 
-	private void createTable(String tableName, LinkedHashMap<String, String> columnsAndTypes) throws EPFDbException {
+	private void createTable(String tableName,
+			LinkedHashMap<String, String> columnsAndTypes)
+			throws EPFDbException {
 		columnNames = "";
 		String columnsToCreate = "";
 
@@ -132,7 +140,8 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 		while (entrySet.hasNext()) {
 			Entry<String, String> colNType = entrySet.next();
 			columnNames += "`" + colNType.getKey() + "`";
-			columnsToCreate += "`" + colNType.getKey() + "` " + translateColumnType(colNType.getValue());
+			columnsToCreate += "`" + colNType.getKey() + "` "
+					+ translateColumnType(colNType.getValue());
 			quotedColumnType[col++] = isQuotedColumnType(colNType.getValue());
 
 			if (entrySet.hasNext()) {
@@ -143,6 +152,70 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 
 		executeSQLStatement(String.format(CREATE_TABLE_STMT, tableName,
 				columnsToCreate));
+	}
+
+	private void setupColumnMap(LinkedHashMap<String, String> columnsAndTypes)
+			throws EPFDbException {
+		Map<String, Integer> currentColumnMap = getCurrentTableColumns(tableName);
+
+		if (currentColumnMap.size() == 0) {
+			throw new EPFDbException(
+					"Table does not exist and cannot be updated");
+		}
+
+		columnMap = new HashMap<String, Integer>();
+
+		for (String columnName : columnsAndTypes.keySet()) {
+			if (currentColumnMap.containsKey(columnName)) {
+				columnMap.put(columnName, currentColumnMap.get(columnName));
+			}
+		}
+
+		if (columnMap.size() == 0) {
+			throw new EPFDbException(
+					"No import columns match destination table");
+		}
+	}
+
+	/**
+	 * Retrieve a Map of Column Names and ordinal positions for the current
+	 * table. If the table doesn't exist, return an empty Map.
+	 * 
+	 * @param tableName
+	 * @return
+	 * @throws EPFDbException
+	 *             - if it cannot get a db connection
+	 */
+	private Map<String, Integer> getCurrentTableColumns(String tableName)
+			throws EPFDbException {
+		Connection connection = null;
+
+		String sqlStmt = String.format(COLUMN_NAMES_SQL, tableName);
+		Map<String, Integer> tableColumns = new HashMap<String, Integer>();
+		Statement st;
+
+		try {
+			connection = getConnection();
+			st = connection.createStatement();
+			ResultSet resultSet = st.executeQuery(sqlStmt);
+			// ResultSetMetaData metaData =
+			// st.executeQuery(sqlStmt).getMetaData();
+			ResultSetMetaData metaData = resultSet.getMetaData();
+			for (int i = 0; i < metaData.getColumnCount(); i++) {
+				tableColumns.put(metaData.getColumnName(i), Integer.valueOf(i));
+			}
+		} catch (Exception e) {
+			e = e;
+			// Ignore all errors & exceptions...
+			// If the table does not exist because it hasn't
+			// previously been imported, return an empty tableColumns list.
+		} catch (Error e) {
+			e = e;
+		}
+
+		releaseConnection(connection);
+
+		return tableColumns;
 	}
 
 	private boolean isQuotedColumnType(String columnType) {
@@ -160,7 +233,8 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 	}
 
 	@Override
-	public void setPrimaryKey(String tableName, String[] columnName) throws EPFDbException {
+	public void setPrimaryKey(String tableName, String[] columnName)
+			throws EPFDbException {
 		String primaryKeyColumns = "";
 		for (int i = 0; i < columnName.length; i++) {
 			primaryKeyColumns += "`" + columnName[i] + "`";
@@ -168,7 +242,7 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 				primaryKeyColumns += ",";
 			}
 		}
-		String sqlAlterTable = String.format(PRIMARY_KEY_STMT,tableName,
+		String sqlAlterTable = String.format(PRIMARY_KEY_STMT, tableName,
 				primaryKeyColumns);
 		executeSQLStatement(sqlAlterTable);
 	}
@@ -182,8 +256,9 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 			insertBuffer += ",";
 		}
 		insertBuffer += "(" + formatInsertRow(rowData) + ")";
-		if (insertBufferCount++ >= INSERT_BUFFER_SIZE) {
+		if (++insertBufferCount >= INSERT_BUFFER_SIZE) {
 			flushInsertBuffer();
+			insertBufferCount = 0;
 		}
 	}
 
@@ -212,16 +287,19 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 			} else {
 				row += rowData[i];
 			}
+			if (i + 1 < rowData.length) {
+				row += ",";
+			}
 		}
 		return row;
 	}
 
 	private void executeSQLStatement(String sqlStmt) throws EPFDbException {
 		boolean completed = false;
-		
+
 		int retries = 0;
 		Connection connection = null;
-		
+
 		while (!completed) {
 			retries++;
 			Statement st;
@@ -231,7 +309,7 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 				st.execute(sqlStmt);
 				completed = true;
 			} catch (SQLException e1) {
-				e1.printStackTrace();
+				// Log this error e1.printStackTrace();
 				if (SQLUtil.getSQLStateCode(e1.getSQLState()) == SQLUtil.INTEGRITY_CONSTRAINT_VIOLATION) {
 					// Probably a primary key error - report the error and
 					// return
@@ -252,6 +330,9 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 					// Ignore and interrupted sleep error
 				}
 			}
+			if (retries >= MAX_SQL_RETRIES) {
+				break;
+			}
 		}
 		releaseConnection(connection);
 	}
@@ -259,6 +340,20 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 	@Override
 	public void finalizeImport() throws EPFDbException {
 		flushInsertBuffer();
+
+		if (processMode == ProcessMode.MERGE_RENAME) {
+			// Union Query with destination to the uncTableName
+			// Rename tableName to oldTableName;
+			// Rename uncTableName tableName
+			// Drop oldTableName
+			// Drop tmpTableName
+		}
+
+		if (processMode == ProcessMode.IMPORT_RENAME) {
+			// Rename tableName to oldTableName;
+			// Rename tmpTableName tableName
+			// Drop oldTableName
+		}
 	}
 
 	@Override
@@ -280,10 +375,10 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 			try {
 				connection.close();
 			} catch (SQLException e) {
-				//Ignore - this may attempting to close a failed connection
+				// Ignore - this may attempting to close a failed connection
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -305,10 +400,10 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 			try {
 				connection.close();
 			} catch (SQLException e) {
-				//Ignore - this may attempting to close a failed connection
+				// Ignore - this may attempting to close a failed connection
 			}
 		}
-		
+
 		return 0;
 	}
 }

@@ -48,9 +48,12 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 
 	public static String DROP_TABLE_STMT = "DROP TABLE IF EXISTS %s";
 	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s)";
+	public static String RENAME_TABLE_STMT = "ALTER TABLE %s RENAME %s";
 	public static String PRIMARY_KEY_STMT = "ALTER TABLE %s ADD CONSTRAINT PRIMARY KEY (%s)";
 	public static String INSERT_SQL_STMT = "%s INTO %s (%s) VALUES %s";
 	public static String COLUMN_NAMES_SQL = "SELECT * FROM `%s` LIMIT 1";
+	public static String TABLE_EXISTS_SQL = "SHOW TABLES";
+	public static String UNLOCK_TABLES = "UNLOCK TABLES";
 
 	public static int EXECUTE_SQL_STATEMENT_RETRIES = 30;
 	public static long MERGE_THRESHOLD = 500000;
@@ -123,7 +126,31 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 
 	private void dropTable(String tableName) throws EPFDbException {
 		String sqlDrop = String.format(DROP_TABLE_STMT, tableName);
-		executeSQLStatement(sqlDrop);
+		SQLReturnStatus status;
+		int attempts = 0;
+		while (true) {
+			attempts++;
+			if (attempts == 2) {
+				executeSQLStatement(UNLOCK_TABLES);
+			}
+			status = executeSQLStatement(sqlDrop);
+			if (status.success) {
+				break;
+			} else if (status.sqlExceptionCode == MySQLErrorCodes.ER_LOCK_WAIT_TIMEOUT) {
+				// Logger.info("Lock wait timeout while dropping %s, waiting 60 seconds to try again");
+				try {
+					Thread.sleep(60000);
+				} catch (InterruptedException e) {
+				}
+			} else {
+				// Logger.error(String.format(
+				// "Error dropping table %s, SQLStateCode = %s, SQLExceptionCode = %d"));
+				throw new EPFDbException(
+						String.format(
+								"Error dropping table %s, SQLStateCode = %s, SQLExceptionCode = %d",
+								status.sqlStateCode, status.sqlExceptionCode));
+			}
+		}
 	}
 
 	private void createTable(String tableName,
@@ -294,47 +321,31 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 		return row;
 	}
 
-	private void executeSQLStatement(String sqlStmt) throws EPFDbException {
-		boolean completed = false;
+	private class SQLReturnStatus {
+		public String sqlStateCode;
+		public Integer sqlExceptionCode;
+		public boolean success;
+	}
 
-		int retries = 0;
+	private SQLReturnStatus executeSQLStatement(String sqlStmt)
+			throws EPFDbException {
+		SQLReturnStatus sqlStatus = new SQLReturnStatus();
+
 		Connection connection = null;
 
-		while (!completed) {
-			retries++;
-			Statement st;
-			try {
-				connection = getConnection();
-				st = connection.createStatement();
-				st.execute(sqlStmt);
-				completed = true;
-			} catch (SQLException e1) {
-				// Log this error e1.printStackTrace();
-				if (SQLUtil.getSQLStateCode(e1.getSQLState()) == SQLUtil.INTEGRITY_CONSTRAINT_VIOLATION) {
-					// Probably a primary key error - report the error and
-					// return
-					// Logger.logError("Error %d: %s",e1.getErrorCode(),e1.getMessage);
-					completed = true;
-					break;
-				} else if ((e1.getErrorCode() != MySQLErrorCodes.ER_LOCK_WAIT_TIMEOUT)
-						|| (retries >= EXECUTE_SQL_STATEMENT_RETRIES)) {
-					// Raise the error
-					throw new RuntimeException(e1.getMessage());
-				}
-				releaseConnection(connection);
-			} catch (Error e) {
-				try {
-					releaseConnection(connection);
-					Thread.sleep(60);
-				} catch (InterruptedException ie) {
-					// Ignore and interrupted sleep error
-				}
-			}
-			if (retries >= MAX_SQL_RETRIES) {
-				break;
-			}
+		Statement st;
+		try {
+			connection = getConnection();
+			st = connection.createStatement();
+			st.execute(sqlStmt);
+			sqlStatus.success = true;
+		} catch (SQLException e1) {
+			sqlStatus.success = false;
+			sqlStatus.sqlStateCode = SQLUtil.getSQLStateCode(e1.getSQLState());
+			sqlStatus.sqlExceptionCode = e1.getErrorCode();
 		}
 		releaseConnection(connection);
+		return sqlStatus;
 	}
 
 	@Override
@@ -343,17 +354,46 @@ public class EPFDbWriterMySQL extends EPFDbWriter {
 
 		if (processMode == ProcessMode.MERGE_RENAME) {
 			// Union Query with destination to the uncTableName
-			// Rename tableName to oldTableName;
+			mergeTables(tableName, impTableName, uncTableName);
 			// Rename uncTableName tableName
-			// Drop oldTableName
-			// Drop tmpTableName
+			renameTableAndDrop(uncTableName, tableName);
+			// Drop impTableName
+			dropTable(impTableName);
 		}
 
 		if (processMode == ProcessMode.IMPORT_RENAME) {
-			// Rename tableName to oldTableName;
 			// Rename tmpTableName tableName
-			// Drop oldTableName
+			renameTableAndDrop(uncTableName, tableName);
 		}
+	}
+
+	private void mergeTables(String srcTableName1, String srcTableName2,
+			String destTableName) {
+
+	}
+
+	private void renameTableAndDrop(String srcTableName, String destTableName)
+			throws EPFDbException {
+		String oldTableName = destTableName + "_old";
+		// Drop the oldTableName just in case it was left from a previous run
+		dropTable(oldTableName);
+		String sql;
+		SQLReturnStatus status = new SQLReturnStatus();
+		status.success = true;
+		if (isTableInDatabase(destTableName)) {
+			sql = String.format(RENAME_TABLE_STMT, destTableName, oldTableName);
+			status = executeSQLStatement(sql);
+		}
+		sql = String.format(RENAME_TABLE_STMT, srcTableName, destTableName);
+		status = executeSQLStatement(sql);
+		if (!status.success) {
+			// Logger.logInfo(String.format("Error renaming table srcTableName
+			// to destTableName - reverting);
+			sql = String.format(RENAME_TABLE_STMT, oldTableName, destTableName);
+			executeSQLStatement(sql);
+		}
+		// Drop the oldTableName
+		dropTable(oldTableName);
 	}
 
 	@Override

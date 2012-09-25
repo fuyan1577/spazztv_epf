@@ -11,15 +11,9 @@ import java.util.List;
 
 import com.spazzmania.epf.ingester.SQL92StateCode;
 
-public class EPFDbMySQLDao {
-	
+public class EPFDbDaoMySql extends EPFDbDao {
+
 	public static String COLUMN_NAMES_SQL = "SELECT * FROM `%s` LIMIT 1";
-	
-	private EPFDbConnector connector;
-	
-	public void setConnector(EPFDbConnector connector) {
-		this.connector = connector;
-	}
 
 	public SQLReturnStatus executeSQLStatement(String sqlStmt)
 			throws EPFDbException {
@@ -27,15 +21,15 @@ public class EPFDbMySQLDao {
 
 		Connection connection = null;
 
-		int l = sqlStmt.length();
-		if (l > 80) {
-			l = 80;
-		}
-		System.out.println(sqlStmt.substring(0,l));
-		
+//		int l = sqlStmt.length();
+//		if (l > 80) {
+//			l = 80;
+//		}
+//		System.out.println(sqlStmt.substring(0, l));
+
 		Statement st;
 		try {
-			connection = connector.getConnection();
+			connection = getConnector().getConnection();
 			st = connection.createStatement();
 			st.execute(sqlStmt);
 			sqlStatus.setSuccess(true);
@@ -45,7 +39,7 @@ public class EPFDbMySQLDao {
 					.getSQLState()));
 			sqlStatus.setSqlExceptionCode(e1.getErrorCode());
 		}
-		connector.releaseConnection(connection);
+		getConnector().releaseConnection(connection);
 		return sqlStatus;
 	}
 
@@ -58,8 +52,7 @@ public class EPFDbMySQLDao {
 	 * @throws EPFDbException
 	 *             - if it cannot get a db connection
 	 */
-	public List<String> getTableColumns(String tableName)
-			throws EPFDbException {
+	public List<String> getTableColumns(String tableName) throws EPFDbException {
 		Connection connection = null;
 
 		String sqlStmt = String.format(COLUMN_NAMES_SQL, tableName);
@@ -67,11 +60,9 @@ public class EPFDbMySQLDao {
 		Statement st;
 
 		try {
-			connection = connector.getConnection();
+			connection = getConnector().getConnection();
 			st = connection.createStatement();
 			ResultSet resultSet = st.executeQuery(sqlStmt);
-			// ResultSetMetaData metaData =
-			// st.executeQuery(sqlStmt).getMetaData();
 			ResultSetMetaData metaData = resultSet.getMetaData();
 			for (int i = 0; i < metaData.getColumnCount(); i++) {
 				tableColumns.add(metaData.getColumnName(i));
@@ -83,16 +74,16 @@ public class EPFDbMySQLDao {
 		} catch (Error e) {
 		}
 
-		connector.releaseConnection(connection);
+		getConnector().releaseConnection(connection);
 
 		return tableColumns;
 	}
-	
+
 	public boolean isTableInDatabase(String tableName) throws EPFDbException {
 		DatabaseMetaData dbm;
 		Connection connection = null;
 		try {
-			connection = connector.getConnection();
+			connection = getConnector().getConnection();
 			dbm = connection.getMetaData();
 			String types[] = { "TABLE" };
 			ResultSet tables = dbm.getTables(null, null, tableName, types);
@@ -103,7 +94,7 @@ public class EPFDbMySQLDao {
 		} catch (SQLException e) {
 			// IGNORE - an error will occur when the table doesn't exist
 		} finally {
-			connector.releaseConnection(connection);
+			getConnector().releaseConnection(connection);
 		}
 
 		return false;

@@ -16,7 +16,7 @@ public class EPFDbWriterFactory {
 				private static final long serialVersionUID = 1L;
 				{
 					put("com.jdbc.mysql.Driver",
-							com.spazzmania.epf.dao.EPFDbWriterMySQL.class
+							com.spazzmania.epf.dao.EPFDbWriterMySql.class
 									.getName());
 				}
 			});

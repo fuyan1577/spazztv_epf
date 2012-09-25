@@ -15,6 +15,8 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.mysql.jdbc.DatabaseMetaData;
+
 public class EPFDbWriterMySQLTest {
 
 	EPFDbWriter dbWriter;
@@ -23,6 +25,7 @@ public class EPFDbWriterMySQLTest {
 	Statement statement;
 	ResultSet resultSet;
 	MockMetaData metaData;
+	DatabaseMetaData dbMetaData;
 	String tablePrefix = "test_";
 	String tableName = "epftable";
 	LinkedHashMap<String, String> columnsAndTypes;
@@ -34,6 +37,7 @@ public class EPFDbWriterMySQLTest {
 		connection = EasyMock.createMock(Connection.class);
 		statement = EasyMock.createMock(Statement.class);
 		resultSet = EasyMock.createMock(ResultSet.class);
+		dbMetaData = EasyMock.createMock(DatabaseMetaData.class);
 		metaData = new MockMetaData();
 		dbWriter = new EPFDbWriterMySQL();
 		dbWriter.setConnector(connector);
@@ -64,35 +68,27 @@ public class EPFDbWriterMySQLTest {
 	public void testInitImport1() throws EPFDbException, SQLException {
 		String expectedColumnsAndTypes = "`export_date` BIGINT, `application_id` INTEGER, `title` VARCHAR(1000), `recommended_age` VARCHAR(20), `artist_name` VARCHAR(1000), `seller_name` VARCHAR(1000), `company_url` VARCHAR(1000), `support_url` VARCHAR(1000), `view_url` VARCHAR(1000), `artwork_url_large` VARCHAR(1000), `artwork_url_small` VARCHAR(1000), `itunes_release_date` DATETIME, `copyright` VARCHAR(4000), `description` LONGTEXT, `version` VARCHAR(100), `itunes_version` VARCHAR(100), `download_size` BIGINT";
 		String expectedTmpTableName = tablePrefix + tableName + "_tmp";
-		String expectedTableName = tablePrefix + tableName;
 		String expectedSQLDropTable = String.format(
 				EPFDbWriterMySQL.DROP_TABLE_STMT, expectedTmpTableName);
 		String expectedSQLCreateTable = String.format("CREATE TABLE %s (%s)",
 				expectedTmpTableName, expectedColumnsAndTypes);
-		String expectedSQLCheckTable = String.format(
-				"SELECT * FROM `%s` LIMIT 1", expectedTableName);
 
 		EasyMock.reset(connector);
 		connector.getConnection();
-		EasyMock.expectLastCall().andReturn(connection).times(3);
+		EasyMock.expectLastCall().andReturn(connection).times(2);
 		EasyMock.replay(connector);
 		EasyMock.reset(connection);
 		connection.createStatement();
-		EasyMock.expectLastCall().andReturn(statement).times(3);
+		EasyMock.expectLastCall().andReturn(statement).times(2);
 		connection.close();
-		EasyMock.expectLastCall().times(3);
+		EasyMock.expectLastCall().times(2);
 		EasyMock.replay(connection);
 		EasyMock.reset(statement);
-		statement.executeQuery(expectedSQLCheckTable);
-		EasyMock.expectLastCall().andReturn(resultSet).times(1);
 		statement.execute(expectedSQLDropTable);
 		EasyMock.expectLastCall().andReturn(true).times(1);
 		statement.execute(expectedSQLCreateTable);
 		EasyMock.expectLastCall().andReturn(true).times(1);
 		EasyMock.replay(statement);
-		resultSet.getMetaData();
-		EasyMock.expectLastCall().andReturn(metaData).times(1);
-		EasyMock.replay(resultSet);
 		metaData.reset();
 
 		long numberOfRows = 500000;
@@ -102,18 +98,6 @@ public class EPFDbWriterMySQLTest {
 		EasyMock.verify(connector);
 		EasyMock.verify(connection);
 		EasyMock.verify(statement);
-		EasyMock.verify(resultSet);
-		Assert.assertTrue(
-				String.format(
-						"Invalid number of calls to getColumnCount(), expected %d, actual %d",
-						columnsAndTypes.size() + 1,
-						metaData.getColumnCountCount),
-				columnsAndTypes.size() + 1 == metaData.getColumnCountCount());
-		Assert.assertTrue(
-				String.format(
-						"Invalid number of calls to getColumnName(), expected %d, actual %d",
-						columnsAndTypes.size(), metaData.getColumnNameCount),
-				columnsAndTypes.size() == metaData.getColumnNameCount());
 	}
 
 	@Test
@@ -278,26 +262,41 @@ public class EPFDbWriterMySQLTest {
 		String expectedTmpTableName = tablePrefix + tableName + "_tmp";
 		String expectedSQLDropTable = String.format(
 				EPFDbWriterMySQL.DROP_TABLE_STMT, expectedTmpTableName);
+		String expectedSQLDropTableOld = String.format(
+				EPFDbWriterMySQL.DROP_TABLE_STMT, expectedTableName + "_old");
 		String expectedSQLCreateTable = String.format("CREATE TABLE %s (%s)",
 				expectedTmpTableName, expectedColumnsAndTypes);
-		String expectedSQLCheckTable = String.format(
-				"SELECT * FROM `%s` LIMIT 1", expectedTableName);
+//		String expectedSQLCheckTable = String.format(
+//				"SELECT * FROM `%s` LIMIT 1", expectedTableName);
+		String expectedSQLRenameTable = String.format(EPFDbWriterMySQL.RENAME_TABLE_STMT, expectedTableName, expectedTableName + "_old");
+		String expectedSQLRenameTable2 = String.format(EPFDbWriterMySQL.RENAME_TABLE_STMT, expectedTmpTableName, expectedTableName);
 
+		EasyMock.reset(resultSet);
+		resultSet.beforeFirst();
+		EasyMock.expectLastCall().times(1);
+		resultSet.next();
+		EasyMock.expectLastCall().andReturn(true).times(1);
+		EasyMock.replay(resultSet);
+		
+		EasyMock.reset(dbMetaData);
+		String[] expectedTypes = {"TABLE"};
+		dbMetaData.getTables((String)EasyMock.isNull(), (String)EasyMock.isNull(), EasyMock.eq(expectedTableName), EasyMock.aryEq(expectedTypes));
+		EasyMock.expectLastCall().andReturn(resultSet).times(1);
+		EasyMock.replay(dbMetaData);
+		
 		EasyMock.reset(connection);
 		connection.createStatement();
-		EasyMock.expectLastCall().andReturn(statement).times(4);
+		EasyMock.expectLastCall().andReturn(statement).times(8);
 		connection.close();
 		EasyMock.expectLastCall().anyTimes();
+		connection.getMetaData();
+		EasyMock.expectLastCall().andReturn(dbMetaData).anyTimes();
 		EasyMock.replay(connection);
 		
 		EasyMock.reset(connector);
 		connector.getConnection();
-		EasyMock.expectLastCall().andReturn(connection).times(4);
+		EasyMock.expectLastCall().andReturn(connection).times(9);
 		EasyMock.replay(connector);
-		
-		resultSet.getMetaData();
-		EasyMock.expectLastCall().andReturn(metaData).times(1);
-		EasyMock.replay(resultSet);
 		
 		int expectedRows  = 200;
 		String expectedBlockInsertSQL;
@@ -318,8 +317,8 @@ public class EPFDbWriterMySQLTest {
 		expectedBlockInsertSQLFinalize = String.format(EPFDbWriterMySQL.INSERT_SQL_STMT,"INSERT",expectedTmpTableName,expectedInsertColumns,expectedInsertValues);
 		
 		EasyMock.reset(statement);
-		statement.executeQuery(expectedSQLCheckTable);
-		EasyMock.expectLastCall().andReturn(resultSet).times(1);
+//		statement.executeQuery(expectedSQLCheckTable);
+//		EasyMock.expectLastCall().andReturn(resultSet).times(1);
 		statement.execute(expectedSQLDropTable);
 		EasyMock.expectLastCall().andReturn(true).times(1);
 		statement.execute(expectedSQLCreateTable);
@@ -328,8 +327,14 @@ public class EPFDbWriterMySQLTest {
 		EasyMock.expectLastCall().andReturn(true).times(1);
 		statement.execute(expectedBlockInsertSQLFinalize);
 		EasyMock.expectLastCall().andReturn(true).anyTimes();
+		statement.execute(expectedSQLDropTableOld);
+		EasyMock.expectLastCall().andReturn(true).times(2);
+		statement.execute(expectedSQLRenameTable);
+		EasyMock.expectLastCall().andReturn(true).times(1);
+		statement.execute(expectedSQLRenameTable2);
+		EasyMock.expectLastCall().andReturn(true).times(1);
 		EasyMock.replay(statement);
-		
+
 		metaData.reset();
 
 		long numberOfRows = 500000;
@@ -346,17 +351,6 @@ public class EPFDbWriterMySQLTest {
 		EasyMock.verify(connection);
 		EasyMock.verify(statement);
 		EasyMock.verify(resultSet);
-		Assert.assertTrue(
-				String.format(
-						"Invalid number of calls to getColumnCount(), expected %d, actual %d",
-						columnsAndTypes.size() + 1,
-						metaData.getColumnCountCount),
-				columnsAndTypes.size() + 1 == metaData.getColumnCountCount());
-		Assert.assertTrue(
-				String.format(
-						"Invalid number of calls to getColumnName(), expected %d, actual %d",
-						columnsAndTypes.size(), metaData.getColumnNameCount),
-				columnsAndTypes.size() == metaData.getColumnNameCount());
 	}
 
 	@Test
@@ -755,4 +749,5 @@ public class EPFDbWriterMySQLTest {
 			return false;
 		}
 	}
+	
 }

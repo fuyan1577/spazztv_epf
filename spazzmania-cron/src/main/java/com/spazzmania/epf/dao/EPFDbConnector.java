@@ -1,4 +1,4 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.dao;
 
 import java.sql.Connection;
 import java.sql.SQLException;

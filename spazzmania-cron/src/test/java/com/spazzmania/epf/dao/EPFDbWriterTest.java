@@ -1,4 +1,4 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.dao;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -7,6 +7,8 @@ import java.util.LinkedHashMap;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.spazzmania.epf.ingester.EPFExportType;
 
 public class EPFDbWriterTest {
 	

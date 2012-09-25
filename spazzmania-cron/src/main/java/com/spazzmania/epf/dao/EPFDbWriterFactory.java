@@ -1,8 +1,9 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.dao;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
 
 /**
  * @author Thomas Billingsley
@@ -15,7 +16,7 @@ public class EPFDbWriterFactory {
 				private static final long serialVersionUID = 1L;
 				{
 					put("com.jdbc.mysql.Driver",
-							com.spazzmania.epf.ingester.EPFDbWriterMySQL.class
+							com.spazzmania.epf.dao.EPFDbWriterMySQL.class
 									.getName());
 				}
 			});

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.dao;
 
 /**
  * A generic wrapper for JDBC & NoSQL DB Connection Exceptions.

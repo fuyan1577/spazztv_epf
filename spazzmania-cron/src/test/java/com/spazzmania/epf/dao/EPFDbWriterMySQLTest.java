@@ -1,4 +1,4 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.dao;
 
 import static org.junit.Assert.fail;
 
@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mysql.jdbc.DatabaseMetaData;
+import com.spazzmania.epf.ingester.EPFExportType;
 
 public class EPFDbWriterMySQLTest {
 

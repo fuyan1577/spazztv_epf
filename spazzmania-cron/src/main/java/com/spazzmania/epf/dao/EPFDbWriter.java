@@ -1,11 +1,13 @@
 /**
  * 
  */
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.dao;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
+
+import com.spazzmania.epf.ingester.EPFExportType;
 
 /**
  * Abstract class for creating, dropping, merging and updating an EPF Database.

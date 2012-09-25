@@ -7,6 +7,9 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.spazzmania.epf.dao.EPFDbException;
+import com.spazzmania.epf.dao.EPFDbWriter;
+
 public class EPFImportTaskTest {
 
 	String storefrontEpfFiles = "testdata/epf_files/storefront";

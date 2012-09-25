@@ -3,6 +3,9 @@
  */
 package com.spazzmania.epf.ingester;
 
+import com.spazzmania.epf.dao.EPFDbException;
+import com.spazzmania.epf.dao.EPFDbWriter;
+
 /**
  * 
  * @author Thomas Billingsley

@@ -7,7 +7,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 
-import com.spazzmania.epf.ingester.EPFExportType;
+import com.spazzmania.epf.importer.EPFExportType;
 
 /**
  * Abstract class for creating, dropping, merging and updating an EPF Database.
@@ -55,6 +55,7 @@ public abstract class EPFDbWriter {
 
 	private EPFDbConnector connector;
 	private String tablePrefix;
+	private boolean skipKeyViolators;
 
 	public EPFDbWriter() {
 	}
@@ -68,8 +69,22 @@ public abstract class EPFDbWriter {
 		return tablePrefix;
 	}
 
+	/**
+	 * Set the prefix to prepend to the import table names in the destination
+	 * database.
+	 * 
+	 * @param tablePrefix
+	 */
 	public final void setTablePrefix(String tablePrefix) {
 		this.tablePrefix = tablePrefix;
+	}
+
+	public final boolean isSkipKeyViolators() {
+		return skipKeyViolators;
+	}
+
+	public final void setSkipKeyViolators(boolean skipKeyViolators) {
+		this.skipKeyViolators = skipKeyViolators;
 	}
 
 	/**
@@ -134,11 +149,9 @@ public abstract class EPFDbWriter {
 	}
 
 	/**
-	 * Provide access to the connection pool connector for the implementing
-	 * classes.
+	 * Get a connection from the connection pool.
 	 * 
 	 * @return
-	 * @throws SQLException
 	 */
 	public final Connection getConnection() throws SQLException {
 		return connector.getConnection();
@@ -152,11 +165,7 @@ public abstract class EPFDbWriter {
 	public final void releaseConnection(Connection connection)
 			throws EPFDbException {
 		if (connection != null) {
-			try {
-				connection.close();
-			} catch (SQLException e) {
-				throw new EPFDbException(e.getMessage());
-			}
+			connector.releaseConnection(connection);
 		}
 	}
 

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.importer;
 
 import com.spazzmania.epf.dao.EPFDbException;
 import com.spazzmania.epf.dao.EPFDbWriter;

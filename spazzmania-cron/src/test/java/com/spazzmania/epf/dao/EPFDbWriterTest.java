@@ -8,7 +8,7 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.spazzmania.epf.ingester.EPFExportType;
+import com.spazzmania.epf.importer.EPFExportType;
 
 public class EPFDbWriterTest {
 	
@@ -58,27 +58,15 @@ public class EPFDbWriterTest {
 	}
 	
 	@Test
-	public void testGetConnection() throws SQLException {
-		EasyMock.reset(dbConnector);
-		dbConnector.getConnection();
-		EasyMock.expectLastCall().andReturn(connection).times(1);
-		EasyMock.replay(dbConnector);
-		
-		dbWriter.getConnection();
-		
-		EasyMock.verify(dbConnector);
-	}
-
-	@Test
 	public void testReleaseConnection() throws SQLException, EPFDbException {
-		EasyMock.reset(connection);
-		connection.close();
+		EasyMock.reset(dbConnector);
+		dbConnector.releaseConnection(connection);
 		EasyMock.expectLastCall().times(1);
-		EasyMock.replay(connection);
+		EasyMock.replay(dbConnector);
 		
 		dbWriter.releaseConnection(connection);
 		
-		EasyMock.verify(connection);
+		EasyMock.verify(dbConnector);
 	}
 
 }

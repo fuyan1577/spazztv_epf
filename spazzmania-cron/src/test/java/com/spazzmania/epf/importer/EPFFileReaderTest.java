@@ -1,4 +1,4 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.importer;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -7,6 +7,10 @@ import junit.framework.Assert;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.spazzmania.epf.importer.EPFFileFormatException;
+import com.spazzmania.epf.importer.EPFFileReader;
+import com.spazzmania.epf.importer.EPFImportTranslator;
 
 public class EPFFileReaderTest {
 

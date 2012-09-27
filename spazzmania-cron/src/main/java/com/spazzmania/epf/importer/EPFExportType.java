@@ -1,4 +1,4 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.importer;
 
 public enum EPFExportType {
 	FULL, INCREMENTAL, FLAT;

@@ -1,4 +1,4 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.importer;
 
 import java.io.FileNotFoundException;
 import java.util.LinkedHashMap;
@@ -9,6 +9,11 @@ import org.junit.Test;
 
 import com.spazzmania.epf.dao.EPFDbException;
 import com.spazzmania.epf.dao.EPFDbWriter;
+import com.spazzmania.epf.importer.EPFExportType;
+import com.spazzmania.epf.importer.EPFFileFormatException;
+import com.spazzmania.epf.importer.EPFFileReader;
+import com.spazzmania.epf.importer.EPFImportTask;
+import com.spazzmania.epf.importer.EPFImportTranslator;
 
 public class EPFImportTaskTest {
 

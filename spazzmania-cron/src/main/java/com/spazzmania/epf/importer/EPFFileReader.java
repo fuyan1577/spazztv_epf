@@ -1,4 +1,4 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.importer;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;

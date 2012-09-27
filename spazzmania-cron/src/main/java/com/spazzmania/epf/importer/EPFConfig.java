@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.importer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,12 +32,14 @@ public class EPFConfig {
 	public static String EPF_DIRECTORY_PATH = "directoryPath";
 	public static String EPF_MAX_THREADS = "maxThreads";
 	public static String EPF_ALLOW_EXTENSIONS = "allowExtensions";
+	public static String EPF_SKIP_KEY_VIOLATORS = "skipKeyViolators";
 
 	private List<String> whiteList;
 	private List<String> blackList;
 	private String directoryPath;
 	private int maxThreads;
 	private boolean allowExtensions;
+	private boolean skipKeyViolators = false;
 
 	public EPFConfig() {
 		whiteList = new ArrayList<String>();
@@ -79,7 +81,7 @@ public class EPFConfig {
 		try {
 			configObj = (JSONObject) parser.parse(configJson);
 		} catch (ParseException e) {
-			throw new RuntimeException(e);
+			throw new EPFImporterException(e.getMessage());
 		}
 
 		checkConfiguration(configObj);
@@ -89,6 +91,10 @@ public class EPFConfig {
 
 		if (configObj.get(EPF_ALLOW_EXTENSIONS) != null) {
 			allowExtensions = (Boolean) configObj.get(EPF_ALLOW_EXTENSIONS);
+		}
+
+		if (configObj.get(EPF_SKIP_KEY_VIOLATORS) != null) {
+			skipKeyViolators = (Boolean) configObj.get(EPF_SKIP_KEY_VIOLATORS);
 		}
 
 		checkWhiteList(configObj);
@@ -182,5 +188,13 @@ public class EPFConfig {
 
 	public void setAllowExtensions(boolean allowExtensions) {
 		this.allowExtensions = allowExtensions;
+	}
+
+	public boolean isSkipKeyViolators() {
+		return skipKeyViolators;
+	}
+
+	public void setSkipKeyViolators(boolean skipKeyViolators) {
+		this.skipKeyViolators = skipKeyViolators;
 	}
 }

@@ -1,7 +1,9 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.importer;
 
 import java.util.List;
 
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
 public class EPFImporter {
@@ -32,6 +34,58 @@ public class EPFImporter {
 	private List<String> blackList;
 	@Option(name = "-k", aliases = "--skipkeyviolators", metaVar = "skipKeyViolators", usage = "\"Ignore inserts which would violate a primary key constraint; only applies to full imports\"")
 	private boolean skipKeyViolators;
+	
+	public boolean isFlat() {
+		return flat;
+	}
+
+	public boolean isResume() {
+		return resume;
+	}
+
+	public String getDbHost() {
+		return dbHost;
+	}
+
+	public String getDbUser() {
+		return dbUser;
+	}
+
+	public String getDbPassword() {
+		return dbPassword;
+	}
+
+	public String getDbName() {
+		return dbName;
+	}
+
+	public String getRecordSep() {
+		return recordSep;
+	}
+
+	public String getFieldSep() {
+		return fieldSep;
+	}
+
+	public boolean isAllowExtensions() {
+		return allowExtensions;
+	}
+
+	public String getTablePrefix() {
+		return tablePrefix;
+	}
+
+	public List<String> getWhiteList() {
+		return whiteList;
+	}
+
+	public List<String> getBlackList() {
+		return blackList;
+	}
+
+	public boolean isSkipKeyViolators() {
+		return skipKeyViolators;
+	}
 
 	public static void printUsage() {
 		System.out
@@ -42,12 +96,25 @@ public class EPFImporter {
 				.println("       [-b regex [-b regex2 [...]]] source_directory [source_directory2 ...]");
 	}
 
+	public void parseArgs(String[] args) {
+	    final CmdLineParser parser = new CmdLineParser(this);
+	    try {
+			parser.parseArgument(args);
+		} catch (CmdLineException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
+		if (args.length > 0) {
+			EPFImporter importer = new EPFImporter();
+			importer.parseArgs(args);
+		} else {
+			printUsage();
+		}
 	}
 
 }

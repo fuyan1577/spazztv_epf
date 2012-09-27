@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.importer;
 
 /**
  * Generic exception class for EPFImporter errors.

@@ -1,4 +1,4 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.archive;
 
 public class MySQLErrorCodes {
 	public static int ER_DUP_KEY = 1022;

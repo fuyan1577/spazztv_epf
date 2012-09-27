@@ -1,4 +1,4 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.dao;
 
 public class SQL92StateCode {
 	

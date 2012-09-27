@@ -1,4 +1,4 @@
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.importer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +8,10 @@ import java.util.Map.Entry;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.spazzmania.epf.importer.EPFExportType;
+import com.spazzmania.epf.importer.EPFFileReader;
+import com.spazzmania.epf.importer.EPFImportTranslator;
 
 public class EPFImportTranslatorTest {
 

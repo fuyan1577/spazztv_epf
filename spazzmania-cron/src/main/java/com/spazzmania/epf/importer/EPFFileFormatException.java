@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.importer;
 
 /**
  * EPF File Format exception. Thrown when the EPF Input File has an invalid

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.spazzmania.epf.ingester;
+package com.spazzmania.epf.importer;
 
 import java.io.File;
 import java.io.FileNotFoundException;

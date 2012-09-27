@@ -1,8 +1,4 @@
-package com.spazzmania.epf.ingester;
-
-import static org.junit.Assert.fail;
-
-import java.util.List;
+package com.spazzmania.epf.importer;
 
 import junit.framework.Assert;
 
@@ -106,6 +102,6 @@ public class EPFConfigTest {
 			actualThrewError = true;
 		}
 		Assert.assertTrue("Expected parsing to throw error",
-				expectedThrewError = actualThrewError);
+				expectedThrewError == actualThrewError);
 	}
 }

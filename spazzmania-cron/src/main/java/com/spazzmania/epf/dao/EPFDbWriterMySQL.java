@@ -11,13 +11,19 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.mysql.jdbc.MysqlErrorNumbers;
-import com.spazzmania.epf.ingester.EPFExportType;
+import com.spazzmania.epf.importer.EPFExportType;
 
 /**
  * A MySQL Implementation of the EPFDbWriter interface.
  * <p>
  * This implementation matches the original EPF Python scripts and creates a
  * MyISAM table based on the import file definition and data.
+ * 
+ * <p/>
+ * This implementation was split into two objects EPFDbWriterMySql and
+ * EPFDbDaoMySql to simplify JUnit testing. This object creates SQL statements
+ * per the tables being imported. The EPFDbDaoMySql class is used to execute the
+ * statements.
  * 
  * <p>
  * This has three modes of import with three very different modes of operation:
@@ -48,7 +54,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s)";
 	public static String RENAME_TABLE_STMT = "ALTER TABLE %s RENAME %s";
 	public static String PRIMARY_KEY_STMT = "ALTER TABLE %s ADD CONSTRAINT PRIMARY KEY (%s)";
-	public static String INSERT_SQL_STMT = "%s INTO %s (%s) VALUES %s";
+	public static String INSERT_SQL_STMT = "%s %s INTO %s (%s) VALUES %s";
 	public static String TABLE_EXISTS_SQL = "SHOW TABLES";
 	public static String UNLOCK_TABLES = "UNLOCK TABLES";
 
@@ -62,7 +68,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	public static long INSERT_BUFFER_SIZE = 200;
 	public static int MAX_SQL_ATTEMPTS = 3;
 
-	private EPFDbDaoMySql mySqlDao;
+	private EPFDbWriterMySqlDao mySqlDao;
 
 	public static Map<String, String> TRANSLATION_MAP = Collections
 			.unmodifiableMap(new HashMap<String, String>() {
@@ -101,11 +107,25 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 	private ProcessMode processMode;
 
+	/**
+	 * Instantiate this object, <b>EPFDbWriterMySql</b>, and it's sister object
+	 * <b>EPFDbWriterMySqlDao</b>.
+	 */
 	public EPFDbWriterMySql() {
 		super();
+		mySqlDao = new EPFDbWriterMySqlDao(this);
 	}
 
-	public void setMySqlDao(EPFDbDaoMySql mySqlDao) {
+	/**
+	 * The EPFDbWriterMySqlDao is normally instantiated by this object's no-arg
+	 * class constructor.
+	 * <p/>
+	 * This method was included to allow for setting the EPFDbWriterMySqlDao in
+	 * JUnit Tests.
+	 * 
+	 * @param mySqlDao
+	 */
+	public void setMySqlDao(EPFDbWriterMySqlDao mySqlDao) {
 		this.mySqlDao = mySqlDao;
 	}
 
@@ -115,7 +135,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			throws EPFDbException {
 
 		this.tableName = getTablePrefix() + tableName;
-		//Default method is to create a temporary table and append data
+		// Default method is to create a temporary table and append data
 		this.impTableName = this.tableName + "_tmp";
 		this.uncTableName = null;
 
@@ -128,7 +148,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 				throw new EPFDbException("Table not found - cannot append data");
 			}
 			if (numberOfRows < MERGE_THRESHOLD) {
-				//Append directly to the existing table
+				// Append directly to the existing table
 				processMode = ProcessMode.APPEND;
 				this.impTableName = this.tableName;
 			} else {
@@ -143,7 +163,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			dropTable(impTableName);
 			createTable(impTableName, columnsAndTypes);
 		}
-		
+
 		insertBufferCount = 0;
 	}
 
@@ -228,13 +248,16 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 		quotedColumnType = new boolean[columnsAndTypes.size()];
 		columnNames = "";
 		int col = 0;
-		
+
 		// Full or Flat Export - Use All Columns
 		if ((exportType == EPFExportType.FULL)
 				|| (exportType == EPFExportType.FLAT)) {
-			for (Entry<String,String> columnAndType : columnsAndTypes.entrySet()) {
-				columnMap.put(Integer.valueOf(col), (String)columnAndType.getKey());
-				quotedColumnType[col] = isQuotedColumnType(columnAndType.getValue());
+			for (Entry<String, String> columnAndType : columnsAndTypes
+					.entrySet()) {
+				columnMap.put(Integer.valueOf(col),
+						(String) columnAndType.getKey());
+				quotedColumnType[col] = isQuotedColumnType(columnAndType
+						.getValue());
 				if (columnNames.length() > 0) {
 					columnNames += ",";
 				}
@@ -250,10 +273,12 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 						"Table does not exist and cannot be updated");
 			}
 
-			for (Entry<String,String> columnAndType : columnsAndTypes.entrySet()) {
+			for (Entry<String, String> columnAndType : columnsAndTypes
+					.entrySet()) {
 				if (currentColumns.contains(columnAndType.getKey())) {
 					columnMap.put(Integer.valueOf(col), columnAndType.getKey());
-					quotedColumnType[col] = isQuotedColumnType(columnAndType.getValue());
+					quotedColumnType[col] = isQuotedColumnType(columnAndType
+							.getValue());
 				}
 				if (columnNames.length() > 0) {
 					columnNames += ",";
@@ -261,7 +286,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 				columnNames += "`" + columnAndType.getKey() + "`";
 				col++;
 			}
-			
+
 			if (columnMap.size() == 0) {
 				throw new EPFDbException(
 						"No import columns match destination table");
@@ -335,8 +360,15 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			commandString = "REPLACE";
 		}
 
+		//Apply the skip key violators parameter for full imports only
+		String ignoreKeyViolators = "";
+		if (processMode == ProcessMode.IMPORT_RENAME) {
+			ignoreKeyViolators = (isSkipKeyViolators() ? "" : "IGNORE");
+		}
+
 		executeSQLStatementWithRetry(String.format(INSERT_SQL_STMT,
-				commandString, impTableName, columnNames, insertBuffer));
+				commandString, ignoreKeyViolators, impTableName, columnNames,
+				insertBuffer));
 		insertBuffer = "";
 		insertBufferCount = 0;
 	}

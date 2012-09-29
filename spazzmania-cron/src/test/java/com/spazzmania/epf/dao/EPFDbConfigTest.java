@@ -1,5 +1,6 @@
 package com.spazzmania.epf.dao;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -8,6 +9,8 @@ import junit.framework.Assert;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.spazzmania.epf.importer.EPFImporterException;
 
 public class EPFDbConfigTest {
 
@@ -46,7 +49,7 @@ public class EPFDbConfigTest {
 	}
 
 	@Test
-	public void testParseConfiguration() {
+	public void testParseConfiguration() throws EPFImporterException {
 		dbConfig.parseConfiguration(epfDbConfigJson);
 		Assert.assertTrue("Invalid jdbcDriverClass",
 				dbConfig.getDbDriverClass().equals("com.mysql.jdbc.Driver"));
@@ -63,7 +66,7 @@ public class EPFDbConfigTest {
 	}
 
 	@Test
-	public void testParseConfigurationWithDefaults() {
+	public void testParseConfigurationWithDefaults() throws EPFImporterException {
 		dbConfig.parseConfiguration(epfDbConfigJson2);
 		// Test for the default min & max connection values
 		Assert.assertTrue("Invalid minConnections", dbConfig.getMinConnections() == 5);
@@ -71,10 +74,10 @@ public class EPFDbConfigTest {
 	}
 
 	@Test
-	public void testEPFDbConnector() throws IOException {
+	public void testEPFDbConnector() throws IOException, EPFImporterException {
 		Assert.assertNotNull("EPFDbConfig.json not found for JUnit test",
 				epfDbConfigPath);
-		EPFDbConfig config = new EPFDbConfig(epfDbConfigPath);
+		EPFDbConfig config = new EPFDbConfig(new File(epfDbConfigPath));
 		Assert.assertNotNull("Invalid dbJdbcDriverClass",config.getDbDriverClass());
 		Assert.assertNotNull("Invalid dbJdbcUrl",config.getJdbcUrl());
 		Assert.assertNotNull("Invalid dbDefaultCatalog",config.getDefaultCatalog());

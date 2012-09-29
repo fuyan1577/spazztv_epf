@@ -1,0 +1,16 @@
+{
+    "dbConnection": {
+    	"dbDriverClass": "com.mysql.jdbc.Driver",
+	    "dbUrl": "com.jdbc.mysql:localhost/epf", 
+	    "dbUser": "epfimporter", 
+	    "dbPassword": "epf123"
+    },
+    "tablePrefix": "epf", 
+    "allowExtensions": false, 
+    "blackList": [
+        "^\\."
+    ], 
+    "whiteList": [
+        ".*?"
+    ]
+}

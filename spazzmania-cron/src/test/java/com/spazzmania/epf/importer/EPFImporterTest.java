@@ -1,5 +1,8 @@
 package com.spazzmania.epf.importer;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import junit.framework.Assert;
@@ -12,38 +15,37 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.junit.Before;
 import org.junit.Test;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
 
 public class EPFImporterTest {
 	
 	private EPFImporter epfImporter;
-	private CmdLineParser parser;
 	
 	@Before
 	public void setUp() throws Exception {
 		epfImporter = new EPFImporter();
-		parser = new CmdLineParser(epfImporter);
 	}
 
 	@Test
-	public void testMainWhiteList() throws CmdLineException {
-		String[] args = {"-w", "'whitelist1'","-w","'whitelist2'","--whitelist","'whitelist3'","-w","\"whitelist4\"","-b","blacklist1","--blacklist","blacklist2"};
-		parser.parseArgument(args);
+	public void testMainWhiteList() throws ParseException, IOException, EPFImporterException {
+		String[] args = {"-config","testdata/EPFConfig.json", "-w", "\"whitelist1\"","-w","whitelist2","--whitelist","'whitelist3'","-w","\"whitelist4\"","-b","blacklist1","--blacklist","blacklist2"};
+
+		File myFile = new File("testdata/EPFConfig.json");
+		epfImporter.parseCommandLine(args);
 		
 		int expectedCount = 4;
-		List<String>actualWhiteList = epfImporter.getWhiteList();
+		List<String>actualWhiteList = epfImporter.getConfig().getWhiteList();
 		Assert.assertTrue("Invalid whiteList parsed - no values parsed",actualWhiteList != null);
 		Assert.assertTrue(String.format("Invalid whitelist parsing, expecting %d whitelist items, actual %d",expectedCount,actualWhiteList.size()),actualWhiteList.size() == expectedCount);
 	}
 
 	@Test
-	public void testMainBlacklist() throws CmdLineException {
+	public void testMainBlacklist() throws ParseException, IOException, EPFImporterException {
 		String[] args = {"-b","blacklist1","--blacklist","blacklist2"};
-		parser.parseArgument(args);
+		
+		epfImporter.parseCommandLine(args);
 		
 		int expectedCount = 2;
-		List<String>actualBlackList = epfImporter.getBlackList();
+		List<String>actualBlackList = epfImporter.getConfig().getBlackList();
 		Assert.assertTrue("Invalid whiteList parsed - no values parsed",actualBlackList != null);
 		Assert.assertTrue(String.format("Invalid whitelist parsing, expecting %d whitelist items, actual %d",expectedCount,actualBlackList.size()),actualBlackList.size() == expectedCount);
 	}
@@ -83,8 +85,10 @@ public class EPFImporterTest {
 		                               + "-l:show ctime and sort by name otherwise: sort "
 		                               + "by ctime" );
 		options.addOption( "C", false, "list entries by columns" );
+		options.addOption( "w", "whitelist", true, "whitelist entries" );
+		options.addOption( "x", "tableprefix", true, "\"Optional prefix which will be added to all table names, e.g. 'MyPrefix_video_translation'\"");
 
-		String[] args = new String[]{ "--block-size=10", "-aAbB" };
+		String[] args = new String[]{ "--block-size=10", "-aAbB", "-w","entry1","-w","entry2","-x","temp_"};
 
 		try {
 		    // parse the command line arguments
@@ -98,6 +102,17 @@ public class EPFImporterTest {
 		        System.out.println( line.hasOption( "b" ) );
 		        System.out.println( line.hasOption( "B" ) );
 		        System.out.println( line.hasOption( "C" ) );
+		        System.out.println( line.hasOption( "all" ) );
+		        System.out.println( line.hasOption( "almost-all" ) );
+		        System.out.println( line.hasOption("whitelist"));
+		        String[] aVals = line.getOptionValues("A");
+		        System.out.printf( "A argument: %s%n",line.getOptionValue("A"));
+		        List<String>whiteList = Arrays.asList(line.getOptionValues("whitelist"));
+		        System.out.printf("WhiteList Item: %s%n",line.getOptionValue("whitelist","entryX"));
+		        for (String whiteListItem : whiteList ) {
+		        	System.out.printf("WhiteList Item: %s%n",whiteListItem);
+		        }
+		        System.out.printf("TablePrefix: %s%n",line.getOptionValue("tableprefix"));
 		    }
 		}
 		catch( ParseException exp ) {

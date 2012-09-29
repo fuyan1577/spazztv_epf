@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import com.spazzmania.epf.dao.EPFDbConfig;
 import com.spazzmania.epf.dao.EPFDbException;
@@ -28,9 +29,11 @@ public class EPFImportManager {
 	private List<String> fileList;
 	private String whiteListRegex;
 	private String blackListRegex;
+	private List<Future<Runnable>> importThreads;
 
 	public EPFImportManager(EPFConfig config, EPFDbConfig dbConfig) {
 		service = Executors.newFixedThreadPool(config.getMaxThreads());
+		
 		whiteListRegex = createRegexPattern(config.getWhiteList());
 		blackListRegex = createRegexPattern(config.getBlackList());
 		loadImportFileList(config.getDirectoryPath());
@@ -102,6 +105,7 @@ public class EPFImportManager {
 		return valid;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void loadImportThreads(EPFDbConfig dbConfig) {
 		for (String filePath : fileList) {
 			EPFFileReader fileReader;
@@ -113,7 +117,7 @@ public class EPFImportManager {
 				importTranslator = new EPFImportTranslator(fileReader);
 				dbWriter = EPFDbWriterFactory.getDbWriter(dbConfig);
 				importTask = new EPFImportTask(importTranslator, dbWriter);
-				service.execute(importTask);
+				importThreads.add((Future<Runnable>) service.submit(importTask));
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -125,7 +129,15 @@ public class EPFImportManager {
 				e.printStackTrace();
 			}
 
-			service.submit(new EPFImportTask(null, null));
 		}
+	}
+	
+	public boolean isRunning() {
+		for (Future<Runnable> f : importThreads){
+			if (!f.isDone()) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

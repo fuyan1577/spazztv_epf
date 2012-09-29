@@ -11,6 +11,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.spazzmania.epf.importer.EPFImporterException;
 
 /**
  * This object is a simple pojo for holding datasbase configuration values for
@@ -20,15 +21,15 @@ import org.json.simple.parser.ParseException;
  * 
  */
 public class EPFDbConfig {
-	public static String CONNECTION_POOL = "dbConnectionPool";
+	public static String DB_CONNECTION_POOL = "dbConnection";
 	public static String DB_DRIVER_CLASS = "dbDriverClass";
 	public static String DB_DEFAULT_CATALOG = "dbDefaultCatalog";
 	public static String DB_MIN_CONNECTIONS = "dbMinConnections";
 	public static String DB_MAX_CONNECTIONS = "dbMaxConnections";
-	public static String DB_URL = "dbJdbcUrl";
+	public static String DB_URL = "dbUrl";
 	public static String DB_USER = "dbUser";
 	public static String DB_PASSWORD = "dbPassword";
-	
+
 	private String dbDriverClass;
 	private String defaultCatalog;
 	private String jdbcUrl;
@@ -36,41 +37,61 @@ public class EPFDbConfig {
 	private String password;
 	private Long minConnections;
 	private Long maxConnections;
-	private String tablePrefix;
-	
+
 	public EPFDbConfig() {
 	}
-	
-	public EPFDbConfig(String configFilePath) throws IOException {
-		String configJson = loadConfigFile(configFilePath);
+
+	public EPFDbConfig(File configFile) throws IOException,
+			EPFImporterException {
+		String configJson = loadConfigFile(configFile);
 		parseConfiguration(configJson);
 	}
-	
-	
-	public void parseConfiguration(String configJson) {
+
+	public void parseConfiguration(String configJson)
+			throws EPFImporterException {
 		JSONParser parser = new JSONParser();
 		JSONObject connPoolObject;
 		try {
 			JSONObject json = (JSONObject) parser.parse(configJson);
-			connPoolObject = (JSONObject) json.get(CONNECTION_POOL);
+			connPoolObject = (JSONObject) json.get(DB_CONNECTION_POOL);
 		} catch (ParseException e) {
-			throw new RuntimeException(e);
+			throw new EPFImporterException(e.getMessage());
 		}
 
+		validDbConfig(connPoolObject);
+
 		// Required Values
-		dbDriverClass = verifyString(connPoolObject,
-				DB_DRIVER_CLASS);
+		dbDriverClass = verifyString(connPoolObject, DB_DRIVER_CLASS);
 		jdbcUrl = verifyString(connPoolObject, DB_URL);
 		username = verifyString(connPoolObject, DB_USER);
 		password = verifyString(connPoolObject, DB_PASSWORD);
 
 		// Optional values
-		defaultCatalog = (String) connPoolObject
-				.get(DB_DEFAULT_CATALOG);
-		minConnections = verifyLongDefault(connPoolObject,
-				DB_MIN_CONNECTIONS, EPFDbConnector.DEFAULT_MIN_CONNECTIONS);
-		maxConnections = verifyLongDefault(connPoolObject,
-				DB_MAX_CONNECTIONS, EPFDbConnector.DEFAULT_MAX_CONNECTIONS);
+		defaultCatalog = (String) connPoolObject.get(DB_DEFAULT_CATALOG);
+		minConnections = verifyLongDefault(connPoolObject, DB_MIN_CONNECTIONS,
+				EPFDbConnector.DEFAULT_MIN_CONNECTIONS);
+		maxConnections = verifyLongDefault(connPoolObject, DB_MAX_CONNECTIONS,
+				EPFDbConnector.DEFAULT_MAX_CONNECTIONS);
+	}
+
+	private void validDbConfig(JSONObject configObj)
+			throws EPFImporterException {
+		for (Object key : configObj.keySet()) {
+			if (!isValidConfigKey((String) key)) {
+				throw new EPFImporterException("Invalid EPFConfig key: " + key);
+			}
+		}
+	}
+
+	public static boolean isValidConfigKey(String key) {
+		if (key.equals(DB_CONNECTION_POOL) || key.equals(DB_DRIVER_CLASS)
+				|| key.equals(DB_DEFAULT_CATALOG)
+				|| key.equals(DB_MIN_CONNECTIONS)
+				|| key.equals(DB_MAX_CONNECTIONS) || key.equals(DB_USER)
+				|| key.equals(DB_URL) || key.equals(DB_PASSWORD)) {
+			return true;
+		}
+		return false;
 	}
 
 	private String verifyString(JSONObject connPoolObject, String key) {
@@ -89,8 +110,8 @@ public class EPFDbConfig {
 		return (Long) connPoolObject.get(key);
 	}
 
-	private String loadConfigFile(String configFilePath) throws IOException {
-		FileInputStream stream = new FileInputStream(new File(configFilePath));
+	private String loadConfigFile(File configFile) throws IOException {
+		FileInputStream stream = new FileInputStream(configFile);
 		try {
 			FileChannel fc = stream.getChannel();
 			MappedByteBuffer bb = fc.map(FileChannel.MapMode.READ_ONLY, 0,
@@ -101,54 +122,60 @@ public class EPFDbConfig {
 			stream.close();
 		}
 	}
-	
-	
+
 	public String getDbDriverClass() {
 		return dbDriverClass;
 	}
+
 	public void setJdbcDriverClass(String dbDriverClass) {
 		this.dbDriverClass = dbDriverClass;
 	}
+
 	public String getDefaultCatalog() {
 		return defaultCatalog;
 	}
+
 	public void setDefaultCatalog(String defaultCatalog) {
 		this.defaultCatalog = defaultCatalog;
 	}
+
 	public String getJdbcUrl() {
 		return jdbcUrl;
 	}
+
 	public void setJdbcUrl(String jdbcUrl) {
 		this.jdbcUrl = jdbcUrl;
 	}
+
 	public String getUsername() {
 		return username;
 	}
+
 	public void setUsername(String username) {
 		this.username = username;
 	}
+
 	public String getPassword() {
 		return password;
 	}
+
 	public void setPassword(String password) {
 		this.password = password;
 	}
+
 	public Long getMinConnections() {
 		return minConnections;
 	}
+
 	public void setMinConnections(Long minConnections) {
 		this.minConnections = minConnections;
 	}
+
 	public Long getMaxConnections() {
 		return maxConnections;
 	}
+
 	public void setMaxConnections(Long maxConnections) {
 		this.maxConnections = maxConnections;
-	}
-	public String getTablePrefix() {
-		return tablePrefix;
-	}
-	public void setTablePrefix(String tablePrefix) {
-		this.tablePrefix = tablePrefix;
 	}
 }

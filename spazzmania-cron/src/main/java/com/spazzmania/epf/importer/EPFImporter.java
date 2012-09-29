@@ -1,90 +1,30 @@
 package com.spazzmania.epf.importer;
 
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
+
+import com.spazzmania.epf.dao.EPFDbConfig;
 
 public class EPFImporter {
 
-	@Option(name = "-f", aliases = "--flat", metaVar = "flat", usage = "\"Import EPF Flat files, using values from EPFFlat.config if not overridden\"")
-	private boolean flat;
-	@Option(name = "-r", aliases = "--resume", metaVar = "resume", usage = "\"Resume the most recent import according to the relevant .json status file (EPFStatusIncremental.json if -i, otherwise EPFStatusFull.json)\"")
-	private boolean resume;
-	@Option(name = "-d", aliases = "--dbhost", metaVar = "dbHost", usage = "\"The hostname of the database (default is localhost)\"")
-	private String dbHost;
-	@Option(name = "-u", aliases = "--dbuser", metaVar = "dbUser", usage = "\"The user which will execute the database commands; must have table create/drop priveleges\"")
-	private String dbUser;
-	@Option(name = "-p", aliases = "--dbpassword", metaVar = "dbPassword", usage = "\"The user's password for the database\"")
-	private String dbPassword;
-	@Option(name = "-n", aliases = "--dbname", metaVar = "dbName", usage = "\"The name of the database to connect to\"")
-	private String dbName;
-	@Option(name = "-s", aliases = "--recordseparator", metaVar = "recordSep", usage = "\"The string separating records in the file\"")
-	private String recordSep;
-	@Option(name = "-t", aliases = "--fieldseparator", metaVar = "fieldSep", usage = "\"The string separating fields in the file\"")
-	private String fieldSep;
-	@Option(name = "-a", aliases = "--allowextensions", metaVar = "allowExtensions", usage = "\"Include files with dots in their names in the import\"")
-	private boolean allowExtensions;
-	@Option(name = "-x", aliases = "--tableprefix", metaVar = "tablePrefix", usage = "\"Optional prefix which will be added to all table names, e.g. 'MyPrefix_video_translation'\"")
-	private String tablePrefix;
-	@Option(name = "-w", aliases = "--whitelist", metaVar = "<whiteList>", usage = "\"A regular expression to add to the whiteList; repeated -w arguments will append\"")
-	private List<String> whiteList;
-	@Option(name = "-b", aliases = "--blacklist", metaVar = "<blackList>", usage = "\"A regular expression to add to the whiteList; repeated -b arguments will append\"")
-	private List<String> blackList;
-	@Option(name = "-k", aliases = "--skipkeyviolators", metaVar = "skipKeyViolators", usage = "\"Ignore inserts which would violate a primary key constraint; only applies to full imports\"")
-	private boolean skipKeyViolators;
-	
-	public boolean isFlat() {
-		return flat;
+	public static String EPF_CONFIG_DEFAULT = "./EPFConfig.json";
+
+	private EPFConfig config;
+	private EPFDbConfig dbConfig;
+
+	public EPFConfig getConfig() {
+		return config;
 	}
 
-	public boolean isResume() {
-		return resume;
-	}
-
-	public String getDbHost() {
-		return dbHost;
-	}
-
-	public String getDbUser() {
-		return dbUser;
-	}
-
-	public String getDbPassword() {
-		return dbPassword;
-	}
-
-	public String getDbName() {
-		return dbName;
-	}
-
-	public String getRecordSep() {
-		return recordSep;
-	}
-
-	public String getFieldSep() {
-		return fieldSep;
-	}
-
-	public boolean isAllowExtensions() {
-		return allowExtensions;
-	}
-
-	public String getTablePrefix() {
-		return tablePrefix;
-	}
-
-	public List<String> getWhiteList() {
-		return whiteList;
-	}
-
-	public List<String> getBlackList() {
-		return blackList;
-	}
-
-	public boolean isSkipKeyViolators() {
-		return skipKeyViolators;
+	public EPFDbConfig getDbConfig() {
+		return dbConfig;
 	}
 
 	public static void printUsage() {
@@ -96,25 +36,169 @@ public class EPFImporter {
 				.println("       [-b regex [-b regex2 [...]]] source_directory [source_directory2 ...]");
 	}
 
-	public void parseArgs(String[] args) {
-	    final CmdLineParser parser = new CmdLineParser(this);
-	    try {
-			parser.parseArgument(args);
-		} catch (CmdLineException e) {
-			e.printStackTrace();
+	private void updateConfigWithCommandLineArguments(CommandLine line) {
+		for (Object lineArg : line.getArgList()) {
+			String arg = lineArg.toString();
+			if (arg.equals("dburl")) {
+				dbConfig.setJdbcUrl(line.getOptionValue(arg));
+			} else if (arg.equals("dbuser")) {
+				dbConfig.setUsername(line.getOptionValue(arg));
+			} else if (arg.equals("dbpassword")) {
+				dbConfig.setPassword(line.getOptionValue(arg));
+			} else if (arg.equals("dbdriver")) {
+				dbConfig.setJdbcDriverClass(line.getOptionValue(arg));
+			} else if (arg.equals("allowextensions")) {
+				config.setAllowExtensions(true);
+			} else if (arg.equals("tableprefix")) {
+				config.setTablePrefix(line.getOptionValue(arg));
+			} else if (arg.equals("whitelist")) {
+				config.setWhiteList(Arrays.asList(line.getOptionValues(arg)));
+			} else if (arg.equals("blacklist")) {
+				config.setBlackList(Arrays.asList(line.getOptionValues(arg)));
+			} else if (arg.equals("skipkeyviolators")) {
+				config.setSkipKeyViolators(true);
+			}
 		}
 	}
-	
+
+	public Options getOptions() {
+		Options options = new Options();
+		options.addOption("f", "flat", false,
+				"\"Import EPF Flat files, using values from EPFFlat.config if not overridden\"");
+		options.addOption(
+				"r",
+				"resume",
+				false,
+				"\"Resume the most recent import according to the relevant .json status file (EPFStatusIncremental.json if -i, otherwise EPFStatusFull.json);\"");
+		options.addOption("d", "dbhost", true,
+				"\"The hostname of the database (default is localhost);\"");
+		options.addOption(
+				"u",
+				"dbuser",
+				true,
+				"\"The user which will execute the database commands; must have table create/drop priveleges\"");
+		options.addOption("p", "dbpassword", true,
+				"\"The user's password for the database\"");
+		options.addOption("n", "dbname", true,
+				"\"The name of the database to connect to\"");
+		options.addOption("n", "dbname", true,
+				"\"The name of the database to connect to\"");
+		options.addOption("t", "max_threads", true,
+				"\"The maximum concurrently executing threads. Default to 8\"");
+		options.addOption("a", "allowextensions", false,
+				"\"Include files with dots in their names in the import\"");
+		options.addOption(
+				"x",
+				"tableprefix",
+				true,
+				"\"Optional prefix which will be added to all table names, e.g. 'MyPrefix_video_translation'\"");
+		options.addOption(
+				"w",
+				"whitelist",
+				true,
+				"\"A regular expression to add to the whiteList; repeated -w arguments will append\"");
+		options.addOption(
+				"b",
+				"blacklist",
+				true,
+				"\"A regular expression to add to the whiteList; repeated -b arguments will append\"");
+		options.addOption(
+				"k",
+				"skipkeyviolators",
+				false,
+				"\"Ignore inserts which would violate a primary key constraint; only applies to full imports\"");
+		options.addOption(
+				"config",
+				true,
+				"\"The configuration file path and name. Defaults to EPFConfig.json in the local directory\"");
+		options.addOption(
+				"db_config",
+				true,
+				"\"The configuration file path and name. Defaults to EPFConfig.json in the local directory\"");
+		return options;
+	}
+
+	public EPFConfig loadConfig(String configPath) throws IOException,
+			EPFImporterException {
+		if (configPath == null) {
+			configPath = EPF_CONFIG_DEFAULT;
+		}
+
+		return new EPFConfig(new File(configPath));
+	}
+
+	public EPFDbConfig loadDbConfig(String configPath) throws IOException,
+			EPFImporterException {
+		if (configPath == null) {
+			configPath = EPF_CONFIG_DEFAULT;
+		}
+
+		return new EPFDbConfig(new File(configPath));
+	}
+
 	/**
+	 * Parse the command line arguments and set the values in EPFConfig and
+	 * EPFDbConfig.
+	 * 
+	 * <p/>
+	 * The default configuration file for both EPFConfig and EPFDbConfig are the
+	 * same file, <i>EPFConfig.json</i>.
+	 * <p/>
+	 * Config files are loaded first. Any specified command line options
+	 * override the values in the JSON configuration files.
+	 * 
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public void parseCommandLine(String[] args) throws ParseException,
+			IOException, EPFImporterException {
+		CommandLineParser parser = new PosixParser();
+		// Get the command line arguments
+		CommandLine line = parser.parse(getOptions(), args);
+
+		// Load the configurations
+		String configFile = line.getOptionValue("config");
+		config = loadConfig(configFile);
+		String dbConfigFile = line.getOptionValue("config");
+		if (line.hasOption("db_config")) {
+			dbConfigFile = line.getOptionValue("db_config");
+		}
+		dbConfig = loadDbConfig(dbConfigFile);
+
+		// Override the configurations with any specified command line args
+		updateConfigWithCommandLineArguments(line);
+	}
+
+	public void runImporterJob() {
+		EPFImportManager importManager = new EPFImportManager(config, dbConfig);
+		// Wait for the EPFImportManager to complete
+		// Check every 60 seconds if any threads are still executing
+
+		while (true) {
+			if (!importManager.isRunning()) {
+				break;
+			}
+			try {
+				Thread.sleep(60000);
+			} catch (InterruptedException e) {
+				// Ignore
+			}
+		}
+	}
+
+	/**
+	 * @param args
+	 * @throws EPFImporterException
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public static void main(String[] args) throws ParseException, IOException,
+			EPFImporterException {
 		if (args.length > 0) {
 			EPFImporter importer = new EPFImporter();
-			importer.parseArgs(args);
+			importer.parseCommandLine(args);
+			importer.runImporterJob();
 		} else {
 			printUsage();
 		}
 	}
-
 }

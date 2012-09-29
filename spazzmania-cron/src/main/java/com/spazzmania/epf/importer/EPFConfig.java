@@ -17,6 +17,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.spazzmania.epf.dao.EPFDbConfig;
+
 /**
  * A simple object to parse the EPFConfig.json file and hold the values.
  * 
@@ -33,13 +35,17 @@ public class EPFConfig {
 	public static String EPF_MAX_THREADS = "maxThreads";
 	public static String EPF_ALLOW_EXTENSIONS = "allowExtensions";
 	public static String EPF_SKIP_KEY_VIOLATORS = "skipKeyViolators";
+	public static String EPF_TABLE_PREFIX = "tablePrefix";
+
+	public static int EPF_MAX_THREADS_DEFAULT = 8;
 
 	private List<String> whiteList;
 	private List<String> blackList;
 	private String directoryPath;
-	private int maxThreads;
-	private boolean allowExtensions;
+	private int maxThreads = EPF_MAX_THREADS_DEFAULT;
+	private boolean allowExtensions = false;
 	private boolean skipKeyViolators = false;
+	private String tablePrefix = "";
 
 	public EPFConfig() {
 		whiteList = new ArrayList<String>();
@@ -55,20 +61,26 @@ public class EPFConfig {
 	private void checkConfiguration(JSONObject configObj)
 			throws EPFImporterException {
 		for (Object key : configObj.keySet()) {
-			if (!isValidConfigKey((String)key)) {
-				throw new EPFImporterException("Invalid EPFConfig key: " + key);
-			}
-			if (JSONObject.class
-					.isAssignableFrom(configObj.get(key).getClass())) {
-				checkConfiguration((JSONObject) configObj.get(key));
+			// Skip over any DbConfig keys
+			if (!EPFDbConfig.isValidConfigKey((String) key)) {
+				if (!isValidConfigKey((String) key)) {
+					throw new EPFImporterException("Invalid EPFConfig key: "
+							+ key);
+				}
+				if (JSONObject.class.isAssignableFrom(configObj.get(key)
+						.getClass())) {
+					checkConfiguration((JSONObject) configObj.get(key));
+				}
 			}
 		}
 	}
 
 	private boolean isValidConfigKey(String key) {
-		if (key.equals(EPF_ALLOW_EXTENSIONS) || key.equals(EPF_BLACKLIST)
-				|| key.equals(EPF_DIRECTORY_PATH)
-				|| key.equals(EPF_MAX_THREADS) || key.equals(EPF_WHITELIST)) {
+		if (key.equals(EPF_ALLOW_EXTENSIONS) || key.equals(EPF_WHITELIST)
+				|| key.equals(EPF_BLACKLIST) || key.equals(EPF_DIRECTORY_PATH)
+				|| key.equals(EPF_MAX_THREADS) || key.equals(EPF_WHITELIST)
+				|| key.equals(EPF_TABLE_PREFIX)
+				|| key.equals(EPF_SKIP_KEY_VIOLATORS)) {
 			return true;
 		}
 		return false;
@@ -86,8 +98,11 @@ public class EPFConfig {
 
 		checkConfiguration(configObj);
 
-		// Required Values
-		directoryPath = verifyString(configObj, EPF_DIRECTORY_PATH);
+		if (configObj.get(EPF_DIRECTORY_PATH) != null) {
+			directoryPath = (String) configObj.get(EPF_DIRECTORY_PATH);
+		} else {
+			directoryPath = System.getProperty("user.dir");
+		}
 
 		if (configObj.get(EPF_ALLOW_EXTENSIONS) != null) {
 			allowExtensions = (Boolean) configObj.get(EPF_ALLOW_EXTENSIONS);
@@ -95,6 +110,14 @@ public class EPFConfig {
 
 		if (configObj.get(EPF_SKIP_KEY_VIOLATORS) != null) {
 			skipKeyViolators = (Boolean) configObj.get(EPF_SKIP_KEY_VIOLATORS);
+		}
+
+		if (configObj.get(EPF_MAX_THREADS) != null) {
+			maxThreads = (Integer) configObj.get(EPF_MAX_THREADS);
+		}
+
+		if (configObj.get(EPF_TABLE_PREFIX) != null) {
+			tablePrefix = (String) configObj.get(EPF_TABLE_PREFIX);
 		}
 
 		checkWhiteList(configObj);
@@ -119,14 +142,6 @@ public class EPFConfig {
 		for (int i = 0; i < bList.size(); i++) {
 			blackList.add((String) bList.get(i));
 		}
-	}
-
-	private String verifyString(JSONObject connPoolObject, String key) {
-		if (connPoolObject.get(key) == null) {
-			throw new RuntimeException(String.format(
-					"Missing EPFDbConnector Parameter: %s", key));
-		}
-		return (String) connPoolObject.get(key);
 	}
 
 	private String loadConfigFile(File configFile) throws IOException {
@@ -196,5 +211,13 @@ public class EPFConfig {
 
 	public void setSkipKeyViolators(boolean skipKeyViolators) {
 		this.skipKeyViolators = skipKeyViolators;
+	}
+
+	public String getTablePrefix() {
+		return tablePrefix;
+	}
+
+	public void setTablePrefix(String tablePrefix) {
+		this.tablePrefix = tablePrefix;
 	}
 }

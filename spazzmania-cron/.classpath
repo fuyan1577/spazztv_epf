@@ -20,5 +20,8 @@
 	<classpathentry kind="lib" path="lib/slf4j-log4j12-1.6.1.jar"/>
 	<classpathentry kind="lib" path="lib/bonecp-0.7.1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-cli-1.2.jar"/>
+	<classpathentry kind="lib" path="lib/cglib-nodep-2.2.2.jar"/>
+	<classpathentry kind="lib" path="lib/javassist-3.16.1-GA.jar"/>
+	<classpathentry kind="lib" path="lib/powermock-easymock-1.4.12-full.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.mysql.jdbc.MysqlErrorNumbers;
-import com.spazzmania.epf.ingester.EPFExportType;
+import com.spazzmania.epf.importer.EPFExportType;
 
 /**
  * A MySQL Implementation of the EPFDbWriter interface.
@@ -62,7 +62,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	public static long INSERT_BUFFER_SIZE = 200;
 	public static int MAX_SQL_ATTEMPTS = 3;
 
-	private EPFDbDaoMySql mySqlDao;
+	private EPFDbWriterMySqlDao mySqlDao;
 
 	public static Map<String, String> TRANSLATION_MAP = Collections
 			.unmodifiableMap(new HashMap<String, String>() {
@@ -105,7 +105,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 		super();
 	}
 
-	public void setMySqlDao(EPFDbDaoMySql mySqlDao) {
+	public void setMySqlDao(EPFDbWriterMySqlDao mySqlDao) {
 		this.mySqlDao = mySqlDao;
 	}
 

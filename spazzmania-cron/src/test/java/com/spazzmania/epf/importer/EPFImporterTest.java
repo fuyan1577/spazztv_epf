@@ -9,6 +9,7 @@ import junit.framework.Assert;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -27,7 +28,7 @@ public class EPFImporterTest {
 
 	@Test
 	public void testMainWhiteList() throws ParseException, IOException, EPFImporterException {
-		String[] args = {"-config","testdata/EPFConfig.json", "-w", "\"whitelist1\"","-w","whitelist2","--whitelist","'whitelist3'","-w","\"whitelist4\"","-b","blacklist1","--blacklist","blacklist2"};
+		String[] args = {"--config","testdata/EPFConfig.json", "-w", "\"whitelist1\"","-w","whitelist2","--whitelist","'whitelist3'","-w","\"whitelist4\"","-b","blacklist1","--blacklist","blacklist2"};
 
 		File myFile = new File("testdata/EPFConfig.json");
 		epfImporter.parseCommandLine(args);
@@ -40,9 +41,22 @@ public class EPFImporterTest {
 
 	@Test
 	public void testMainBlacklist() throws ParseException, IOException, EPFImporterException {
-		String[] args = {"-b","blacklist1","--blacklist","blacklist2"};
+		String[] args = {"-config","testdata/EPFConfig.json", "-b","blacklist1","--blacklist","blacklist2"};
 		
 		epfImporter.parseCommandLine(args);
+		
+		int expectedCount = 2;
+		List<String>actualBlackList = epfImporter.getConfig().getBlackList();
+		Assert.assertTrue("Invalid whiteList parsed - no values parsed",actualBlackList != null);
+		Assert.assertTrue(String.format("Invalid whitelist parsing, expecting %d whitelist items, actual %d",expectedCount,actualBlackList.size()),actualBlackList.size() == expectedCount);
+	}
+	
+	@Test
+	public void testRunImporterJob() {
+		String[] args = {"-config","testdata/EPFConfig.json", "-b","blacklist1","--blacklist","blacklist2"};
+		
+		epfImporter.setPauseInterval(1000);
+		epfImporter.runImporterJob();
 		
 		int expectedCount = 2;
 		List<String>actualBlackList = epfImporter.getConfig().getBlackList();
@@ -88,12 +102,12 @@ public class EPFImporterTest {
 		options.addOption( "w", "whitelist", true, "whitelist entries" );
 		options.addOption( "x", "tableprefix", true, "\"Optional prefix which will be added to all table names, e.g. 'MyPrefix_video_translation'\"");
 
-		String[] args = new String[]{ "--block-size=10", "-aAbB", "-w","entry1","-w","entry2","-x","temp_"};
+		String[] args = { "--block-size=10", "-aAbB", "-w","entry1","-w","entry2","-x","temp_"};
 
 		try {
 		    // parse the command line arguments
 		    CommandLine line = parser.parse( options, args );
-
+		    
 		    // validate that block-size has been set
 		    if( line.hasOption( "block-size" ) ) {
 		        // print the value of block-size

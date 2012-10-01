@@ -9,12 +9,12 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.spazzmania.epf.ingester.EPFExportType;
+import com.spazzmania.epf.importer.EPFExportType;
 
 public class EPFDbWriterMySqlTest {
 
 	EPFDbWriter dbWriter;
-	EPFDbDaoMySql mySqlDao;
+	EPFDbWriterMySqlDao mySqlDao;
 	String tablePrefix = "test_";
 	String tableName = "epftable";
 	LinkedHashMap<String, String> columnsAndTypes;
@@ -22,7 +22,7 @@ public class EPFDbWriterMySqlTest {
 
 	@Before
 	public void setUp() throws Exception {
-		mySqlDao = EasyMock.createMock(EPFDbDaoMySql.class);
+		mySqlDao = EasyMock.createMock(EPFDbWriterMySqlDao.class);
 		dbWriter = new EPFDbWriterMySql();
 		dbWriter.setTablePrefix(tablePrefix);
 		((EPFDbWriterMySql) dbWriter).setMySqlDao(mySqlDao);

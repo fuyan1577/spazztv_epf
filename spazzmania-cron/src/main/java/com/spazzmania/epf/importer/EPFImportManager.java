@@ -18,7 +18,7 @@ import com.spazzmania.epf.dao.EPFDbWriter;
 import com.spazzmania.epf.dao.EPFDbWriterFactory;
 
 /**
- * This is the work manager class of the EPFImport process that queues all
+ * This is the main work manager class of the EPFImport process that queues all
  * EPFImportTasks.
  * 
  * @author Thomas Billingsley
@@ -31,6 +31,10 @@ public class EPFImportManager {
 	private String blackListRegex;
 	private List<Future<Runnable>> importThreads;
 
+	public EPFImportManager() {
+		super();
+	}
+	
 	public EPFImportManager(EPFConfig config, EPFDbConfig dbConfig) {
 		service = Executors.newFixedThreadPool(config.getMaxThreads());
 		
@@ -108,24 +112,17 @@ public class EPFImportManager {
 	@SuppressWarnings("unchecked")
 	public void loadImportThreads(EPFDbConfig dbConfig) {
 		for (String filePath : fileList) {
-			EPFFileReader fileReader;
-			EPFImportTranslator importTranslator;
-			EPFDbWriter dbWriter;
-			EPFImportTask importTask;
 			try {
-				fileReader = new EPFFileReader(filePath);
-				importTranslator = new EPFImportTranslator(fileReader);
-				dbWriter = EPFDbWriterFactory.getDbWriter(dbConfig);
-				importTask = new EPFImportTask(importTranslator, dbWriter);
+				EPFFileReader fileReader = new EPFFileReader(filePath);
+				EPFImportTranslator importTranslator = new EPFImportTranslator(fileReader);
+				EPFDbWriter dbWriter = EPFDbWriterFactory.getDbWriter(dbConfig);
+				EPFImportTask importTask = new EPFImportTask(importTranslator, dbWriter);
 				importThreads.add((Future<Runnable>) service.submit(importTask));
 			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (EPFFileFormatException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (EPFDbException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -139,5 +136,13 @@ public class EPFImportManager {
 			}
 		}
 		return false;
+	}
+
+	public List<String> getFileList() {
+		return fileList;
+	}
+
+	public void setFileList(List<String> fileList) {
+		this.fileList = fileList;
 	}
 }

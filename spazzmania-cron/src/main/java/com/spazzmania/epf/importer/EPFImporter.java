@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
@@ -18,6 +19,9 @@ public class EPFImporter {
 
 	private EPFConfig config;
 	private EPFDbConfig dbConfig;
+	
+	public static int EPF_PAUSE_INTERVAL;
+	private int pauseInterval = EPF_PAUSE_INTERVAL;
 
 	public EPFConfig getConfig() {
 		return config;
@@ -25,6 +29,10 @@ public class EPFImporter {
 
 	public EPFDbConfig getDbConfig() {
 		return dbConfig;
+	}
+	
+	public void setPauseInterval(int pauseInterval) {
+		this.pauseInterval = pauseInterval;
 	}
 
 	public static void printUsage() {
@@ -37,8 +45,8 @@ public class EPFImporter {
 	}
 
 	private void updateConfigWithCommandLineArguments(CommandLine line) {
-		for (Object lineArg : line.getArgList()) {
-			String arg = lineArg.toString();
+		for (Option option : line.getOptions()) {
+			String arg = option.getLongOpt();
 			if (arg.equals("dburl")) {
 				dbConfig.setJdbcUrl(line.getOptionValue(arg));
 			} else if (arg.equals("dbuser")) {
@@ -108,10 +116,12 @@ public class EPFImporter {
 				false,
 				"\"Ignore inserts which would violate a primary key constraint; only applies to full imports\"");
 		options.addOption(
+				"c",
 				"config",
 				true,
 				"\"The configuration file path and name. Defaults to EPFConfig.json in the local directory\"");
 		options.addOption(
+				"d",
 				"db_config",
 				true,
 				"\"The configuration file path and name. Defaults to EPFConfig.json in the local directory\"");
@@ -154,7 +164,7 @@ public class EPFImporter {
 		CommandLineParser parser = new PosixParser();
 		// Get the command line arguments
 		CommandLine line = parser.parse(getOptions(), args);
-
+ 
 		// Load the configurations
 		String configFile = line.getOptionValue("config");
 		config = loadConfig(configFile);
@@ -178,7 +188,7 @@ public class EPFImporter {
 				break;
 			}
 			try {
-				Thread.sleep(60000);
+				Thread.sleep(pauseInterval);
 			} catch (InterruptedException e) {
 				// Ignore
 			}

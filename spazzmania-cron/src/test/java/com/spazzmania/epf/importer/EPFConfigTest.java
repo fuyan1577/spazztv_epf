@@ -1,5 +1,8 @@
 package com.spazzmania.epf.importer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import junit.framework.Assert;
 
 import org.junit.Test;
@@ -19,12 +22,13 @@ public class EPFConfigTest {
 			+ "        \".*?\"" + "    ]" + "}";
 
 	String epfConfig1 = "{"
-			+ "    \"directoryPath\": \"testdata/epf_files/\", "
+			+ "    \"directoryPaths\": [\"testdata/epf_files/\"], "
 			+ "    \"allowExtensions\": false, " + "    \"blackList\": ["
 			+ "        \"^\\.\"" + "    ], " + "    \"whiteList\": ["
 			+ "        \".*?\"" + "    ]" + "}";
 
-	String epfConfig2 = "{" + "	\"directoryPath\" : \"testdata/epf_files/\","
+	String epfConfig2 = "{"
+			+ "	\"directoryPaths\" : [\"testdata/epf_files/\"],"
 			+ "    \"allowExtensions\": false, " + "    \"blackList\": ["
 			+ "        \"blfile1\"," + "        \"blfile2\","
 			+ "        \"blfile3\"" + "    ], " + "    \"whiteList\": ["
@@ -35,7 +39,8 @@ public class EPFConfigTest {
 	public void testConfig1() throws EPFImporterException {
 		config = new EPFConfig();
 		config.parseConfiguration(epfConfig1);
-		String expectedDirectoryPath = "testdata/epf_files/";
+		List<String> expectedDirectoryPath = new ArrayList<String>();
+		expectedDirectoryPath.add("testdata/epf_files/");
 		boolean expectedAllowExtensions = false;
 
 		Assert.assertTrue("Invalid number of blacklist elements", config
@@ -44,8 +49,8 @@ public class EPFConfigTest {
 				.getWhiteList().size() == 1);
 		Assert.assertTrue(String.format(
 				"Invalid directoryPath, expected %s, actual %s",
-				expectedDirectoryPath, config.getDirectoryPath()),
-				expectedDirectoryPath.equals(config.getDirectoryPath()));
+				expectedDirectoryPath, config.getDirectoryPaths()),
+				expectedDirectoryPath.equals(config.getDirectoryPaths()));
 		Assert.assertTrue(String.format(
 				"Invalid allowExtensions, expected %s, actual %s",
 				Boolean.toString(expectedAllowExtensions),
@@ -57,7 +62,8 @@ public class EPFConfigTest {
 	public void testConfig2() throws EPFImporterException {
 		config = new EPFConfig();
 		config.parseConfiguration(epfConfig2);
-		String expectedDirectoryPath = "testdata/epf_files/";
+		List<String> expectedDirectoryPath = new ArrayList<String>();
+		expectedDirectoryPath.add("testdata/epf_files/");
 		boolean expectedAllowExtensions = false;
 		String expectedBlacklistRegex = "^blfile\\d$";
 		String expectedWhitelistRegex = "^wlfile\\d$";
@@ -68,8 +74,8 @@ public class EPFConfigTest {
 				.getWhiteList().size() == 3);
 		Assert.assertTrue(String.format(
 				"Invalid directoryPath, expected %s, actual %s",
-				expectedDirectoryPath, config.getDirectoryPath()),
-				expectedDirectoryPath.equals(config.getDirectoryPath()));
+				expectedDirectoryPath, config.getDirectoryPaths()),
+				expectedDirectoryPath.equals(config.getDirectoryPaths()));
 		Assert.assertTrue(String.format(
 				"Invalid allowExtensions, expected %s, actual %s",
 				Boolean.toString(expectedAllowExtensions),

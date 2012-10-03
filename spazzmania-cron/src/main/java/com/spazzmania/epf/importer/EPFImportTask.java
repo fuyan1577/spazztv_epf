@@ -3,6 +3,8 @@
  */
 package com.spazzmania.epf.importer;
 
+import java.io.FileNotFoundException;
+
 import com.spazzmania.epf.dao.EPFDbException;
 import com.spazzmania.epf.dao.EPFDbWriter;
 
@@ -17,8 +19,9 @@ public class EPFImportTask implements Runnable {
 	EPFDbWriter dbWriter;
 	long recordCount = 0;
 
-	public EPFImportTask(EPFImportTranslator importTranslator, EPFDbWriter dbWriter) {
-		this.importTranslator = importTranslator;
+	public EPFImportTask(String filePath, EPFDbWriter dbWriter)
+			throws FileNotFoundException, EPFFileFormatException {
+		importTranslator = new EPFImportTranslator(new EPFFileReader(filePath));
 		this.dbWriter = dbWriter;
 	}
 
@@ -35,7 +38,8 @@ public class EPFImportTask implements Runnable {
 
 	public void setupImportDataStore() throws EPFDbException {
 		dbWriter.initImport(importTranslator.getExportType(),
-				importTranslator.getTableName(), importTranslator.getColumnAndTypes(),
+				importTranslator.getTableName(),
+				importTranslator.getColumnAndTypes(),
 				importTranslator.getTotalDataRecords());
 	}
 

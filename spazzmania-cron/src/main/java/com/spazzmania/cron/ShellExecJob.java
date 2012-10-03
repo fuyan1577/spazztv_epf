@@ -3,11 +3,18 @@
  */
 package com.spazzmania.cron;
 
-import org.kohsuke.args4j.Option;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+
+import com.spazzmania.epf.importer.EPFImporterException;
 
 /**
  * @author Thomas Billingsley
@@ -18,15 +25,10 @@ public class ShellExecJob implements Job {
 	public static String SHELL_PARAMETERS = "parameters";
 	public static String SHELL_DIRECTORY = "directory";
 
-	@Option(name = "--parameters", metaVar = "<parameters>", usage = "parameter arguments enclosed by \"\"")
+	//Command line arguments
 	private String parameters;
-
-	@Option(name = "--executable", metaVar = "<executable>", usage = "executable script or binary")
 	private String executable;
-
-	@Option(name = "--directory", metaVar = "<directory>", usage = "base directory for execution")
 	private String directory;
-
 	/**
 	 * @return the parameters
 	 */
@@ -78,13 +80,36 @@ public class ShellExecJob implements Job {
 		directory = dataMap.getString(SHELL_DIRECTORY);
 	}
 
-	public void parseArgs(String[] args) {
+	public void parseArgs(String[] args) throws ParseException, EPFImporterException {
+		Options options = new Options();
+		options.addOption("parameters",true,"Job Parameters");
+		options.addOption("executable",true,"Job Executable");
+		options.addOption("directory",true,"Base Directory");
+		
+		CommandLineParser parser = new PosixParser();
+		// Get the command line arguments
+		CommandLine line = parser.parse(options, args);
+		
+		for (Option option : line.getOptions()) {
+			String arg = option.getLongOpt();
+			if (arg.equals("parameters")) {
+				this.parameters = line.getOptionValue(arg);
+			}
+			if (arg.equals("executable")) {
+				this.executable = line.getOptionValue(arg);
+			}
+			if (arg.equals("directory")) {
+				this.directory = line.getOptionValue(arg);
+			}
+		}
 	}
 
 	/**
 	 * @param args
+	 * @throws EPFImporterException 
+	 * @throws ParseException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ParseException, EPFImporterException {
 		ShellExecJob job = new ShellExecJob();
 		job.parseArgs(args);
 		try {

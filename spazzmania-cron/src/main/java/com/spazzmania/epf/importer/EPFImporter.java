@@ -19,7 +19,7 @@ public class EPFImporter {
 
 	private EPFConfig config;
 	private EPFDbConfig dbConfig;
-	
+
 	public static int EPF_PAUSE_INTERVAL;
 	private int pauseInterval = EPF_PAUSE_INTERVAL;
 
@@ -27,10 +27,18 @@ public class EPFImporter {
 		return config;
 	}
 
+	public void setConfig(EPFConfig config) {
+		this.config = config;
+	}
+
 	public EPFDbConfig getDbConfig() {
 		return dbConfig;
 	}
-	
+
+	public void setDbConfig(EPFDbConfig dbConfig) {
+		this.dbConfig = dbConfig;
+	}
+
 	public void setPauseInterval(int pauseInterval) {
 		this.pauseInterval = pauseInterval;
 	}
@@ -44,7 +52,7 @@ public class EPFImporter {
 				.println("       [-b regex [-b regex2 [...]]] source_directory [source_directory2 ...]");
 	}
 
-	private void updateConfigWithCommandLineArguments(CommandLine line) {
+	private void updateConfigWithCommandLineArguments(CommandLine line) throws EPFImporterException {
 		for (Option option : line.getOptions()) {
 			String arg = option.getLongOpt();
 			if (arg.equals("dburl")) {
@@ -65,6 +73,19 @@ public class EPFImporter {
 				config.setBlackList(Arrays.asList(line.getOptionValues(arg)));
 			} else if (arg.equals("skipkeyviolators")) {
 				config.setSkipKeyViolators(true);
+			} else if (arg.equals("recordseparator")) {
+				config.setRecordSeparator(line.getOptionValue(arg));
+			} else if (arg.equals("fieldseparator")) {
+				config.setFieldSeparator(line.getOptionValue(arg));
+			} else if (arg.equals("flat")) {
+				config.setRecordSeparator(line.getOptionValue(EPFConfig.EPF_FLAT_RECORD_SEPARATOR_DEFAULT));
+				config.setFieldSeparator(line.getOptionValue(EPFConfig.EPF_FLAT_FIELD_SEPARATOR_DEFAULT));
+			}
+		}
+		
+		for (String opt : line.getArgs()) {
+			if (opt.contains("=")) {
+				throw new EPFImporterException(String.format("Unrecognized Option: %s",opt));
 			}
 		}
 	}
@@ -78,7 +99,7 @@ public class EPFImporter {
 				"resume",
 				false,
 				"\"Resume the most recent import according to the relevant .json status file (EPFStatusIncremental.json if -i, otherwise EPFStatusFull.json);\"");
-		options.addOption("d", "dbhost", true,
+		options.addOption("h", "dbhost", true,
 				"\"The hostname of the database (default is localhost);\"");
 		options.addOption(
 				"u",
@@ -164,19 +185,46 @@ public class EPFImporter {
 		CommandLineParser parser = new PosixParser();
 		// Get the command line arguments
 		CommandLine line = parser.parse(getOptions(), args);
- 
+
 		// Load the configurations
 		String configFile = line.getOptionValue("config");
-		config = loadConfig(configFile);
-		String dbConfigFile = line.getOptionValue("config");
+		if (configFile != null) {
+			config = loadConfig(configFile);
+		} else {
+			config = new EPFConfig();
+		}
+		String dbConfigFile = line.getOptionValue("db_config");
 		if (line.hasOption("db_config")) {
 			dbConfigFile = line.getOptionValue("db_config");
 		}
-		dbConfig = loadDbConfig(dbConfigFile);
+		if (dbConfigFile != null) {
+			dbConfig = loadDbConfig(dbConfigFile);
+		} else {
+			dbConfig = new EPFDbConfig();
+		}
 
 		// Override the configurations with any specified command line args
 		updateConfigWithCommandLineArguments(line);
+
+		// Verify the configuration
+		// verifyDbConfig();
 	}
+
+//	public void verifyDbConfig() throws EPFImporterException {
+//		String msg = "";
+//		if (dbConfig.getJdbcUrl() == null) {
+//			msg += " - No JDBC URL Designated";
+//		}
+//		if (dbConfig.getUsername() == null) {
+//			msg += " - No DB Username Designated";
+//		}
+//		if (dbConfig.getPassword() == null){
+//			msg += " - No DB Password Designated";
+//		}
+//		if (msg.length() > 0) {
+//			throw new EPFImporterException(msg);
+//		}
+//	}
 
 	public void runImporterJob() {
 		EPFImportManager importManager = new EPFImportManager(config, dbConfig);

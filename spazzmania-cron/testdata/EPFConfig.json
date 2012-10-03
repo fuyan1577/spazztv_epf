@@ -2,8 +2,8 @@
     "dbConnection": {
     	"dbDriverClass": "com.mysql.jdbc.Driver",
 	    "dbUrl": "com.jdbc.mysql:localhost/epf", 
-	    "dbUser": "epfimporter", 
-	    "dbPassword": "epf123"
+	    "dbUser": "webaccess", 
+	    "dbPassword": "wsc2aofi"
     },
     "tablePrefix": "epf", 
     "allowExtensions": false, 

@@ -35,10 +35,13 @@ public class EPFDbConfig {
 	private String jdbcUrl;
 	private String username;
 	private String password;
-	private Long minConnections;
-	private Long maxConnections;
+	private Long minConnections = 1L;
+	private Long maxConnections = 8L;
 
 	public EPFDbConfig() {
+		jdbcUrl = "jdbc:mysql://localhost:3306/epf";
+		username="epfimporter";
+		password="epf123";
 	}
 
 	public EPFDbConfig(File configFile) throws IOException,

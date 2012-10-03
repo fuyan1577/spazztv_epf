@@ -20,7 +20,7 @@ public class EPFReleaseUtilTest {
 	private EPFReleaseUtil epfUtil;
 	private EPFConnector epfConnector;
 	private Date aug012012;
-	private Date aug022012;
+//	private Date aug022012;
 	private Date aug062012;
 	private Date aug072012;
 	private Date aug122012;
@@ -34,7 +34,7 @@ public class EPFReleaseUtilTest {
 		epfUtil.addBlackListItem(blackListItem);
 		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy");
 		aug012012 = format.parse("01-AUG-2012");
-		aug022012 = format.parse("02-AUG-2012");
+//		aug022012 = format.parse("02-AUG-2012");
 		aug062012 = format.parse("06-AUG-2012");
 		aug072012 = format.parse("07-AUG-2012");
 		aug122012 = format.parse("12-AUG-2012");

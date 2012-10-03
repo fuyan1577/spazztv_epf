@@ -31,25 +31,38 @@ public class EPFConfig {
 
 	public static String EPF_BLACKLIST = "blackList";
 	public static String EPF_WHITELIST = "whiteList";
-	public static String EPF_DIRECTORY_PATH = "directoryPath";
+	public static String EPF_DIRECTORY_PATHS = "directoryPaths";
 	public static String EPF_MAX_THREADS = "maxThreads";
 	public static String EPF_ALLOW_EXTENSIONS = "allowExtensions";
 	public static String EPF_SKIP_KEY_VIOLATORS = "skipKeyViolators";
 	public static String EPF_TABLE_PREFIX = "tablePrefix";
+	public static String EPF_RECORD_SEPARATOR = "recordSep";
+	public static String EPF_FIELD_SEPARATOR = "fieldSep";
 
 	public static int EPF_MAX_THREADS_DEFAULT = 8;
+	public static String EPF_FIELD_SEPARATOR_DEFAULT = "\\x01";
+	public static String EPF_RECORD_SEPARATOR_DEFAULT = "\\x02";
+	public static String EPF_FLAT_FIELD_SEPARATOR_DEFAULT = "\\t";
+	public static String EPF_FLAT_RECORD_SEPARATOR_DEFAULT = "\\n";
 
 	private List<String> whiteList;
 	private List<String> blackList;
-	private String directoryPath;
+	private List<String> directoryPaths;
 	private int maxThreads = EPF_MAX_THREADS_DEFAULT;
 	private boolean allowExtensions = false;
 	private boolean skipKeyViolators = false;
 	private String tablePrefix = "";
+	private String recordSeparator = EPF_RECORD_SEPARATOR;
+	private String fieldSeparator = EPF_FIELD_SEPARATOR;
 
 	public EPFConfig() {
 		whiteList = new ArrayList<String>();
 		blackList = new ArrayList<String>();
+
+		whiteList.add(".*?");
+		blackList.add("^\\.");
+		allowExtensions = false;
+		tablePrefix = "epf";
 	}
 
 	public EPFConfig(File configFile) throws IOException, EPFImporterException {
@@ -77,7 +90,7 @@ public class EPFConfig {
 
 	private boolean isValidConfigKey(String key) {
 		if (key.equals(EPF_ALLOW_EXTENSIONS) || key.equals(EPF_WHITELIST)
-				|| key.equals(EPF_BLACKLIST) || key.equals(EPF_DIRECTORY_PATH)
+				|| key.equals(EPF_BLACKLIST) || key.equals(EPF_DIRECTORY_PATHS)
 				|| key.equals(EPF_MAX_THREADS) || key.equals(EPF_WHITELIST)
 				|| key.equals(EPF_TABLE_PREFIX)
 				|| key.equals(EPF_SKIP_KEY_VIOLATORS)) {
@@ -86,6 +99,7 @@ public class EPFConfig {
 		return false;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void parseConfiguration(String configJson)
 			throws EPFImporterException {
 		JSONParser parser = new JSONParser();
@@ -98,10 +112,12 @@ public class EPFConfig {
 
 		checkConfiguration(configObj);
 
-		if (configObj.get(EPF_DIRECTORY_PATH) != null) {
-			directoryPath = (String) configObj.get(EPF_DIRECTORY_PATH);
+		if (configObj.get(EPF_DIRECTORY_PATHS) != null) {
+			JSONArray dirPaths = (JSONArray) configObj.get(EPF_DIRECTORY_PATHS);
+			directoryPaths = (List<String>)dirPaths;
 		} else {
-			directoryPath = System.getProperty("user.dir");
+			directoryPaths = new ArrayList<String>();
+			directoryPaths.add(System.getProperty("user.dir"));
 		}
 
 		if (configObj.get(EPF_ALLOW_EXTENSIONS) != null) {
@@ -129,6 +145,7 @@ public class EPFConfig {
 		if (wList == null) {
 			return;
 		}
+		whiteList = new ArrayList<String>();
 		for (int i = 0; i < wList.size(); i++) {
 			whiteList.add((String) wList.get(i));
 		}
@@ -139,6 +156,7 @@ public class EPFConfig {
 		if (bList == null) {
 			return;
 		}
+		blackList = new ArrayList<String>();
 		for (int i = 0; i < bList.size(); i++) {
 			blackList.add((String) bList.get(i));
 		}
@@ -181,12 +199,12 @@ public class EPFConfig {
 		this.blackList = blackList;
 	}
 
-	public String getDirectoryPath() {
-		return directoryPath;
+	public List<String> getDirectoryPaths() {
+		return directoryPaths;
 	}
 
-	public void setDirectoryPath(String directoryPath) {
-		this.directoryPath = directoryPath;
+	public void setDirectoryPaths(List<String> directoryPaths) {
+		this.directoryPaths = directoryPaths;
 	}
 
 	public int getMaxThreads() {
@@ -219,5 +237,21 @@ public class EPFConfig {
 
 	public void setTablePrefix(String tablePrefix) {
 		this.tablePrefix = tablePrefix;
+	}
+
+	public String getRecordSeparator() {
+		return recordSeparator;
+	}
+
+	public void setRecordSeparator(String recordSeparator) {
+		this.recordSeparator = recordSeparator;
+	}
+
+	public String getFieldSeparator() {
+		return fieldSeparator;
+	}
+
+	public void setFieldSeparator(String fieldSeparator) {
+		this.fieldSeparator = fieldSeparator;
 	}
 }

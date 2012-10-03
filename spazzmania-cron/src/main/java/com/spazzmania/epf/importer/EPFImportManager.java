@@ -31,16 +31,12 @@ public class EPFImportManager {
 	private String blackListRegex;
 	private List<Future<Runnable>> importThreads;
 
-	public EPFImportManager() {
-		super();
-	}
-	
 	public EPFImportManager(EPFConfig config, EPFDbConfig dbConfig) {
 		service = Executors.newFixedThreadPool(config.getMaxThreads());
 		
 		whiteListRegex = createRegexPattern(config.getWhiteList());
 		blackListRegex = createRegexPattern(config.getBlackList());
-		loadImportFileList(config.getDirectoryPath());
+		loadImportFileList(config.getDirectoryPaths());
 		loadImportThreads(dbConfig);
 	}
 
@@ -60,16 +56,19 @@ public class EPFImportManager {
 		return "^" + regexPattern + "$";
 	}
 
-	public void loadImportFileList(String directoryPath) {
+	private void loadImportFileList(List<String> directoryPaths) {
 		fileList = new ArrayList<String>();
-		File dir = new File(directoryPath);
-
-		String[] children = dir.list();
-		if (children != null) {
-			for (int i = 0; i < children.length; i++) {
-				// Get filename of file or directory
-				if (isValidImportFile(children[i])) {
-					fileList.add(children[i]);
+		
+		for (String directoryPath : directoryPaths) {
+			File dir = new File(directoryPath);
+	
+			String[] children = dir.list();
+			if (children != null) {
+				for (int i = 0; i < children.length; i++) {
+					// Get filename of file or directory
+					if (isValidImportFile(children[i])) {
+						fileList.add(children[i]);
+					}
 				}
 			}
 		}
@@ -93,7 +92,7 @@ public class EPFImportManager {
 	 * @param importFile
 	 * @return
 	 */
-	public boolean isValidImportFile(String importFile) {
+	private boolean isValidImportFile(String importFile) {
 		boolean valid = true;
 		if (whiteListRegex != null) {
 			valid = false;
@@ -110,13 +109,12 @@ public class EPFImportManager {
 	}
 
 	@SuppressWarnings("unchecked")
-	public void loadImportThreads(EPFDbConfig dbConfig) {
+	private void loadImportThreads(EPFDbConfig dbConfig) {
+		importThreads = new ArrayList<Future<Runnable>>();
 		for (String filePath : fileList) {
 			try {
-				EPFFileReader fileReader = new EPFFileReader(filePath);
-				EPFImportTranslator importTranslator = new EPFImportTranslator(fileReader);
 				EPFDbWriter dbWriter = EPFDbWriterFactory.getDbWriter(dbConfig);
-				EPFImportTask importTask = new EPFImportTask(importTranslator, dbWriter);
+				EPFImportTask importTask = new EPFImportTask(filePath, dbWriter);
 				importThreads.add((Future<Runnable>) service.submit(importTask));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -125,7 +123,6 @@ public class EPFImportManager {
 			} catch (EPFDbException e) {
 				e.printStackTrace();
 			}
-
 		}
 	}
 	
@@ -136,13 +133,5 @@ public class EPFImportManager {
 			}
 		}
 		return false;
-	}
-
-	public List<String> getFileList() {
-		return fileList;
-	}
-
-	public void setFileList(List<String> fileList) {
-		this.fileList = fileList;
 	}
 }

@@ -9,15 +9,10 @@ import org.junit.Test;
 
 import com.spazzmania.epf.dao.EPFDbException;
 import com.spazzmania.epf.dao.EPFDbWriter;
-import com.spazzmania.epf.importer.EPFExportType;
-import com.spazzmania.epf.importer.EPFFileFormatException;
-import com.spazzmania.epf.importer.EPFFileReader;
-import com.spazzmania.epf.importer.EPFImportTask;
-import com.spazzmania.epf.importer.EPFImportTranslator;
 
 public class EPFImportTaskTest {
 
-	String storefrontEpfFiles = "testdata/epf_files/storefront";
+	String storefrontEpfFile = "testdata/epf_files/storefront";
 	EPFImportTask importTask;
 	EPFImportTranslator importXlator;
 	EPFDbWriter dbWriter;
@@ -31,13 +26,13 @@ public class EPFImportTaskTest {
 	public void setUp() throws FileNotFoundException, EPFFileFormatException {
 		//Setting up importXlator to read the storefront data file
 		//Setting up dbWriter as a mock object
-		EPFFileReader fileReader = new EPFFileReader(storefrontEpfFiles);
-		importXlator = new EPFImportTranslator(fileReader);
-		recordsExpected = importXlator.getTotalDataRecords();
+		EPFFileReader fileReader = new EPFFileReader(storefrontEpfFile);
 		dbWriter = EasyMock.createMock(EPFDbWriter.class);
 		
-		importTask = new EPFImportTask(importXlator,dbWriter);
+		importTask = new EPFImportTask(storefrontEpfFile,dbWriter);
 		
+		importXlator = new EPFImportTranslator(fileReader);
+		recordsExpected = importXlator.getTotalDataRecords();
 		exportType = importXlator.getExportType();
 		tableName = importXlator.getTableName();
 		columnsAndTypes = importXlator.getColumnAndTypes();
@@ -75,5 +70,4 @@ public class EPFImportTaskTest {
 		importTask.finalizeImport();
 		EasyMock.verify(dbWriter);
 	}
-
 }

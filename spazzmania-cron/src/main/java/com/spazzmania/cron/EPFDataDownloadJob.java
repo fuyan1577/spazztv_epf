@@ -3,7 +3,12 @@
  */
 package com.spazzmania.cron;
 
-import org.kohsuke.args4j.Option;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -15,6 +20,7 @@ import com.spazzmania.epf.feed.EPFConnector;
 import com.spazzmania.epf.feed.EPFConnectorImpl;
 import com.spazzmania.epf.feed.EPFDataDownloadUtil;
 import com.spazzmania.epf.feed.EPFReleaseUtil;
+import com.spazzmania.epf.importer.EPFImporterException;
 import com.spazzmania.model.util.SpazzDBUtil;
 
 /**
@@ -107,34 +113,16 @@ public class EPFDataDownloadJob implements Job {
 	public static String LOGGER_NAME = "logger_name";
 	public static String SLEEP_INTERVAL = "sleep_interval";
 
-	@Option(name = "--username", metaVar = "<username>")
+	//Command Line Arguments
 	private String username;
-
-	@Option(name = "--password", metaVar = "<password>")
 	private String password;
-
-	@Option(name = "--database", metaVar = "<database>")
 	private String database;
-
-	@Option(name = "--host", metaVar = "<host>")
 	private String host;
-
-	@Option(name = "--epf_username", metaVar = "<database>")
 	private String epfUsername;
-
-	@Option(name = "--epf_password", metaVar = "<database>")
 	private String epfPassword;
-
-	@Option(name = "--epf_baseurl", metaVar = "<database>")
 	private String epfBaseUrl = EPFConnector.EPF_BASE_URL;
-
-	@Option(name = "--download_dir", metaVar = "<downloadDirectory>")
 	private String downloadDirectory;
-
-	@Option(name = "--timeout", metaVar = "<timeOut>")
 	private Integer timeOut = 0;
-
-	@Option(name = "--sleep_interval", metaVar = "<sleepInterval>")
 	private Integer sleepInterval = 300; // Defaults to 300 seconds
 
 	private EPFDataDownloadUtil epfDownloadUtil;
@@ -160,6 +148,60 @@ public class EPFDataDownloadJob implements Job {
 		epfDownloadUtil.run();
 		logger.info(String.format("Job Completed: %s", this.getClass()
 				.getName()));
+	}
+	
+	public void parseOptions(String[] args) throws ParseException, EPFImporterException {
+		Options options = new Options();
+		options.addOption("username",true,"database username");
+		options.addOption("password",true,"database password");
+		options.addOption("database_url",true,"jdbc database url");
+		options.addOption("epf_username",true,"EPF Username");
+		options.addOption("epf_password",true,"EPF Password");
+		options.addOption("epf_baseurl",true,"EPF Base URL");
+		options.addOption("download_dir",true,"Download directory");
+		options.addOption("timeout",true,"Time to wait for availability of files on EPF: defaults to 0 (no waiting)");
+		options.addOption("sleep_interval",true,"Sleep between retries: defaults to 300 seconds");
+		
+		CommandLineParser parser = new PosixParser();
+		// Get the command line arguments
+		CommandLine line = parser.parse(options, args);
+		
+		for (Option option : line.getOptions()) {
+			String arg = option.getLongOpt();
+			if (arg.equals("database_url")) {
+				this.database = line.getOptionValue(arg);
+			}
+			if (arg.equals("username")) {
+				this.username = line.getOptionValue(arg);
+			}
+			if (arg.equals("password")) {
+				this.password = line.getOptionValue(arg);
+			}
+			if (arg.equals("epf_username")) {
+				this.epfUsername = line.getOptionValue(arg);
+			}
+			if (arg.equals("epf_password")) {
+				this.epfPassword = line.getOptionValue(arg);
+			}
+			if (arg.equals("epf_baseurl")) {
+				this.epfBaseUrl = line.getOptionValue(arg);
+			}
+			if (arg.equals("donwload_dir")) {
+				this.downloadDirectory = line.getOptionValue(arg);
+			}
+			if (arg.equals("timeout")) {
+				this.timeOut = Integer.decode(line.getOptionValue(arg));
+			}
+			if (arg.equals("sleep_interval")) {
+				this.sleepInterval = Integer.decode(line.getOptionValue(arg));
+			}
+		}
+		
+		for (String opt : line.getArgs()) {
+			if (opt.contains("=")) {
+				throw new EPFImporterException(String.format("Unrecognized Option: %s",opt));
+			}
+		}
 	}
 
 	/**
@@ -245,8 +287,13 @@ public class EPFDataDownloadJob implements Job {
 	public static void main(String[] args) {
 		EPFDataDownloadJob job = new EPFDataDownloadJob();
 		try {
+			job.parseOptions(args);
 			job.execute(null);
 		} catch (JobExecutionException e) {
+			throw new RuntimeException(e);
+		} catch (ParseException e) {
+			throw new RuntimeException(e);
+		} catch (EPFImporterException e) {
 			throw new RuntimeException(e);
 		}
 	}

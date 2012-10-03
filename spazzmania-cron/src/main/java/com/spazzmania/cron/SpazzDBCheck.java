@@ -3,9 +3,12 @@
  */
 package com.spazzmania.cron;
 
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 
 import com.spazzmania.epf.feed.EPFDataDownloadUtil;
 import com.spazzmania.model.util.SpazzDBUtil;
@@ -16,13 +19,9 @@ import com.spazzmania.model.util.SpazzDBUtil;
  */
 public class SpazzDBCheck {
 
-	@Option(name = "--username", metaVar = "<username>")
+	//Command line arguments
 	private String username;
-
-	@Option(name = "--password", metaVar = "<password>")
 	private String password;
-
-	@Option(name = "--host", metaVar = "<host>")
 	private String host;
 
 	public void run() {
@@ -36,6 +35,31 @@ public class SpazzDBCheck {
 		System.out.println(String.format("System Key %s = %s",
 				EPFDataDownloadUtil.EPF_LAST_DOWNLOAD_DATE, lastDownloadDate));
 	}
+	
+	public void parseArgs(String[] args) throws ParseException {
+		Options options = new Options();
+		options.addOption("parameters",true,"Job Parameters");
+		options.addOption("executable",true,"Job Executable");
+		options.addOption("directory",true,"Base Directory");
+		
+		CommandLineParser parser = new PosixParser();
+		// Get the command line arguments
+		CommandLine line = parser.parse(options, args);
+		
+		for (Option option : line.getOptions()) {
+			String arg = option.getLongOpt();
+			if (arg.equals("username")) {
+				this.username = line.getOptionValue(arg);
+			}
+			if (arg.equals("password")) {
+				this.password = line.getOptionValue(arg);
+			}
+			if (arg.equals("host")) {
+				this.host = line.getOptionValue(arg);
+			}
+		}
+		
+	}
 
 	/**
 	 * @param args
@@ -46,10 +70,9 @@ public class SpazzDBCheck {
 					"SpazzDBCheck --host=SPAZZDBURL --username=USERNAME --password=PASSWORD");
 		}
 		final SpazzDBCheck check = new SpazzDBCheck();
-	    final CmdLineParser parser = new CmdLineParser(check);
 	    try {
-			parser.parseArgument(args);
-		} catch (CmdLineException e) {
+	    	check.parseArgs(args);
+		} catch (ParseException e) {
 			throw new RuntimeException(e);
 		}
 	    System.out.println("SpazzDBCheck - Checking the connection to the Spazzmania DB...");

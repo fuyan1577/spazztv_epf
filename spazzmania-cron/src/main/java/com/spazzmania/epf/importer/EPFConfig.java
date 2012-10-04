@@ -54,6 +54,7 @@ public class EPFConfig {
 	private String tablePrefix = "";
 	private String recordSeparator = EPF_RECORD_SEPARATOR;
 	private String fieldSeparator = EPF_FIELD_SEPARATOR;
+	private String snapShotFile;
 
 	public EPFConfig() {
 		whiteList = new ArrayList<String>();
@@ -253,5 +254,13 @@ public class EPFConfig {
 
 	public void setFieldSeparator(String fieldSeparator) {
 		this.fieldSeparator = fieldSeparator;
+	}
+
+	public String getSnapShotFile() {
+		return snapShotFile;
+	}
+
+	public void setSnapShotFile(String snapShotFile) {
+		this.snapShotFile = snapShotFile;
 	}
 }

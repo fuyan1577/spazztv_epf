@@ -322,4 +322,8 @@ public class EPFImportTranslator {
 			exportType = EPFExportType.INCREMENTAL;
 		}
 	}
+	
+	public String getFilePath() {
+		return epfFileReader.getFilePath();
+	}
 }

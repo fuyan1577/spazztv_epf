@@ -44,19 +44,28 @@ public class EPFImportTask implements Runnable {
 	}
 
 	public void importData() throws EPFDbException {
-		while (importTranslator.hasNextRecord()) {
-			recordCount++;
-			dbWriter.insertRow(importTranslator.nextRecord());
-		}
-		if (recordCount != importTranslator.getTotalDataRecords()) {
-			throw new EPFDbException(
-					String.format(
-							"Incorrect number of import records. Expecting %d, found %d",
-							importTranslator.getTotalDataRecords(), recordCount));
+		try {
+			while (importTranslator.hasNextRecord()) {
+				recordCount++;
+				dbWriter.insertRow(importTranslator.nextRecord());
+			}
+			if (recordCount != importTranslator.getTotalDataRecords()) {
+				throw new EPFDbException(
+						String.format(
+								"Incorrect number of import records. Expecting %d, found %d",
+								importTranslator.getTotalDataRecords(),
+								recordCount));
+			}
+		} catch (EPFDbException e) {
+			EPFImporterQueue.getInstance().failed(
+					importTranslator.getFilePath());
+			throw e;
 		}
 	}
 
 	public void finalizeImport() throws EPFDbException {
 		dbWriter.finalizeImport();
+		EPFImporterQueue.getInstance()
+				.completed(importTranslator.getFilePath());
 	}
 }

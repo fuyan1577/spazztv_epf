@@ -15,8 +15,6 @@ import com.spazzmania.epf.dao.EPFDbConfig;
 
 public class EPFImporter {
 
-	public static String EPF_CONFIG_DEFAULT = "./EPFConfig.json";
-
 	private EPFConfig config;
 	private EPFDbConfig dbConfig;
 
@@ -52,7 +50,8 @@ public class EPFImporter {
 				.println("       [-b regex [-b regex2 [...]]] source_directory [source_directory2 ...]");
 	}
 
-	private void updateConfigWithCommandLineArguments(CommandLine line) throws EPFImporterException {
+	private void updateConfigWithCommandLineArguments(CommandLine line)
+			throws EPFImporterException {
 		for (Option option : line.getOptions()) {
 			String arg = option.getLongOpt();
 			if (arg.equals("dburl")) {
@@ -78,16 +77,22 @@ public class EPFImporter {
 			} else if (arg.equals("fieldseparator")) {
 				config.setFieldSeparator(line.getOptionValue(arg));
 			} else if (arg.equals("flat")) {
-				config.setRecordSeparator(line.getOptionValue(EPFConfig.EPF_FLAT_RECORD_SEPARATOR_DEFAULT));
-				config.setFieldSeparator(line.getOptionValue(EPFConfig.EPF_FLAT_FIELD_SEPARATOR_DEFAULT));
+				config.setRecordSeparator(line
+						.getOptionValue(EPFConfig.EPF_FLAT_RECORD_SEPARATOR_DEFAULT));
+				config.setFieldSeparator(line
+						.getOptionValue(EPFConfig.EPF_FLAT_FIELD_SEPARATOR_DEFAULT));
 			}
 		}
-		
+
 		for (String opt : line.getArgs()) {
 			if (opt.contains("=")) {
-				throw new EPFImporterException(String.format("Unrecognized Option: %s",opt));
+				throw new EPFImporterException(String.format(
+						"Unrecognized Option: %s", opt));
 			}
 		}
+
+		// All additional arguments are directory paths for locating input files
+		config.setDirectoryPaths(Arrays.asList(line.getArgs()));
 	}
 
 	public Options getOptions() {
@@ -146,13 +151,48 @@ public class EPFImporter {
 				"db_config",
 				true,
 				"\"The configuration file path and name. Defaults to EPFConfig.json in the local directory\"");
+		options.addOption("r", "record_separator", true,
+				"\"The record separator\"");
+		options.addOption("f", "field_separator", true,
+				"\"The field separator\"");
+		options.addOption("p", "snapshot", true,
+				"\"The snapshot file for allowing restarts\"");
 		return options;
+	}
+
+	public void verifyConfiguration() throws EPFImporterException {
+		boolean invalidConfig = false;
+		String msg = "";
+		if (dbConfig.getDbDriverClass() == null) {
+			invalidConfig = true;
+			msg += " - JDBC Class name is required";
+		}
+		if (dbConfig.getJdbcUrl() == null) {
+			invalidConfig = true;
+			msg += " - JDBC URL Connection string is required";
+		}
+		if (dbConfig.getUsername() == null) {
+			invalidConfig = true;
+			msg += " - JDBC Username is required";
+		}
+		if (dbConfig.getUsername() == null) {
+			invalidConfig = true;
+			msg += " - JDBC Password is required";
+		}
+		if (config.getDirectoryPaths() == null) {
+			invalidConfig = true;
+			msg += " - Input directory path is required";
+		}
+		if (invalidConfig) {
+			System.out.println("Invalid options/configuration:");
+			throw new EPFImporterException(msg);
+		}
 	}
 
 	public EPFConfig loadConfig(String configPath) throws IOException,
 			EPFImporterException {
 		if (configPath == null) {
-			configPath = EPF_CONFIG_DEFAULT;
+			return null;
 		}
 
 		return new EPFConfig(new File(configPath));
@@ -161,7 +201,7 @@ public class EPFImporter {
 	public EPFDbConfig loadDbConfig(String configPath) throws IOException,
 			EPFImporterException {
 		if (configPath == null) {
-			configPath = EPF_CONFIG_DEFAULT;
+			return null;
 		}
 
 		return new EPFDbConfig(new File(configPath));
@@ -210,22 +250,6 @@ public class EPFImporter {
 		// verifyDbConfig();
 	}
 
-//	public void verifyDbConfig() throws EPFImporterException {
-//		String msg = "";
-//		if (dbConfig.getJdbcUrl() == null) {
-//			msg += " - No JDBC URL Designated";
-//		}
-//		if (dbConfig.getUsername() == null) {
-//			msg += " - No DB Username Designated";
-//		}
-//		if (dbConfig.getPassword() == null){
-//			msg += " - No DB Password Designated";
-//		}
-//		if (msg.length() > 0) {
-//			throw new EPFImporterException(msg);
-//		}
-//	}
-
 	public void runImporterJob() {
 		EPFImportManager importManager = new EPFImportManager(config, dbConfig);
 		// Wait for the EPFImportManager to complete
@@ -254,6 +278,7 @@ public class EPFImporter {
 		if (args.length > 0) {
 			EPFImporter importer = new EPFImporter();
 			importer.parseCommandLine(args);
+			importer.verifyConfiguration();
 			importer.runImporterJob();
 		} else {
 			printUsage();

@@ -2,14 +2,16 @@ package com.spazzmania.epf.dao;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.jolbox.bonecp.BoneCP;
-import com.jolbox.bonecp.BoneCPConfig;
+import oracle.ucp.jdbc.PoolDataSource;
+import oracle.ucp.jdbc.PoolDataSourceFactory;
 
 /**
  * This is an object for wrapping a JDBC or NoSQL DB Connection Pool. The
- * current implementation uses BoneCP.
- * 
+ * current implementation uses Oracle Universal Connection Pool (UCP)
  * <p/>
  * The provided EPFDbConfig object is used to set up the Connection Pool object.
  * 
@@ -25,12 +27,22 @@ import com.jolbox.bonecp.BoneCPConfig;
  * 
  */
 public class EPFDbConnector {
-	private BoneCP connectionPool;
+	public static Integer DEFAULT_MIN_CONNECTIONS = 5;
+	public static Integer DEFAULT_MAX_CONNECTIONS = 20;
 
-	public static Long DEFAULT_MIN_CONNECTIONS = 5L;
-	public static Long DEFAULT_MAX_CONNECTIONS = 20L;
+	private PoolDataSource pds;
 
 	private EPFDbConfig dbConfig;
+
+	public static Map<String, String> DB_FACTORY_CLASS_MAP = Collections
+			.unmodifiableMap(new HashMap<String, String>() {
+				private static final long serialVersionUID = 1L;
+				{
+					put("com.jdbc.mysql.Driver",
+							com.mysql.jdbc.jdbc2.optional.MysqlDataSource.class
+									.getName());
+				}
+			});
 
 	public EPFDbConnector(EPFDbConfig dbConfig) {
 		this.dbConfig = dbConfig;
@@ -42,30 +54,36 @@ public class EPFDbConnector {
 
 	public void openConnectionPool() throws EPFDbException {
 		EPFDbConfig dbConfig = getEPFDbConfig();
-		BoneCPConfig config = new BoneCPConfig();
+		pds = PoolDataSourceFactory.getPoolDataSource();
+
 		try {
-			Class.forName(dbConfig.getDbDriverClass());
-			config.setJdbcUrl(dbConfig.getJdbcUrl());
-			config.setDefaultCatalog(dbConfig.getDefaultCatalog());
-			config.setUsername(dbConfig.getUsername());
-			config.setPassword(dbConfig.getPassword());
-			connectionPool = new BoneCP(config);
-		} catch (Exception e) {
+			pds.setConnectionFactoryClassName(DB_FACTORY_CLASS_MAP.get(dbConfig
+					.getDbDriverClass()));
+			pds.setConnectionPoolName("JDBC_UCP");
+			pds.setURL(dbConfig.getJdbcUrl());
+			pds.setUser(dbConfig.getUsername());
+			pds.setPassword(dbConfig.getPassword());
+			pds.setInitialPoolSize(dbConfig.getMinConnections());
+			pds.setMinPoolSize(dbConfig.getMinConnections());
+			pds.setMaxPoolSize(dbConfig.getMaxConnections());
+		} catch (SQLException e) {
 			throw new EPFDbException(e.getMessage());
 		}
+
 	}
 
 	public void closeConnectionPool() throws EPFDbException {
-		connectionPool.close();
+		//Note: UCP doesn't support "close connection pool"
 	}
 
 	public Connection getConnection() throws SQLException {
-		return connectionPool.getConnection();
+		return pds.getConnection();
 	}
 
 	public void releaseConnection(Object connection) throws EPFDbException {
 		try {
 			((Connection) connection).close();
+			connection = null;
 		} catch (SQLException e) {
 			throw new EPFDbException(e.getMessage());
 		}

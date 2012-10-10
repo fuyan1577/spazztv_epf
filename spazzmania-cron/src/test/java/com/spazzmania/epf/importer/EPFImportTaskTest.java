@@ -80,7 +80,7 @@ public class EPFImportTaskTest {
 		EasyMock.replay(dbWriter);
 		
 		EasyMock.reset(importerQueue);
-		importerQueue.completed(storefrontEpfFile);
+		importerQueue.setCompleted(storefrontEpfFile);
 		EasyMock.expectLastCall().times(1);
 		EasyMock.replay(importerQueue);
 

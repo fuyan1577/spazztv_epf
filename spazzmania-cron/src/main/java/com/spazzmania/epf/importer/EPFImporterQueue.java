@@ -93,12 +93,12 @@ public class EPFImporterQueue {
 		updateSnapshot();
 	}
 
-	public synchronized void failed(String fileName) {
+	public synchronized void setFailed(String fileName) {
 		importQueue.remove(fileName);
 		failedFiles.add(fileName);
 	}
 
-	public synchronized void completed(String fileName) {
+	public synchronized void setCompleted(String fileName) {
 		importQueue.remove(fileName);
 		importedFiles.add(fileName);
 	}

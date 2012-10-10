@@ -35,8 +35,8 @@ public class EPFDbConfig {
 	private String jdbcUrl;
 	private String username;
 	private String password;
-	private Long minConnections = 1L;
-	private Long maxConnections = 8L;
+	private Integer minConnections = 1;
+	private Integer maxConnections = 8;
 
 	public EPFDbConfig() {
 		jdbcUrl = "jdbc:mysql://localhost:3306/epf";
@@ -71,9 +71,9 @@ public class EPFDbConfig {
 
 		// Optional values
 		defaultCatalog = (String) connPoolObject.get(DB_DEFAULT_CATALOG);
-		minConnections = verifyLongDefault(connPoolObject, DB_MIN_CONNECTIONS,
+		minConnections = verifyIntegerDefault(connPoolObject, DB_MIN_CONNECTIONS,
 				EPFDbConnector.DEFAULT_MIN_CONNECTIONS);
-		maxConnections = verifyLongDefault(connPoolObject, DB_MAX_CONNECTIONS,
+		maxConnections = verifyIntegerDefault(connPoolObject, DB_MAX_CONNECTIONS,
 				EPFDbConnector.DEFAULT_MAX_CONNECTIONS);
 	}
 
@@ -105,12 +105,12 @@ public class EPFDbConfig {
 		return (String) connPoolObject.get(key);
 	}
 
-	private Long verifyLongDefault(JSONObject connPoolObject, String key,
-			Long defaultValue) {
+	private Integer verifyIntegerDefault(JSONObject connPoolObject, String key,
+			Integer defaultValue) {
 		if (connPoolObject.get(key) == null) {
 			return defaultValue;
 		}
-		return (Long) connPoolObject.get(key);
+		return (Integer) connPoolObject.get(key);
 	}
 
 	private String loadConfigFile(File configFile) throws IOException {
@@ -166,19 +166,19 @@ public class EPFDbConfig {
 		this.password = password;
 	}
 
-	public Long getMinConnections() {
+	public Integer getMinConnections() {
 		return minConnections;
 	}
 
-	public void setMinConnections(Long minConnections) {
+	public void setMinConnections(Integer minConnections) {
 		this.minConnections = minConnections;
 	}
 
-	public Long getMaxConnections() {
+	public Integer getMaxConnections() {
 		return maxConnections;
 	}
 
-	public void setMaxConnections(Long maxConnections) {
+	public void setMaxConnections(Integer maxConnections) {
 		this.maxConnections = maxConnections;
 	}
 }

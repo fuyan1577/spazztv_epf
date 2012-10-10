@@ -56,7 +56,7 @@ public class EPFImporterQueueTest {
 	@Test
 	public void testFailed() {
 		for (String failedFile : expectedFailedFiles) {
-			importerQueue.failed(failedFile);
+			importerQueue.setFailed(failedFile);
 		}
 		List<String> actualFailedFiles = importerQueue.getFailedFiles();
 		Assert.assertTrue(
@@ -77,7 +77,7 @@ public class EPFImporterQueueTest {
 	@Test
 	public void testCompleted() {
 		for (String failedFile : expectedImportedFiles) {
-			importerQueue.completed(failedFile);
+			importerQueue.setCompleted(failedFile);
 		}
 		List<String> actualImportedFiles = importerQueue.getImportedFiles();
 		Assert.assertTrue(

@@ -57,7 +57,7 @@ public class EPFImportTask implements Runnable {
 								recordCount));
 			}
 		} catch (EPFDbException e) {
-			EPFImporterQueue.getInstance().failed(
+			EPFImporterQueue.getInstance().setFailed(
 					importTranslator.getFilePath());
 			throw e;
 		}
@@ -66,6 +66,6 @@ public class EPFImportTask implements Runnable {
 	public void finalizeImport() throws EPFDbException {
 		dbWriter.finalizeImport();
 		EPFImporterQueue.getInstance()
-				.completed(importTranslator.getFilePath());
+				.setCompleted(importTranslator.getFilePath());
 	}
 }

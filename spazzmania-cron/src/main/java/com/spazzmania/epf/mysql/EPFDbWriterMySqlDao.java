@@ -1,4 +1,4 @@
-package com.spazzmania.epf.dao;
+package com.spazzmania.epf.mysql;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -8,6 +8,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.spazzmania.epf.dao.EPFDbException;
+import com.spazzmania.epf.dao.EPFDbWriter;
+import com.spazzmania.epf.dao.SQL92StateCode;
+import com.spazzmania.epf.dao.SQLReturnStatus;
 
 
 public class EPFDbWriterMySqlDao {

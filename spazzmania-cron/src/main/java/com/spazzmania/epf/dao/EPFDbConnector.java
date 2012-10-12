@@ -6,6 +6,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import oracle.ucp.UniversalConnectionPoolAdapter;
+import oracle.ucp.UniversalConnectionPoolException;
+import oracle.ucp.admin.UniversalConnectionPoolManager;
+import oracle.ucp.admin.UniversalConnectionPoolManagerImpl;
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceFactory;
 
@@ -29,7 +33,9 @@ import oracle.ucp.jdbc.PoolDataSourceFactory;
 public class EPFDbConnector {
 	public static Integer DEFAULT_MIN_CONNECTIONS = 5;
 	public static Integer DEFAULT_MAX_CONNECTIONS = 20;
+	public static String EPF_DB_POOL_NAME = "epf_db_pool";
 
+	private UniversalConnectionPoolManager mgr;
 	private PoolDataSource pds;
 
 	private EPFDbConfig dbConfig;
@@ -38,14 +44,15 @@ public class EPFDbConnector {
 			.unmodifiableMap(new HashMap<String, String>() {
 				private static final long serialVersionUID = 1L;
 				{
-					put("com.jdbc.mysql.Driver",
+					put("com.mysql.jdbc.Driver",
 							com.mysql.jdbc.jdbc2.optional.MysqlDataSource.class
 									.getName());
 				}
 			});
 
-	public EPFDbConnector(EPFDbConfig dbConfig) {
+	public EPFDbConnector(EPFDbConfig dbConfig) throws EPFDbException {
 		this.dbConfig = dbConfig;
+		openConnectionPool();
 	}
 
 	public final EPFDbConfig getEPFDbConfig() {
@@ -54,26 +61,50 @@ public class EPFDbConnector {
 
 	public void openConnectionPool() throws EPFDbException {
 		EPFDbConfig dbConfig = getEPFDbConfig();
-		pds = PoolDataSourceFactory.getPoolDataSource();
 
 		try {
-			pds.setConnectionFactoryClassName(DB_FACTORY_CLASS_MAP.get(dbConfig
-					.getDbDriverClass()));
-			pds.setConnectionPoolName("JDBC_UCP");
+			mgr = UniversalConnectionPoolManagerImpl
+					.getUniversalConnectionPoolManager();
+
+			pds = PoolDataSourceFactory.getPoolDataSource();
+			pds.setConnectionPoolName(EPF_DB_POOL_NAME);
+
+			String factoryClassName = DB_FACTORY_CLASS_MAP.get(dbConfig
+					.getDbDriverClass());
+			if (factoryClassName == null) {
+				throw new EPFDbException(String.format(
+						"Invalid/Unsupported Driver Class: %s",
+						dbConfig.getDbDriverClass()));
+			}
+
+			pds.setConnectionFactoryClassName(factoryClassName);
+
 			pds.setURL(dbConfig.getJdbcUrl());
 			pds.setUser(dbConfig.getUsername());
 			pds.setPassword(dbConfig.getPassword());
+
+			mgr.createConnectionPool((UniversalConnectionPoolAdapter) pds);
+
 			pds.setInitialPoolSize(dbConfig.getMinConnections());
 			pds.setMinPoolSize(dbConfig.getMinConnections());
 			pds.setMaxPoolSize(dbConfig.getMaxConnections());
+
 		} catch (SQLException e) {
 			throw new EPFDbException(e.getMessage());
+		} catch (UniversalConnectionPoolException e) {
+			throw new EPFDbException(e.getMessage());
+			// } catch (ClassNotFoundException e) {
+			// throw new EPFDbException(e.getMessage());
 		}
 
 	}
 
 	public void closeConnectionPool() throws EPFDbException {
-		//Note: UCP doesn't support "close connection pool"
+		try {
+			mgr.purgeConnectionPool(EPF_DB_POOL_NAME);
+		} catch (UniversalConnectionPoolException e) {
+			throw new EPFDbException(e.getMessage());
+		}
 	}
 
 	public Connection getConnection() throws SQLException {

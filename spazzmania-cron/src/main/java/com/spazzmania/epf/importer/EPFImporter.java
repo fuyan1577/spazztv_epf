@@ -12,13 +12,15 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 
 import com.spazzmania.epf.dao.EPFDbConfig;
+import com.spazzmania.epf.dao.EPFDbException;
+import com.spazzmania.epf.dao.EPFDbWriterFactory;
 
 public class EPFImporter {
 
 	private EPFConfig config;
 	private EPFDbConfig dbConfig;
 
-	public static int EPF_PAUSE_INTERVAL;
+	public static int EPF_PAUSE_INTERVAL = 10000;
 	private int pauseInterval = EPF_PAUSE_INTERVAL;
 
 	public EPFConfig getConfig() {
@@ -53,7 +55,10 @@ public class EPFImporter {
 	private void updateConfigWithCommandLineArguments(CommandLine line)
 			throws EPFImporterException {
 		for (Option option : line.getOptions()) {
-			String arg = option.getLongOpt();
+			String arg = option.getOpt();
+			if (option.getLongOpt() != null) {
+				arg = option.getLongOpt();
+			}
 			if (arg.equals("dburl")) {
 				dbConfig.setJdbcUrl(line.getOptionValue(arg));
 			} else if (arg.equals("dbuser")) {
@@ -104,8 +109,8 @@ public class EPFImporter {
 				"resume",
 				false,
 				"\"Resume the most recent import according to the relevant .json status file (EPFStatusIncremental.json if -i, otherwise EPFStatusFull.json);\"");
-		options.addOption("h", "dbhost", true,
-				"\"The hostname of the database (default is localhost);\"");
+		// options.addOption("h", "dbhost", true,
+		// "\"The hostname of the database (default is localhost);\"");
 		options.addOption(
 				"u",
 				"dbuser",
@@ -113,10 +118,10 @@ public class EPFImporter {
 				"\"The user which will execute the database commands; must have table create/drop priveleges\"");
 		options.addOption("p", "dbpassword", true,
 				"\"The user's password for the database\"");
-		options.addOption("n", "dbname", true,
+		options.addOption("dburl", true,
 				"\"The name of the database to connect to\"");
-		options.addOption("n", "dbname", true,
-				"\"The name of the database to connect to\"");
+		options.addOption("l", "dbdriver", true,
+				"\"The JDBC Driver Class name\"");
 		options.addOption("t", "max_threads", true,
 				"\"The maximum concurrently executing threads. Default to 8\"");
 		options.addOption("a", "allowextensions", false,
@@ -155,7 +160,7 @@ public class EPFImporter {
 				"\"The record separator\"");
 		options.addOption("f", "field_separator", true,
 				"\"The field separator\"");
-		options.addOption("p", "snapshot", true,
+		options.addOption("s", "snapshot", true,
 				"\"The snapshot file for allowing restarts\"");
 		return options;
 	}
@@ -165,7 +170,7 @@ public class EPFImporter {
 		String msg = "";
 		if (dbConfig.getDbDriverClass() == null) {
 			invalidConfig = true;
-			msg += " - JDBC Class name is required";
+			msg += " - JDBC Driver Class is required";
 		}
 		if (dbConfig.getJdbcUrl() == null) {
 			invalidConfig = true;
@@ -250,7 +255,7 @@ public class EPFImporter {
 		// verifyDbConfig();
 	}
 
-	public void runImporterJob() {
+	public void runImporterJob() throws EPFDbException {
 		EPFImportManager importManager = new EPFImportManager(config, dbConfig);
 		// Wait for the EPFImportManager to complete
 		// Check every 60 seconds if any threads are still executing
@@ -265,6 +270,7 @@ public class EPFImporter {
 				// Ignore
 			}
 		}
+		EPFDbWriterFactory.getInstance().getConnector().closeConnectionPool();
 	}
 
 	/**
@@ -272,9 +278,10 @@ public class EPFImporter {
 	 * @throws EPFImporterException
 	 * @throws IOException
 	 * @throws ParseException
+	 * @throws EPFDbException
 	 */
 	public static void main(String[] args) throws ParseException, IOException,
-			EPFImporterException {
+			EPFImporterException, EPFDbException {
 		if (args.length > 0) {
 			EPFImporter importer = new EPFImporter();
 			importer.parseCommandLine(args);

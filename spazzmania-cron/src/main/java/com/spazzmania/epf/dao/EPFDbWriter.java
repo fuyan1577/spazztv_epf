@@ -54,7 +54,7 @@ import com.spazzmania.epf.importer.EPFExportType;
 public abstract class EPFDbWriter {
 
 	private EPFDbConnector connector;
-	private String tablePrefix;
+	private String tablePrefix = "";
 	private boolean skipKeyViolators;
 
 	public EPFDbWriter() {
@@ -85,6 +85,40 @@ public abstract class EPFDbWriter {
 
 	public final void setSkipKeyViolators(boolean skipKeyViolators) {
 		this.skipKeyViolators = skipKeyViolators;
+	}
+
+	/**
+	 * Sets the connection pool connector.
+	 * 
+	 * <p/>
+	 * Used by the instantiating class to set the connection pool.
+	 * 
+	 * @param connector
+	 *            the connector to set
+	 */
+	public final void setConnector(EPFDbConnector connector) {
+		this.connector = connector;
+	}
+
+	/**
+	 * Get a connection from the connection pool.
+	 * 
+	 * @return
+	 */
+	public final Connection getConnection() throws SQLException {
+		return connector.getConnection();
+	}
+
+	/**
+	 * Release the connection to the Connection Pool.
+	 * 
+	 * @param connection
+	 */
+	public final void releaseConnection(Connection connection)
+			throws EPFDbException {
+		if (connection != null) {
+			connector.releaseConnection(connection);
+		}
 	}
 
 	/**
@@ -134,40 +168,6 @@ public abstract class EPFDbWriter {
 	 * rename tables.
 	 */
 	public abstract void finalizeImport() throws EPFDbException;
-
-	/**
-	 * Sets the connection pool connector.
-	 * 
-	 * <p/>
-	 * Used by the instantiating class to set the connection pool.
-	 * 
-	 * @param connector
-	 *            the connector to set
-	 */
-	public final void setConnector(EPFDbConnector connector) {
-		this.connector = connector;
-	}
-
-	/**
-	 * Get a connection from the connection pool.
-	 * 
-	 * @return
-	 */
-	public final Connection getConnection() throws SQLException {
-		return connector.getConnection();
-	}
-
-	/**
-	 * Release the connection to the Connection Pool.
-	 * 
-	 * @param connection
-	 */
-	public final void releaseConnection(Connection connection)
-			throws EPFDbException {
-		if (connection != null) {
-			connector.releaseConnection(connection);
-		}
-	}
 
 	/**
 	 * Returns whether or not the table exists in the database.

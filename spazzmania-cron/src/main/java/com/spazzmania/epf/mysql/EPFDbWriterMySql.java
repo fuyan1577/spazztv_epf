@@ -1,16 +1,17 @@
-package com.spazzmania.epf.dao;
+package com.spazzmania.epf.mysql;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import com.mysql.jdbc.MysqlErrorNumbers;
+import com.spazzmania.epf.dao.EPFDbException;
+import com.spazzmania.epf.dao.EPFDbWriter;
+import com.spazzmania.epf.dao.SQLReturnStatus;
 import com.spazzmania.epf.importer.EPFExportType;
 
 /**
@@ -44,24 +45,14 @@ import com.spazzmania.epf.importer.EPFExportType;
  */
 public class EPFDbWriterMySql extends EPFDbWriter {
 
-	public static String DROP_TABLE_STMT = "DROP TABLE IF EXISTS %s";
-	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s)";
-	public static String RENAME_TABLE_STMT = "ALTER TABLE %s RENAME %s";
-	public static String PRIMARY_KEY_STMT = "ALTER TABLE %s ADD CONSTRAINT PRIMARY KEY (%s)";
-	public static String INSERT_SQL_STMT = "%s INTO %s (%s) VALUES %s";
-	public static String TABLE_EXISTS_SQL = "SHOW TABLES";
 	public static String UNLOCK_TABLES = "UNLOCK TABLES";
-
-	public static String UNION_QUERY_PT1 = "CREATE TABLE %s IGNORE SELECT * FROM %s UNION ALL ";
-	public static String UNION_QUERY_PT2 = "SELECT * FROM %s WHERE 0 = (SELECT COUNT(*) FROM %s %s";
-	public static String UNION_QUERY_WHERE = "WHERE %s.export_date <= %s.export_date";
-	public static String UNION_QUERY_JOIN = "AND %s.%s = %s.%s ";
 
 	public static int EXECUTE_SQL_STATEMENT_RETRIES = 30;
 	public static long MERGE_THRESHOLD = 500000;
-	public static long INSERT_BUFFER_SIZE = 200;
+	public static int INSERT_BUFFER_SIZE = 200;
 	public static int MAX_SQL_ATTEMPTS = 3;
 
+	private EPFDbWriterMySqlStmt mySqlStmt;
 	private EPFDbWriterMySqlDao mySqlDao;
 
 	public static Map<String, String> TRANSLATION_MAP = Collections
@@ -86,14 +77,12 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	private String tableName;
 	private String impTableName;
 	private String uncTableName;
-	private boolean[] quotedColumnType;
 
-	private String columnNames;
-	private Map<Integer, String> columnMap;
+	private LinkedHashMap<String, String> columnsAndTypes;
 	private List<String> primaryKey;
 
 	private int insertBufferCount = 0;
-	String insertBuffer;
+	private List<List<String>> insertBuffer;
 
 	private enum ProcessMode {
 		IMPORT_RENAME, APPEND, MERGE_RENAME
@@ -103,10 +92,16 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 	public EPFDbWriterMySql() {
 		super();
+		mySqlDao = new EPFDbWriterMySqlDao(this);
+		mySqlStmt = new EPFDbWriterMySqlStmt();
 	}
 
 	public void setMySqlDao(EPFDbWriterMySqlDao mySqlDao) {
 		this.mySqlDao = mySqlDao;
+	}
+
+	public void setMySqlStmt(EPFDbWriterMySqlStmt mySqlStmt) {
+		this.mySqlStmt = mySqlStmt;
 	}
 
 	@Override
@@ -115,7 +110,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			throws EPFDbException {
 
 		this.tableName = getTablePrefix() + tableName;
-		//Default method is to create a temporary table and append data
+		// Default method is to create a temporary table and append data
 		this.impTableName = this.tableName + "_tmp";
 		this.uncTableName = null;
 
@@ -128,7 +123,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 				throw new EPFDbException("Table not found - cannot append data");
 			}
 			if (numberOfRows < MERGE_THRESHOLD) {
-				//Append directly to the existing table
+				// Append directly to the existing table
 				processMode = ProcessMode.APPEND;
 				this.impTableName = this.tableName;
 			} else {
@@ -143,12 +138,12 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			dropTable(impTableName);
 			createTable(impTableName, columnsAndTypes);
 		}
-		
+
 		insertBufferCount = 0;
 	}
 
 	private void dropTable(String tableName) throws EPFDbException {
-		String sqlDrop = String.format(DROP_TABLE_STMT, tableName);
+		String sqlDrop = mySqlStmt.dropTableStmt(tableName);
 		SQLReturnStatus status;
 		int attempts = 0;
 		while (true) {
@@ -183,29 +178,9 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	private void createTable(String tableName,
 			LinkedHashMap<String, String> columnsAndTypes)
 			throws EPFDbException {
-		columnNames = "";
-		String columnsToCreate = "";
-
-		quotedColumnType = new boolean[columnsAndTypes.size()];
-		int col = 0;
-
-		Iterator<Entry<String, String>> entrySet = columnsAndTypes.entrySet()
-				.iterator();
-		while (entrySet.hasNext()) {
-			Entry<String, String> colNType = entrySet.next();
-			columnNames += "`" + colNType.getKey() + "`";
-			columnsToCreate += "`" + colNType.getKey() + "` "
-					+ translateColumnType(colNType.getValue());
-			quotedColumnType[col++] = isQuotedColumnType(colNType.getValue());
-
-			if (entrySet.hasNext()) {
-				columnNames += ",";
-				columnsToCreate += ", ";
-			}
-		}
-
-		mySqlDao.executeSQLStatement(String.format(CREATE_TABLE_STMT,
-				tableName, columnsToCreate));
+		String createTableStmt = mySqlStmt.createTableStmt(tableName,
+				columnsAndTypes);
+		mySqlDao.executeSQLStatement(createTableStmt);
 	}
 
 	/**
@@ -224,82 +199,23 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	private void setupColumnMap(LinkedHashMap<String, String> columnsAndTypes,
 			EPFExportType exportType) throws EPFDbException {
 
-		columnMap = new HashMap<Integer, String>();
-		quotedColumnType = new boolean[columnsAndTypes.size()];
-		columnNames = "";
-		int col = 0;
-		
-		// Full or Flat Export - Use All Columns
-		if ((exportType == EPFExportType.FULL)
+		List<String> currentColumns = null;
+		if ((exportType == EPFExportType.INCREMENTAL)
 				|| (exportType == EPFExportType.FLAT)) {
-			for (Entry<String,String> columnAndType : columnsAndTypes.entrySet()) {
-				columnMap.put(Integer.valueOf(col), (String)columnAndType.getKey());
-				quotedColumnType[col] = isQuotedColumnType(columnAndType.getValue());
-				if (columnNames.length() > 0) {
-					columnNames += ",";
-				}
-				columnNames += "`" + columnAndType.getKey() + "`";
-				col++;
-			}
-		} else {
-			// Incremental Update - use only the columns of the existing table
-			List<String> currentColumns = mySqlDao.getTableColumns(tableName);
-
-			if (currentColumns.size() == 0) {
-				throw new EPFDbException(
-						"Table does not exist and cannot be updated");
-			}
-
-			for (Entry<String,String> columnAndType : columnsAndTypes.entrySet()) {
-				if (currentColumns.contains(columnAndType.getKey())) {
-					columnMap.put(Integer.valueOf(col), columnAndType.getKey());
-					quotedColumnType[col] = isQuotedColumnType(columnAndType.getValue());
-				}
-				if (columnNames.length() > 0) {
-					columnNames += ",";
-				}
-				columnNames += "`" + columnAndType.getKey() + "`";
-				col++;
-			}
-			
-			if (columnMap.size() == 0) {
-				throw new EPFDbException(
-						"No import columns match destination table");
-			}
+			currentColumns = mySqlDao.getTableColumns(tableName);
 		}
-	}
-
-	private boolean isQuotedColumnType(String columnType) {
-		if (UNQUOTED_TYPES.contains(columnType)) {
-			return false;
-		}
-		return true;
-	}
-
-	private String translateColumnType(String columnType) {
-		if (TRANSLATION_MAP.containsKey(columnType)) {
-			return TRANSLATION_MAP.get(columnType);
-		}
-		return columnType;
+		this.columnsAndTypes = mySqlStmt.setupColumnAndTypesMap(
+				columnsAndTypes, currentColumns);
 	}
 
 	@Override
 	public void setPrimaryKey(String tableName, String[] columnName)
 			throws EPFDbException {
+
 		primaryKey = Arrays.asList(columnName);
-
-		String primaryKeyColumns = "";
-
-		Iterator<String> entries = primaryKey.iterator();
-		while (entries.hasNext()) {
-			primaryKeyColumns += "`" + entries.next() + "`";
-			if (entries.hasNext()) {
-				primaryKeyColumns += ",";
-			}
-		}
-
-		String sqlAlterTable = String.format(PRIMARY_KEY_STMT, tableName,
-				primaryKeyColumns);
+		
+		String sqlAlterTable = mySqlStmt.setPrimaryKeyStmt(tableName,
+				columnName);
 
 		executeSQLStatementWithRetry(sqlAlterTable);
 	}
@@ -307,56 +223,31 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	@Override
 	public void insertRow(String[] rowData) throws EPFDbException {
 		if (insertBufferCount <= 0) {
-			insertBuffer = "";
+			insertBuffer = new ArrayList<List<String>>();
 		}
-		if (insertBuffer.length() > 0) {
-			insertBuffer += ",";
-		}
-		insertBuffer += "(" + formatInsertRow(rowData) + ")";
-		if (++insertBufferCount >= INSERT_BUFFER_SIZE) {
+		insertBuffer.add(Arrays.asList(rowData));
+		insertBufferCount++;
+		if (insertBufferCount >= INSERT_BUFFER_SIZE) {
 			flushInsertBuffer();
 		}
 	}
 
-	public void flushInsertBuffer() throws EPFDbException {
-		// commandString = ("REPLACE" if isIncremental else "INSERT")
-		// exStrTemplate = """%s %s INTO %s %s VALUES %s"""
-		// colNamesStr = "(%s)" % (", ".join(self.parser.columnNames))
-		// colVals = unicode(", ".join(stringList), 'utf-8')
-		// exStr = exStrTemplate % (commandString, ignoreString, tableName,
-		// colNamesStr, colVals)
+	private void flushInsertBuffer() throws EPFDbException {
 		if (insertBufferCount <= 0) {
 			return;
 		}
 
-		String commandString = "INSERT";
+		String insertCommand = "INSERT";
 
 		if (processMode == ProcessMode.APPEND) {
-			commandString = "REPLACE";
+			insertCommand = "REPLACE";
 		}
 
-		executeSQLStatementWithRetry(String.format(INSERT_SQL_STMT,
-				commandString, impTableName, columnNames, insertBuffer));
-		insertBuffer = "";
+		String insertStmt = mySqlStmt.insertRowStatement(impTableName,
+				columnsAndTypes, insertBuffer, insertCommand);
+		executeSQLStatementWithRetry(insertStmt);
+
 		insertBufferCount = 0;
-	}
-
-	public String formatInsertRow(String[] rowData) {
-		String row = "";
-		for (int i = 0; i < rowData.length; i++) {
-			// Include only columns mapped in columnMap
-			if (columnMap.containsKey(Integer.valueOf(i))) {
-				if (quotedColumnType[i]) {
-					row += "'" + rowData[i] + "'";
-				} else {
-					row += rowData[i];
-				}
-				if (i + 1 < rowData.length) {
-					row += ",";
-				}
-			}
-		}
-		return row;
 	}
 
 	public void executeSQLStatementWithRetry(String sqlStmt)
@@ -376,7 +267,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			} else if (status.getSqlExceptionCode() != MysqlErrorNumbers.ER_LOCK_WAIT_TIMEOUT) {
 				throw new EPFDbException(
 						String.format(
-								"Error applying primary key constraint: SQLState %s, MySQLError %d",
+								"Error executing SQL Statement: \"%s...\", sqlStmt.substring(40), SQLState %s, MySQLError %d",
 								status.getSqlStateCode(),
 								status.getSqlExceptionCode()));
 			}
@@ -412,48 +303,48 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	private void mergeTables(String tableName, String incTableName,
 			String unionTableName) throws EPFDbException {
 
-		String mergeWhere = String.format(UNION_QUERY_WHERE, tableName,
-				incTableName);
+		String mergeTableSql = mySqlStmt.mergeTableStmt(tableName,
+				incTableName, unionTableName, primaryKey);
 
-		Iterator<String> keyColumns = primaryKey.iterator();
-		while (keyColumns.hasNext()) {
-			String keyColumn = keyColumns.next();
-			mergeWhere += " "
-					+ String.format(UNION_QUERY_JOIN, tableName, keyColumn,
-							incTableName, keyColumn);
-		}
-
-		String unionCreateTableSQL = String.format(UNION_QUERY_PT1,
-				unionTableName, incTableName);
-		unionCreateTableSQL += " "
-				+ String.format(UNION_QUERY_PT2, tableName, incTableName,
-						mergeWhere);
-
-		executeSQLStatementWithRetry(unionCreateTableSQL);
+		executeSQLStatementWithRetry(mergeTableSql);
 	}
 
 	private void renameTableAndDrop(String srcTableName, String destTableName)
 			throws EPFDbException {
 		String oldTableName = destTableName + "_old";
+
 		// Drop the oldTableName just in case it was left from a previous run
 		dropTable(oldTableName);
-		String sql;
-		SQLReturnStatus status = new SQLReturnStatus();
-		status.setSuccess(true);
+		
+		SQLReturnStatus status;
+		
+		//If the destination table exists, temporarily rename it
 		if (isTableInDatabase(destTableName)) {
-			sql = String.format(RENAME_TABLE_STMT, destTableName, oldTableName);
-			status = mySqlDao.executeSQLStatement(sql);
+			status = renameTable(destTableName, oldTableName);
+		} else {
+			oldTableName = null;
 		}
-		sql = String.format(RENAME_TABLE_STMT, srcTableName, destTableName);
-		status = mySqlDao.executeSQLStatement(sql);
-		if (!status.isSuccess()) {
-			// Logger.logInfo(String.format("Error renaming table srcTableName
-			// to destTableName - reverting);
-			sql = String.format(RENAME_TABLE_STMT, oldTableName, destTableName);
-			mySqlDao.executeSQLStatement(sql);
+		
+		//Execute the main table rename
+		status = renameTable(srcTableName, destTableName);
+		
+		//If not successful, put back the old table and return
+		if (!status.isSuccess() && oldTableName != null) {
+			// Drop the oldTableName
+			renameTable(oldTableName, destTableName);
+			return;
 		}
-		// Drop the oldTableName
-		dropTable(oldTableName);
+		
+		//Drop the old table if it exists
+		if (oldTableName != null) {
+			dropTable(oldTableName);
+		}
+	}
+	
+	private SQLReturnStatus renameTable(String oldTableName, String newTableName)
+			throws EPFDbException {
+		String sql = mySqlStmt.renameTableStmt(oldTableName, newTableName);
+		return mySqlDao.executeSQLStatement(sql);
 	}
 
 	@Override

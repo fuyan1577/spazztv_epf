@@ -25,14 +25,14 @@ import com.spazzmania.epf.dao.EPFDbWriterFactory;
  * 
  */
 public class EPFImportManager {
-	private ExecutorService service;
+	private ExecutorService threadPoolService;
 	private List<String> fileList;
 	private String whiteListRegex;
 	private String blackListRegex;
 	private List<Future<Runnable>> importThreads;
 
 	public EPFImportManager(EPFConfig config, EPFDbConfig dbConfig) {
-		service = Executors.newFixedThreadPool(config.getMaxThreads());
+		threadPoolService = Executors.newFixedThreadPool(config.getMaxThreads());
 		
 		whiteListRegex = createRegexPattern(config.getWhiteList());
 		blackListRegex = createRegexPattern(config.getBlackList());
@@ -62,12 +62,13 @@ public class EPFImportManager {
 		for (String directoryPath : directoryPaths) {
 			File dir = new File(directoryPath);
 	
-			String[] children = dir.list();
-			if (children != null) {
-				for (int i = 0; i < children.length; i++) {
+			String[] dirFileName = dir.list();
+			if (dirFileName != null) {
+				for (int i = 0; i < dirFileName.length; i++) {
 					// Get filename of file or directory
-					if (isValidImportFile(children[i])) {
-						fileList.add(children[i]);
+					if (isValidImportFile(dirFileName[i])) {
+						File dirFile = new File(dir,dirFileName[i]);
+						fileList.add(dirFile.getPath());
 					}
 				}
 			}
@@ -115,7 +116,7 @@ public class EPFImportManager {
 			try {
 				EPFDbWriter dbWriter = EPFDbWriterFactory.getDbWriter(dbConfig);
 				EPFImportTask importTask = new EPFImportTask(filePath, dbWriter);
-				importThreads.add((Future<Runnable>) service.submit(importTask));
+				importThreads.add((Future<Runnable>) threadPoolService.submit(importTask));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			} catch (EPFFileFormatException e) {
@@ -132,6 +133,7 @@ public class EPFImportManager {
 				return true;
 			}
 		}
+		threadPoolService.shutdown();
 		return false;
 	}
 }

@@ -1,4 +1,4 @@
-package com.spazzmania.epf.dao;
+package com.spazzmania.epf.mysql;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -15,6 +15,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mysql.jdbc.DatabaseMetaData;
+import com.spazzmania.epf.dao.EPFDbConnector;
+import com.spazzmania.epf.dao.EPFDbException;
+import com.spazzmania.epf.dao.SQLReturnStatus;
+import com.spazzmania.epf.mysql.EPFDbWriterMySql;
+import com.spazzmania.epf.mysql.EPFDbWriterMySqlDao;
 
 public class EPFDbWriterMySqlDaoTest {
 

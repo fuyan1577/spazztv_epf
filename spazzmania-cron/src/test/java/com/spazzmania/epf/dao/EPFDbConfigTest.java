@@ -22,17 +22,17 @@ public class EPFDbConfigTest {
 	@Before
 	public void setUp() {
 		dbConfig = new EPFDbConfig();
-		epfDbConfigJson = "{" + "	\"dbConnectionPool\": {"
-				+ "		\"dbJdbcDriverClass\":\"com.mysql.jdbc.Driver\","
+		epfDbConfigJson = "{" + "	\"dbConnection\": {"
+				+ "		\"dbDriverClass\":\"com.mysql.jdbc.Driver\","
 				+ "		\"dbDefaultCatalog\":\"mockcatalog\","
 				+ "		\"dbMinConnections\":6," + "		\"dbMaxConnections\":21,"
-				+ "		\"dbJdbcUrl\": \"jdbc:mysql://localhost/mockdb\", "
+				+ "		\"dbUrl\": \"jdbc:mysql://localhost/mockdb\", "
 				+ "		\"dbUser\": \"mockusername\","
 				+ "		\"dbPassword\": \"mockpassword\"" + "	}" + "}";
-		epfDbConfigJson2 = "{" + "	\"dbConnectionPool\": {"
-				+ "		\"dbJdbcDriverClass\":\"com.mysql.jdbc.Driver\","
+		epfDbConfigJson2 = "{" + "	\"dbConnection\": {"
+				+ "		\"dbDriverClass\":\"com.mysql.jdbc.Driver\","
 				+ "		\"dbDefaultCatalog\":\"mockcatalog\","
-				+ "		\"dbJdbcUrl\": \"jdbc:mysql://localhost/mockdb\", "
+				+ "		\"dbUrl\": \"jdbc:mysql://localhost/mockdb\", "
 				+ "		\"dbUser\": \"mockusername\","
 				+ "		\"dbPassword\": \"mockpassword\"" + "	}" + "}";
 

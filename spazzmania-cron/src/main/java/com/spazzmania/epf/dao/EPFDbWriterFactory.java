@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-
 /**
  * @author Thomas Billingsley
  * @version 1.0
@@ -15,8 +14,8 @@ public class EPFDbWriterFactory {
 			.unmodifiableMap(new HashMap<String, String>() {
 				private static final long serialVersionUID = 1L;
 				{
-					put("com.jdbc.mysql.Driver",
-							com.spazzmania.epf.dao.EPFDbWriterMySql.class
+					put("com.mysql.jdbc.Driver",
+							com.spazzmania.epf.mysql.EPFDbWriterMySql.class
 									.getName());
 				}
 			});
@@ -25,8 +24,16 @@ public class EPFDbWriterFactory {
 
 	private EPFDbConnector connector;
 
-	private EPFDbWriterFactory(EPFDbConfig dbConfig) {
-		connector = new EPFDbConnector(dbConfig);
+	private EPFDbWriterFactory(EPFDbConfig dbConfig) throws EPFDbException {
+		try {
+			connector = new EPFDbConnector(dbConfig);
+		} catch (EPFDbException e) {
+			throw new EPFDbException(e.getMessage());
+		}
+	}
+
+	public static EPFDbWriterFactory getInstance() {
+		return factory;
 	}
 
 	/**
@@ -62,9 +69,22 @@ public class EPFDbWriterFactory {
 		} catch (ClassNotFoundException e) {
 			throw new EPFDbException(e.getMessage());
 		}
-		
+
 		dbWriter.setConnector(connector);
 
 		return dbWriter;
 	}
+
+	/**
+	 * Return the EPFDbConnector object used by the factory instance.
+	 * <p/>
+	 * This is primarily used to close down the connection factory on
+	 * completion.
+	 * 
+	 * @return connector
+	 */
+	public EPFDbConnector getConnector() {
+		return connector;
+	}
+
 }

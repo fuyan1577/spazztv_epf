@@ -1,0 +1,11 @@
+{
+	"dbConnection" : {
+		"dbDriverClass":"com.mysql.jdbc.Driver",
+		"dbDefaultCatalog":"mockcatalog",
+		"dbMinConnections":5,
+		"dbMaxConnections":20,
+		"dbUrl": "jdbc:mysql://localhost/epfdatabase", 
+		"dbUser": "mockusername",
+		"dbPassword": "mockpassword"
+	}
+}

@@ -1,0 +1,10 @@
+{
+	"dbConnection" : {
+		"dbDriverClass":"com.mysql.jdbc.Driver",
+		"dbMinConnections":5,
+		"dbMaxConnections":20,
+		"dbUrl": "jdbc:mysql://localhost/epf", 
+		"dbUser": "epf",
+		"dbPassword": "epf123"
+	}
+}

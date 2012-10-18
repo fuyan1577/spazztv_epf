@@ -1,0 +1,49 @@
+<project>
+	<property name="projectname" value="spazzmania-cron" />
+	<target name="clean">
+		<delete dir="build" />
+		<delete file="${projectname}.jar" />
+	</target>
+
+	<target name="compile" depends="clean">
+		<mkdir dir="build" />
+		<copy file="../spazzmania-model/build/spazzmania-model.jar" tofile="lib/spazzmania-model.jar" />
+		<javac debug="true" includeantruntime="false" srcdir="src/main" destdir="build">
+			<classpath>
+				<pathelement path="${classpath}" />
+				<fileset dir="lib">
+					<include name="ucp.jar" />
+					<include name="commons-cli-1.2.jar" />
+					<include name="commons-codec-1.6.jar" />
+					<include name="easymock-3.1.jar" />
+					<include name="json-simple-1.1.1.jar" />
+					<include name="log4j-1.2.16.jar" />
+					<include name="mysql-connector-java-5.1.21-bin.jar" />
+					<include name="powermock-easymock-1.4.12-full.jar" />
+					<include name="slf4j-api-1.6.1.jar" />
+					<include name="slf4j-log4j12-1.6.1.jar" />
+				</fileset>
+			</classpath>
+		</javac>
+		<copy todir="build">
+			<fileset dir="src" includes="**/*.properties" />
+		</copy>
+	</target>
+
+	<target name="dist" depends="compile">
+		<jar destfile="build/${projectname}.jar" basedir="build">
+			<zipgroupfileset dir="lib">
+				<include name="ucp.jar" />
+				<include name="commons-cli-1.2.jar" />
+				<include name="commons-codec-1.6.jar" />
+				<include name="easymock-3.1.jar" />
+				<include name="json-simple-1.1.1.jar" />
+				<include name="log4j-1.2.16.jar" />
+				<include name="mysql-connector-java-5.1.21-bin.jar" />
+				<include name="powermock-easymock-1.4.12-full.jar" />
+				<include name="slf4j-api-1.6.1.jar" />
+				<include name="slf4j-log4j12-1.6.1.jar" />
+			</zipgroupfileset>
+		</jar>
+	</target>
+</project>

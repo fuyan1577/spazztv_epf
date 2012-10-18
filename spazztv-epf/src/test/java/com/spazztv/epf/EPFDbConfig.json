@@ -1,0 +1,24 @@
+{
+	"dbConnections": [
+		"conn1" : {
+			"dbDataSource":"com.mysql.jdbc2.DataSource",
+			"dbWriter":"com.spazztv.dao.EPFDbWriterMySql",
+			"dbDefaultCatalog":"mockcatalog",
+			"dbMinConnections":5,
+			"dbMaxConnections":20,
+			"dbJdbcUrl": "jdbc:mysql://localhost/epfdatabase", 
+			"dbUser": "mockusername",
+			"dbPassword": "mockpassword"
+		},
+		"conn2" : {
+			"dbDataSource":"com.mysql.jdbc2.DataSource",
+			"dbWriter":"com.spazztv.dao.EPFDbWriterMySql",
+			"dbDefaultCatalog":"mockcatalog",
+			"dbMinConnections":5,
+			"dbMaxConnections":20,
+			"dbJdbcUrl": "jdbc:mysql://localhost/epfdatabase", 
+			"dbUser": "mockusername",
+			"dbPassword": "mockpassword"
+		}
+	]
+}

@@ -2,11 +2,8 @@ package com.spazzmania.epf.mysql;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.mysql.jdbc.MysqlErrorNumbers;
 import com.spazzmania.epf.dao.EPFDbException;
@@ -54,25 +51,6 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 	private EPFDbWriterMySqlStmt mySqlStmt;
 	private EPFDbWriterMySqlDao mySqlDao;
-
-	public static Map<String, String> TRANSLATION_MAP = Collections
-			.unmodifiableMap(new HashMap<String, String>() {
-				private static final long serialVersionUID = 1L;
-				{
-					put("CLOB", "LONGTEXT");
-				}
-			});
-
-	public static List<String> UNQUOTED_TYPES = Collections
-			.unmodifiableList(new ArrayList<String>() {
-				private static final long serialVersionUID = 1L;
-				{
-					add("INTEGER");
-					add("INT");
-					add("BIGINT");
-					add("TINYINT");
-				}
-			});
 
 	private String tableName;
 	private String impTableName;
@@ -215,7 +193,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 		primaryKey = Arrays.asList(columnName);
 		
 		String sqlAlterTable = mySqlStmt.setPrimaryKeyStmt(tableName,
-				columnName);
+				primaryKey);
 
 		executeSQLStatementWithRetry(sqlAlterTable);
 	}
@@ -243,14 +221,14 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			insertCommand = "REPLACE";
 		}
 
-		String insertStmt = mySqlStmt.insertRowStatement(impTableName,
+		String insertStmt = mySqlStmt.insertRowStmt(impTableName,
 				columnsAndTypes, insertBuffer, insertCommand);
 		executeSQLStatementWithRetry(insertStmt);
 
 		insertBufferCount = 0;
 	}
 
-	public void executeSQLStatementWithRetry(String sqlStmt)
+	private void executeSQLStatementWithRetry(String sqlStmt)
 			throws EPFDbException {
 		int attempts = 0;
 		while (true) {
@@ -259,7 +237,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 				mySqlDao.executeSQLStatement(UNLOCK_TABLES);
 			} else if (attempts > MAX_SQL_ATTEMPTS) {
 				throw new EPFDbException(String.format(
-						"Error applying primary key constraint: %s", sqlStmt));
+						"Error executing SQL Statement: %s", sqlStmt));
 			}
 			SQLReturnStatus status = mySqlDao.executeSQLStatement(sqlStmt);
 			if (status.isSuccess()) {

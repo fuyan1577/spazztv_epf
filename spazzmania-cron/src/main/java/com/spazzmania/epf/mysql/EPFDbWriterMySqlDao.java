@@ -32,12 +32,6 @@ public class EPFDbWriterMySqlDao {
 
 		Connection connection = null;
 
-//		int l = sqlStmt.length();
-//		if (l > 80) {
-//			l = 80;
-//		}
-//		System.out.println(sqlStmt.substring(0, l));
-
 		Statement st;
 		try {
 			connection = dbWriter.getConnection();

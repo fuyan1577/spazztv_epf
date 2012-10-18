@@ -2,7 +2,7 @@ package com.spazzmania.epf.mysql;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -24,13 +24,14 @@ import com.spazzmania.epf.importer.EPFExportType;
 		EPFDbWriterMySqlStmt.class })
 public class EPFDbWriterMySqlTest {
 
-	EPFDbWriter dbWriter;
-	EPFDbWriterMySqlDao mySqlDao;
-	EPFDbWriterMySqlStmt mySqlStmt;
-	String tablePrefix = "test_";
-	String tableName = "epftable";
-	LinkedHashMap<String, String> columnsAndTypes;
-	String[] primaryKey;
+	private EPFDbWriter dbWriter;
+	private EPFDbWriterMySqlDao mySqlDao;
+	private EPFDbWriterMySqlStmt mySqlStmt;
+	private String tablePrefix = "test_";
+	private String tableName = "epftable";
+	private LinkedHashMap<String, String> columnsAndTypes;
+	private List<String> primaryKey;
+	private String[] keyColumns;
 
 	@Before
 	public void setUp() throws Exception {
@@ -66,7 +67,10 @@ public class EPFDbWriterMySqlTest {
 		columnsAndTypes.put("version", "VARCHAR(100)");
 		columnsAndTypes.put("itunes_version", "VARCHAR(100)");
 		columnsAndTypes.put("download_size", "BIGINT");
-		primaryKey = new String[] { "application_id" };
+		
+		keyColumns = new String[]{"application_id"};
+		primaryKey = new ArrayList<String>();
+		primaryKey.add("application_id");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -203,9 +207,10 @@ public class EPFDbWriterMySqlTest {
 		String expectedTableName = tablePrefix + tableName + "_tmp";
 
 		String expectedPrimaryKey = "";
-		for (int i = 0; i < primaryKey.length; i++) {
-			expectedPrimaryKey += "`" + primaryKey[i] + "`";
-			if ((i + 1) < primaryKey.length) {
+		Iterator<String> i = primaryKey.iterator();
+		while (i.hasNext()) {
+			expectedPrimaryKey += "`" + i.next() + "`";
+			if (i.hasNext()) {
 				expectedPrimaryKey += ",";
 			}
 		}
@@ -230,7 +235,7 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		EasyMock.replay(mySqlDao);
 
-		dbWriter.setPrimaryKey(expectedTableName, primaryKey);
+		dbWriter.setPrimaryKey(expectedTableName, keyColumns);
 
 		EasyMock.verify(mySqlDao);
 	}
@@ -302,7 +307,7 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.expectLastCall().andReturn(expectedSQLRenameTable);
 		mySqlStmt.renameTableStmt(expectedTmpTableName, expectedTableName);
 		EasyMock.expectLastCall().andReturn(expectedSQLRenameTable2);
-		mySqlStmt.insertRowStatement(EasyMock.eq(expectedTmpTableName),
+		mySqlStmt.insertRowStmt(EasyMock.eq(expectedTmpTableName),
 				EasyMock.eq(columnsAndTypes),
 				(List<List<String>>) EasyMock.anyObject(),
 				(String) EasyMock.anyObject());
@@ -384,7 +389,7 @@ public class EPFDbWriterMySqlTest {
 		mySqlStmt.setupColumnAndTypesMap(EasyMock.eq(columnsAndTypes),
 				EasyMock.eq(expectedTableColumns));
 		EasyMock.expectLastCall().andReturn(columnsAndTypes).times(1);
-		mySqlStmt.insertRowStatement(EasyMock.eq(expectedTableName),
+		mySqlStmt.insertRowStmt(EasyMock.eq(expectedTableName),
 				EasyMock.eq(columnsAndTypes),
 				(List<List<String>>) EasyMock.anyObject(),
 				(String) EasyMock.anyObject());
@@ -474,11 +479,12 @@ public class EPFDbWriterMySqlTest {
 		String expectedUnionJoin = String.format(
 				EPFDbWriterMySqlStmt.UNION_CREATE_WHERE, expectedTableName,
 				expectedTmpTableName);
-		for (i = 0; i < primaryKey.length; i++) {
+		
+		for (String k : primaryKey) {
 			expectedUnionJoin += " "
 					+ String.format(EPFDbWriterMySqlStmt.UNION_CREATE_JOIN,
-							expectedTableName, primaryKey[i],
-							expectedTmpTableName, primaryKey[i]);
+							expectedTableName, k,
+							expectedTmpTableName, k);
 		}
 		String expectedSQLCreateTableUnc = String.format(
 				EPFDbWriterMySqlStmt.UNION_CREATE_PT1, expectedUncTableName,
@@ -497,9 +503,10 @@ public class EPFDbWriterMySqlTest {
 		}
 
 		String expectedPrimaryKey = "";
-		for (i = 0; i < primaryKey.length; i++) {
-			expectedPrimaryKey += "`" + primaryKey[i] + "`";
-			if ((i + 1) < primaryKey.length) {
+		Iterator<String> pk = primaryKey.iterator();
+		while (pk.hasNext()) {
+			expectedPrimaryKey += "`" + pk.next() + "`";
+			if (pk.hasNext()) {
 				expectedPrimaryKey += ",";
 			}
 		}
@@ -527,14 +534,14 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.expectLastCall().andReturn(expectedSQLRenameTable);
 		mySqlStmt.renameTableStmt(expectedUncTableName, expectedTableName);
 		EasyMock.expectLastCall().andReturn(expectedSQLRenameTableUnc);
-		mySqlStmt.insertRowStatement(EasyMock.eq(expectedTmpTableName),
+		mySqlStmt.insertRowStmt(EasyMock.eq(expectedTmpTableName),
 				EasyMock.eq(columnsAndTypes),
 				(List<List<String>>) EasyMock.anyObject(),
 				(String) EasyMock.anyObject());
 		EasyMock.expectLastCall().andReturn(expectedBlockInsertSQL).times(1);
 		EasyMock.expectLastCall().andReturn(expectedBlockInsertSQLFinalize)
 				.times(1);
-		mySqlStmt.mergeTableStmt(expectedTableName, expectedTmpTableName, expectedUncTableName, Arrays.asList(primaryKey));
+		mySqlStmt.mergeTableStmt(expectedTableName, expectedTmpTableName, expectedUncTableName, primaryKey);
 		EasyMock.expectLastCall().andReturn(expectedSQLCreateTableUnc).times(1);
 		EasyMock.replay(mySqlStmt);
 
@@ -571,7 +578,7 @@ public class EPFDbWriterMySqlTest {
 		dbWriter.initImport(EPFExportType.INCREMENTAL, tableName,
 				columnsAndTypes, numberOfRows);
 
-		dbWriter.setPrimaryKey(expectedTableName, primaryKey);
+		dbWriter.setPrimaryKey(expectedTableName, keyColumns);
 
 		for (i = 0; i < expectedRows + 1; i++) {
 			dbWriter.insertRow(getInsertData(i));
@@ -600,9 +607,10 @@ public class EPFDbWriterMySqlTest {
 		String expectedTableName = tablePrefix + tableName + "_tmp";
 
 		String expectedPrimaryKey = "";
-		for (int i = 0; i < primaryKey.length; i++) {
-			expectedPrimaryKey += "`" + primaryKey[i] + "`";
-			if ((i + 1) < primaryKey.length) {
+		Iterator<String> i = primaryKey.iterator();
+		while (i.hasNext()) {
+			expectedPrimaryKey += "`" + i.next() + "`";
+			if (i.hasNext()) {
 				expectedPrimaryKey += ",";
 			}
 		}
@@ -634,7 +642,7 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
 		EasyMock.replay(mySqlDao);
 
-		dbWriter.setPrimaryKey(expectedTableName, primaryKey);
+		dbWriter.setPrimaryKey(expectedTableName, keyColumns);
 
 		EasyMock.verify(mySqlStmt);
 		EasyMock.verify(mySqlDao);
@@ -660,7 +668,7 @@ public class EPFDbWriterMySqlTest {
 		StringBuffer values = new StringBuffer();
 
 		for (int i = 0; i < rowData.length; i++) {
-			if (EPFDbWriterMySql.UNQUOTED_TYPES.contains(columnTypes[i])) {
+			if (EPFDbWriterMySqlStmt.UNQUOTED_TYPES.contains(columnTypes[i])) {
 				values.append(rowData[i]);
 			} else {
 				values.append("'" + rowData[i] + "'");

@@ -18,8 +18,8 @@ public class EPFDbWriterMySqlStmt {
 	public static String TABLE_EXISTS_SQL = "SHOW TABLES";
 	public static String UNLOCK_TABLES = "UNLOCK TABLES";
 
-	public static String UNION_CREATE_PT1 = "CREATE TABLE %s IGNORE SELECT * FROM %s UNION ALL ";
-	public static String UNION_CREATE_PT2 = "SELECT * FROM %s WHERE 0 = (SELECT COUNT(*) FROM %s %s";
+	public static String UNION_CREATE_PT1 = "CREATE TABLE %s AS SELECT * FROM %s UNION ALL ";
+	public static String UNION_CREATE_PT2 = "SELECT * FROM %s WHERE 0 = (SELECT COUNT(*) FROM %s %s)";
 	public static String UNION_CREATE_WHERE = "WHERE %s.export_date <= %s.export_date";
 	public static String UNION_CREATE_JOIN = "AND %s.%s = %s.%s ";
 
@@ -93,22 +93,24 @@ public class EPFDbWriterMySqlStmt {
 		return actualColAndTypes;
 	}
 
-	public String setPrimaryKeyStmt(String tableName, String[] keyColumns)
+	public String setPrimaryKeyStmt(String tableName, List<String> keyColumns)
 			{
 
 		String primaryKeyColumns = "";
 
-		for (int i = 0; i < keyColumns.length; i++) {
-			primaryKeyColumns += "`" + keyColumns[i] + "`";
-			if (i + 1 < keyColumns.length) {
+		Iterator<String> i = keyColumns.iterator();
+		while (i.hasNext()) {
+			primaryKeyColumns += "`" + (String)i.next() + "`";
+			if (i.hasNext()) {
 				primaryKeyColumns += ",";
 			}
+			
 		}
 
 		return String.format(PRIMARY_KEY_STMT, tableName, primaryKeyColumns);
 	}
 
-	public String insertRowStatement(String tableName,
+	public String insertRowStmt(String tableName,
 			LinkedHashMap<String, String> columnsAndTypes,
 			List<List<String>> insertValues, String insertCommand) {
 
@@ -118,7 +120,7 @@ public class EPFDbWriterMySqlStmt {
 			if (insertBuffer.length() > 0) {
 				insertBuffer += ",";
 			}
-			insertBuffer += formatInsertRow(columnsAndTypes, rowValues);
+			insertBuffer += "(" + formatInsertRow(columnsAndTypes, rowValues) + ")";
 		}
 
 		return String.format(INSERT_SQL_STMT, insertCommand, tableName,
@@ -171,7 +173,7 @@ public class EPFDbWriterMySqlStmt {
 		Object[] cTypes = columnsAndTypes.values().toArray();
 		for (int i = 0; i < rowData.size(); i++) {
 			// Include only columns mapped in columnMap
-			if (cTypes.length < i) {
+			if (i < cTypes.length) {
 				if (rowData.get(i).length() == 0) {
 					row += "NULL";
 				} else if (!UNQUOTED_TYPES.contains((String) cTypes[i])) {

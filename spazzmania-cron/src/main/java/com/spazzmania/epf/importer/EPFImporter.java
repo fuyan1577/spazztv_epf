@@ -22,7 +22,7 @@ public class EPFImporter {
 
 	public static int EPF_PAUSE_INTERVAL = 10000;
 	private int pauseInterval = EPF_PAUSE_INTERVAL;
-
+	
 	public EPFConfig getConfig() {
 		return config;
 	}

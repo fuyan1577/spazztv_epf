@@ -75,6 +75,13 @@ public class EPFDbWriterOracleStmt {
 					add("NUMBER.*");
 				}
 			});
+	
+	public static List<String> DATE_TYPES = Collections.unmodifiableList(new ArrayList<String>() {
+		private static final long serialVersionUID = 1L;
+		{
+			add("DATETIME");
+		}
+	});
 
 	private String translateColumnType(String columnType) {
 		for (String typePat : TRANSLATION_MAP.keySet()) {
@@ -136,7 +143,7 @@ public class EPFDbWriterOracleStmt {
 
 		Iterator<String> i = keyColumns.iterator();
 		while (i.hasNext()) {
-			primaryKeyColumns += (String) i.next();
+			primaryKeyColumns += "\"" + (String) i.next() + "\"";
 			if (i.hasNext()) {
 				primaryKeyColumns += ",";
 			}
@@ -230,11 +237,11 @@ public class EPFDbWriterOracleStmt {
 	 */
 	private String columnNames(LinkedHashMap<String, String> columnsAndTypes) {
 		StringBuilder concatList = new StringBuilder();
-		for (String word : columnsAndTypes.keySet()) {
+		for (String columnName : columnsAndTypes.keySet()) {
 			if (concatList.length() > 0) {
 				concatList.append(",");
 			}
-			concatList.append("`" + word + "`");
+			concatList.append(columnName);
 		}
 		return concatList.toString();
 	}
@@ -248,6 +255,8 @@ public class EPFDbWriterOracleStmt {
 			if (i < cTypes.length) {
 				if (rowData.get(i).length() == 0) {
 					row += "NULL";
+				} else if (isDateType((String) cTypes[i])) {
+					row += "to_date('" + rowData.get(i) + "','YYYY-MM-DD HH24:MI:SS')";
 				} else if (isQuotedType((String) cTypes[i])) {
 					row += "'" + rowData.get(i).replaceAll("'", "''") + "'";
 				} else {
@@ -268,5 +277,14 @@ public class EPFDbWriterOracleStmt {
 			}
 		}
 		return true;
+	}
+	
+	private boolean isDateType(String type) {
+		for (String dtType : DATE_TYPES) {
+			if (type.matches(dtType)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

@@ -69,8 +69,8 @@ public class EPFDbConnector {
 			pds = PoolDataSourceFactory.getPoolDataSource();
 			pds.setConnectionPoolName(EPF_DB_POOL_NAME);
 
-			String factoryClassName = DB_FACTORY_CLASS_MAP.get(dbConfig
-					.getDbDataSource());
+			String factoryClassName = DB_FACTORY_CLASS_MAP.get(
+					dbConfig.getDbDataSource());
 			if (factoryClassName == null) {
 				throw new EPFDbException(String.format(
 						"Invalid/Unsupported Driver Class: %s",

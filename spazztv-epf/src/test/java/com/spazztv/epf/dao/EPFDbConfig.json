@@ -1,7 +1,7 @@
 {
 	"dbConnection" : {
-		"dbDataSource":"com.mysql.jdbc2.DataSource",
-		"dbWriter":"com.spazztv.dao.EPFDbWriterMySql",
+		"dbDataSourceClass":"com.mysql.jdbc2.optional.MysqlDataSource",
+		"dbWriterClass":"com.spazztv.dao.EPFDbWriterMySql",
 		"dbDefaultCatalog":"mockcatalog",
 		"dbMinConnections":5,
 		"dbMaxConnections":20,

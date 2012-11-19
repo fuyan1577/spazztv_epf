@@ -16,6 +16,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.spazztv.epf.dao.EPFDbConfig;
 import com.spazztv.epf.dao.EPFDbConnector;
+import com.spazztv.epf.dao.EPFDbWriter;
 import com.spazztv.epf.dao.EPFDbWriterFactory;
 
 @RunWith(PowerMockRunner.class)
@@ -61,26 +62,11 @@ public class EPFImporterTest {
 		EasyMock.expectLastCall().andReturn(false).times(1);
 		EasyMock.replay(importManager);
 		
-		EPFDbConnector dbConnector = EasyMock.createMock(EPFDbConnector.class);
-		dbConnector.closeConnectionPool();
-		EasyMock.expectLastCall().times(1);
-		EasyMock.replay(dbConnector);
-		
-		EPFDbWriterFactory dbWriterFactory = EasyMock.createMock(EPFDbWriterFactory.class);
-		dbWriterFactory.getConnector();
-		EasyMock.expectLastCall().andReturn(dbConnector).times(1);
-		EasyMock.replay(dbWriterFactory);
-		
 		EPFConfig config = new EPFConfig();
 		EPFDbConfig dbConfig = new EPFDbConfig();
 		
 		PowerMock.expectNew(EPFImportManager.class,config,dbConfig).andReturn(importManager).times(1);
 		PowerMock.replay(EPFImportManager.class);
-		
-		PowerMock.mockStatic(EPFDbWriterFactory.class);
-		EPFDbWriterFactory.getInstance();
-		PowerMock.expectLastCall().andReturn(dbWriterFactory).times(1);
-		PowerMock.replay(EPFDbWriterFactory.class);
 		
 		epfImporter.setConfig(config);
 		epfImporter.setDbConfig(dbConfig);
@@ -88,9 +74,6 @@ public class EPFImporterTest {
 		epfImporter.runImporterJob();
 		
 		PowerMock.verify(EPFImportManager.class);
-		PowerMock.verify(EPFDbWriterFactory.class);
 		EasyMock.verify(importManager);
-		EasyMock.verify(dbWriterFactory);
-		EasyMock.verify(dbConnector);
 	}
 }

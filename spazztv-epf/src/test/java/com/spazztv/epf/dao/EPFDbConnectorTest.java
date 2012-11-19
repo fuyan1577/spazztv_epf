@@ -22,8 +22,8 @@ public class EPFDbConnectorTest {
 		dbConfig = new EPFDbConfig();
 		dbConfig.setDbDataSourceClass("com.mysql.jdbc.jdbc2.optional.MysqlDataSource");
 		dbConfig.setDbUrl("jdbc:mysql://localhost:3306/epf");
-		dbConfig.setUsername("webaccess");
-		dbConfig.setPassword("wsc2aofi");
+		dbConfig.setUsername("epftest");
+		dbConfig.setPassword("epftest");
 		if (connector == null) {
 			connector = EPFDbConnector.getInstance(dbConfig);
 		}

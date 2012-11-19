@@ -5,7 +5,7 @@
 		"dbMinConnections":5,
 		"dbMaxConnections":20,
 		"dbUrl": "jdbc:mysql://localhost/epf", 
-		"dbUser": "epf",
-		"dbPassword": "epf123"
+		"dbUser": "epftest",
+		"dbPassword": "epftest"
 	}
 }

@@ -42,8 +42,8 @@ public class EPFDbConfig {
 
 	public EPFDbConfig() {
 		dbUrl = "jdbc:mysql://localhost:3306/epf";
-		username = "epfimporter";
-		password = "epf123";
+		username = "epftest";
+		password = "epftest";
 	}
 
 	public EPFDbConfig(File configFile) throws IOException,

@@ -130,6 +130,8 @@ public class EPFImportManagerTest {
 		PowerMock.mockStatic(EPFDbWriterFactory.class);
 		EasyMock.expect(
 				EPFDbWriterFactory.getDbWriter(dbConfig)).andReturn(dbWriter).times(2);
+		EPFDbWriterFactory.closeFactory();
+		PowerMock.expectLastCall().times(1);
 		PowerMock.replay(EPFDbWriterFactory.class);
 
 		PowerMock.expectNew(EPFImportTask.class, "./listitem1", dbWriter)

@@ -10,10 +10,11 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.spazztv.epf.dao.EPFDbConfig;
 import com.spazztv.epf.dao.EPFDbException;
-import com.spazztv.epf.dao.EPFDbWriterFactory;
 
 public class EPFImporter {
 
@@ -22,6 +23,8 @@ public class EPFImporter {
 
 	public static int EPF_PAUSE_INTERVAL = 10000;
 	private int pauseInterval = EPF_PAUSE_INTERVAL;
+	
+	private static Logger logger;
 	
 	public EPFConfig getConfig() {
 		return config;
@@ -51,6 +54,13 @@ public class EPFImporter {
 		System.out
 				.println("       [-b regex [-b regex2 [...]]] source_directory [source_directory2 ...]");
 	}
+	
+	public static Logger getLogger() {
+		if (logger == null) {
+			logger = LoggerFactory.getLogger(EPFImporter.class.getName());
+		}
+		return logger;
+	}
 
 	private void updateConfigWithCommandLineArguments(CommandLine line)
 			throws EPFImporterException {
@@ -66,7 +76,9 @@ public class EPFImporter {
 			} else if (arg.equals("dbpassword")) {
 				dbConfig.setPassword(line.getOptionValue(arg));
 			} else if (arg.equals("dbdriver")) {
-				dbConfig.setDbDataSource(line.getOptionValue(arg));
+				dbConfig.setDbDataSourceClass(line.getOptionValue(arg));
+			} else if (arg.equals("dbwriter")) {
+				dbConfig.setDbWriterClass(line.getOptionValue(arg));
 			} else if (arg.equals("allowextensions")) {
 				config.setAllowExtensions(true);
 			} else if (arg.equals("tableprefix")) {
@@ -122,6 +134,8 @@ public class EPFImporter {
 				"\"The name of the database to connect to\"");
 		options.addOption("l", "dbdriver", true,
 				"\"The JDBC Driver Class name\"");
+		options.addOption("dbwriter", true,
+				"\"The JDBC DataSource Class name\"");
 		options.addOption("t", "max_threads", true,
 				"\"The maximum concurrently executing threads. Default to 8\"");
 		options.addOption("a", "allowextensions", false,
@@ -168,9 +182,8 @@ public class EPFImporter {
 	public void verifyConfiguration() throws EPFImporterException {
 		boolean invalidConfig = false;
 		String msg = "";
-		if (dbConfig.getDbDataSource() == null) {
+		if (dbConfig.getDbDataSourceClass() == null) {
 			invalidConfig = true;
-			msg += " - JDBC Driver Class is required";
 		}
 		if (dbConfig.getDbUrl() == null) {
 			invalidConfig = true;
@@ -270,7 +283,6 @@ public class EPFImporter {
 				// Ignore
 			}
 		}
-		EPFDbWriterFactory.getInstance().getConnector().closeConnectionPool();
 	}
 
 	/**

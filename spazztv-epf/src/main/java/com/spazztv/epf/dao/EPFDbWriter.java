@@ -4,8 +4,8 @@
 package com.spazztv.epf.dao;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import com.spazztv.epf.EPFExportType;
 
@@ -105,7 +105,7 @@ public abstract class EPFDbWriter {
 	 * 
 	 * @return
 	 */
-	public final Connection getConnection() throws SQLException {
+	public final Connection getConnection() throws EPFDbException {
 		return connector.getConnection();
 	}
 
@@ -135,17 +135,7 @@ public abstract class EPFDbWriter {
 	 *            Number of rows in the import file
 	 */
 	public abstract void initImport(EPFExportType exportType, String tableName,
-			LinkedHashMap<String, String> columnsAndTypes, long numberOfRows)
-			throws EPFDbException;
-
-	/**
-	 * Set the column that is the Primary Key. Single column primary keys are
-	 * assumed.
-	 * 
-	 * @param tableName
-	 * @param columnName
-	 */
-	public abstract void setPrimaryKey(String tableName, String[] columnName)
+			LinkedHashMap<String, String> columnsAndTypes, List<String> primaryKey, long numberOfRows)
 			throws EPFDbException;
 
 	/**

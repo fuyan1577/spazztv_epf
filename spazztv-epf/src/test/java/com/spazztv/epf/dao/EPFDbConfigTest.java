@@ -23,16 +23,16 @@ public class EPFDbConfigTest {
 	public void setUp() {
 		dbConfig = new EPFDbConfig();
 		epfDbConfigJson = "{" + "	\"dbConnection\": {"
-				+ "		\"dbWriter\":\"com.spazztv.epf.adapter.EPFDbWriterMySql\","
-				+ "		\"dbDataSource\":\"com.mysql.jdbc.Driver\","
+				+ "		\"dbWriterClass\":\"com.spazztv.epf.adapter.EPFDbWriterMySql\","
+				+ "		\"dbDataSourceClass\":\"com.mysql.jdbc.Driver\","
 				+ "		\"dbDefaultCatalog\":\"mockcatalog\","
 				+ "		\"dbMinConnections\":6," + "		\"dbMaxConnections\":21,"
 				+ "		\"dbUrl\": \"jdbc:mysql://localhost/mockdb\", "
 				+ "		\"dbUser\": \"mockusername\","
 				+ "		\"dbPassword\": \"mockpassword\"" + "	}" + "}";
 		epfDbConfigJson2 = "{" + "	\"dbConnection\": {"
-				+ "		\"dbWriter\":\"com.spazztv.epf.adapter.EPFDbWriterMySql\","
-				+ "		\"dbDataSource\":\"com.mysql.jdbc.Driver\","
+				+ "		\"dbWriterClass\":\"com.spazztv.epf.adapter.EPFDbWriterMySql\","
+				+ "		\"dbDataSourceClass\":\"com.mysql.jdbc.Driver\","
 				+ "		\"dbDefaultCatalog\":\"mockcatalog\","
 				+ "		\"dbUrl\": \"jdbc:mysql://localhost/mockdb\", "
 				+ "		\"dbUser\": \"mockusername\","
@@ -54,9 +54,9 @@ public class EPFDbConfigTest {
 	public void testParseConfiguration() throws EPFImporterException {
 		dbConfig.parseConfiguration(epfDbConfigJson);
 		Assert.assertTrue("Invalid dbWriter",
-				dbConfig.getDbWriter().equals("com.spazztv.epf.adapter.EPFDbWriterMySql"));
+				dbConfig.getDbWriterClass().equals("com.spazztv.epf.adapter.EPFDbWriterMySql"));
 		Assert.assertTrue("Invalid dbDataSource",
-				dbConfig.getDbDataSource().equals("com.mysql.jdbc.Driver"));
+				dbConfig.getDbDataSourceClass().equals("com.mysql.jdbc.Driver"));
 		Assert.assertTrue("Invalid jdbcUrl",
 				dbConfig.getDbUrl().equals("jdbc:mysql://localhost/mockdb"));
 		Assert.assertTrue("Invalid defaultCatalog",
@@ -82,8 +82,8 @@ public class EPFDbConfigTest {
 		Assert.assertNotNull("EPFDbConfig.json not found for JUnit test",
 				epfDbConfigPath);
 		EPFDbConfig config = new EPFDbConfig(new File(epfDbConfigPath));
-		Assert.assertNotNull("Invalid dbWriter",config.getDbDataSource());
-		Assert.assertNotNull("Invalid dbDataSource",config.getDbDataSource());
+		Assert.assertNotNull("Invalid dbWriter",config.getDbWriterClass());
+		Assert.assertNotNull("Invalid dbDataSource",config.getDbDataSourceClass());
 		Assert.assertNotNull("Invalid dbJdbcUrl",config.getDbUrl());
 		Assert.assertNotNull("Invalid dbDefaultCatalog",config.getDefaultCatalog());
 		Assert.assertNotNull("Invalid dbUser",config.getUsername());

@@ -52,8 +52,8 @@ public class EPFConfig {
 	private boolean allowExtensions = false;
 	private boolean skipKeyViolators = false;
 	private String tablePrefix = "";
-	private String recordSeparator = EPF_RECORD_SEPARATOR;
-	private String fieldSeparator = EPF_FIELD_SEPARATOR;
+	private String recordSeparator = EPF_RECORD_SEPARATOR_DEFAULT;
+	private String fieldSeparator = EPF_FIELD_SEPARATOR_DEFAULT;
 	private String snapShotFile;
 
 	public EPFConfig() {

@@ -1,35 +1,17 @@
 package com.spazztv.epf.dao;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @author Thomas Billingsley
  * @version 1.0
  */
 public class EPFDbWriterFactory {
 
-	public static Map<String, String> EPF_DB_WRITER_MAP = Collections
-			.unmodifiableMap(new HashMap<String, String>() {
-				private static final long serialVersionUID = 1L;
-				{
-					put("com.mysql.jdbc.Driver",
-							com.spazztv.epf.adapter.EPFDbWriterMySql.class
-									.getName());
-				}
-			});
-
 	private static EPFDbWriterFactory factory = null;
 
 	private EPFDbConnector connector;
 
 	private EPFDbWriterFactory(EPFDbConfig dbConfig) throws EPFDbException {
-		try {
-			connector = new EPFDbConnector(dbConfig);
-		} catch (EPFDbException e) {
-			throw new EPFDbException(e.getMessage());
-		}
+		connector = EPFDbConnector.getInstance(dbConfig);
 	}
 
 	public static EPFDbWriterFactory getInstance() {
@@ -51,22 +33,12 @@ public class EPFDbWriterFactory {
 
 	private EPFDbWriter newDbWriterInstance(EPFDbConfig dbConfig)
 			throws EPFDbException {
-		if (!EPF_DB_WRITER_MAP.containsKey(dbConfig.getDbDataSource())) {
-			throw new EPFDbException("Unknown/Unsupported Driver: "
-					+ dbConfig.getDbDataSource());
-		}
-
 		EPFDbWriter dbWriter = null;
 
 		try {
-			dbWriter = (EPFDbWriter) Class.forName(
-					EPF_DB_WRITER_MAP.get(dbConfig.getDbDataSource()))
+			dbWriter = (EPFDbWriter) Class.forName(dbConfig.getDbWriterClass())
 					.newInstance();
-		} catch (InstantiationException e) {
-			throw new EPFDbException(e.getMessage());
-		} catch (IllegalAccessException e) {
-			throw new EPFDbException(e.getMessage());
-		} catch (ClassNotFoundException e) {
+		} catch (Exception e) {
 			throw new EPFDbException(e.getMessage());
 		}
 
@@ -85,6 +57,16 @@ public class EPFDbWriterFactory {
 	 */
 	public EPFDbConnector getConnector() {
 		return connector;
+	}
+
+	/**
+	 * Close the connectionPool. The method called closes the pool only if it is
+	 * currently open.
+	 * 
+	 * @throws EPFDbException
+	 */
+	public static void closeFactory() throws EPFDbException {
+		factory.getConnector().closeConnectionPool();
 	}
 
 }

@@ -2,7 +2,7 @@ package com.spazztv.epf.adapter;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -30,7 +30,6 @@ public class EPFDbWriterMySqlTest {
 	private String tableName = "epftable";
 	private LinkedHashMap<String, String> columnsAndTypes;
 	private List<String> primaryKey;
-	private String[] keyColumns;
 
 	@Before
 	public void setUp() throws Exception {
@@ -66,10 +65,9 @@ public class EPFDbWriterMySqlTest {
 		columnsAndTypes.put("version", "VARCHAR(100)");
 		columnsAndTypes.put("itunes_version", "VARCHAR(100)");
 		columnsAndTypes.put("download_size", "BIGINT");
-		
-		keyColumns = new String[]{"application_id"};
-		primaryKey = new ArrayList<String>();
-		primaryKey.add("application_id");
+
+		String[] keyColumns = new String[] { "application_id" };
+		primaryKey = Arrays.asList(keyColumns);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -107,7 +105,7 @@ public class EPFDbWriterMySqlTest {
 
 		long numberOfRows = 500000;
 		dbWriter.initImport(EPFExportType.FULL, tableName, columnsAndTypes,
-				numberOfRows);
+				primaryKey, numberOfRows);
 
 		EasyMock.verify(mySqlDao);
 	}
@@ -139,7 +137,7 @@ public class EPFDbWriterMySqlTest {
 
 		long numberOfRows = 499999;
 		dbWriter.initImport(EPFExportType.INCREMENTAL, tableName,
-				columnsAndTypes, numberOfRows);
+				columnsAndTypes, primaryKey, numberOfRows);
 
 		EasyMock.verify(mySqlDao);
 	}
@@ -196,45 +194,7 @@ public class EPFDbWriterMySqlTest {
 
 		long numberOfRows = 500000;
 		dbWriter.initImport(EPFExportType.INCREMENTAL, tableName,
-				columnsAndTypes, numberOfRows);
-
-		EasyMock.verify(mySqlDao);
-	}
-
-	@Test
-	public void testSetPrimaryKey() throws SQLException, EPFDbException {
-		String expectedTableName = tablePrefix + tableName + "_tmp";
-
-		String expectedPrimaryKey = "";
-		Iterator<String> i = primaryKey.iterator();
-		while (i.hasNext()) {
-			expectedPrimaryKey += "`" + i.next() + "`";
-			if (i.hasNext()) {
-				expectedPrimaryKey += ",";
-			}
-		}
-
-		String expectedSQLSetPrimaryKey = String.format(
-				EPFDbWriterMySqlStmt.PRIMARY_KEY_STMT, expectedTableName,
-				expectedPrimaryKey);
-
-		SQLReturnStatus returnStatus = new SQLReturnStatus();
-		returnStatus.setSuccess(true);
-
-		EasyMock.reset(mySqlStmt);
-		// mySqlStmt.setupColumnAndTypesMap(EasyMock.eq(columnsAndTypes),
-		// EasyMock.isNull())
-		mySqlStmt.setPrimaryKeyStmt(expectedTableName, primaryKey);
-		EasyMock.expectLastCall().andReturn(expectedSQLSetPrimaryKey).times(1);
-		EasyMock.replay(mySqlStmt);
-
-		EasyMock.reset(mySqlDao);
-		mySqlDao.executeSQLStatement((String) EasyMock
-				.eq(expectedSQLSetPrimaryKey));
-		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		EasyMock.replay(mySqlDao);
-
-		dbWriter.setPrimaryKey(expectedTableName, keyColumns);
+				columnsAndTypes, primaryKey, numberOfRows);
 
 		EasyMock.verify(mySqlDao);
 	}
@@ -266,6 +226,9 @@ public class EPFDbWriterMySqlTest {
 		String expectedBlockInsertSQLFinalize;
 		String expectedInsertColumns = getInsertColumns();
 		String expectedInsertValues = "";
+		String expectedAlterTableSetPrimaryKeySQL = String.format(
+				EPFDbWriterMySqlStmt.PRIMARY_KEY_STMT, expectedTmpTableName,
+				primaryKey);
 
 		StringBuffer buf = new StringBuffer();
 		int i;
@@ -313,6 +276,9 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.expectLastCall().andReturn(expectedBlockInsertSQL).times(1);
 		EasyMock.expectLastCall().andReturn(expectedBlockInsertSQLFinalize)
 				.times(1);
+		mySqlStmt.setPrimaryKeyStmt(expectedTableName + "_tmp", primaryKey);
+		EasyMock.expectLastCall().andReturn(expectedAlterTableSetPrimaryKeySQL)
+				.times(1);
 		EasyMock.replay(mySqlStmt);
 
 		EasyMock.reset(mySqlDao);
@@ -332,11 +298,13 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		mySqlDao.executeSQLStatement(expectedBlockInsertSQLFinalize);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
+		mySqlDao.executeSQLStatement(expectedAlterTableSetPrimaryKeySQL);
+		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		EasyMock.replay(mySqlDao);
 
 		long numberOfRows = 500000;
 		dbWriter.initImport(EPFExportType.FULL, tableName, columnsAndTypes,
-				numberOfRows);
+				primaryKey, numberOfRows);
 
 		for (i = 0; i < expectedRows + 1; i++) {
 			dbWriter.insertRow(getInsertData(i));
@@ -412,7 +380,7 @@ public class EPFDbWriterMySqlTest {
 
 		long numberOfRows = 499999;
 		dbWriter.initImport(EPFExportType.INCREMENTAL, tableName,
-				columnsAndTypes, numberOfRows);
+				columnsAndTypes, primaryKey, numberOfRows);
 
 		for (i = 0; i < expectedRows + 1; i++) {
 			dbWriter.insertRow(getInsertData(i));
@@ -466,6 +434,10 @@ public class EPFDbWriterMySqlTest {
 				expectedTmpTableName, expectedInsertColumns,
 				expectedInsertValues);
 
+		String expectedAlterTableSetPrimaryKeySQL = String.format(
+				EPFDbWriterMySqlStmt.PRIMARY_KEY_STMT, expectedUncTableName,
+				primaryKey);
+
 		// Use 1 more record to create the insert statement for the
 		// finalizeImport() call
 		expectedInsertValues = "(" + getInsertValues(i) + ")";
@@ -478,12 +450,11 @@ public class EPFDbWriterMySqlTest {
 		String expectedUnionJoin = String.format(
 				EPFDbWriterMySqlStmt.UNION_CREATE_WHERE, expectedTableName,
 				expectedTmpTableName);
-		
+
 		for (String k : primaryKey) {
 			expectedUnionJoin += " "
 					+ String.format(EPFDbWriterMySqlStmt.UNION_CREATE_JOIN,
-							expectedTableName, k,
-							expectedTmpTableName, k);
+							expectedTableName, k, expectedTmpTableName, k);
 		}
 		String expectedSQLCreateTableUnc = String.format(
 				EPFDbWriterMySqlStmt.UNION_CREATE_PT1, expectedUncTableName,
@@ -501,25 +472,10 @@ public class EPFDbWriterMySqlTest {
 			expectedTableColumns.add(columnName);
 		}
 
-		String expectedPrimaryKey = "";
-		Iterator<String> pk = primaryKey.iterator();
-		while (pk.hasNext()) {
-			expectedPrimaryKey += "`" + pk.next() + "`";
-			if (pk.hasNext()) {
-				expectedPrimaryKey += ",";
-			}
-		}
-
-		String expectedSQLSetPrimaryKey = String.format(
-				EPFDbWriterMySqlStmt.PRIMARY_KEY_STMT, expectedTableName,
-				expectedPrimaryKey);
-
 		EasyMock.reset(mySqlStmt);
 		mySqlStmt.setupColumnAndTypesMap(EasyMock.eq(columnsAndTypes),
 				EasyMock.eq(expectedTableColumns));
 		EasyMock.expectLastCall().andReturn(columnsAndTypes).times(1);
-		mySqlStmt.setPrimaryKeyStmt(expectedTableName, primaryKey);
-		EasyMock.expectLastCall().andReturn(expectedSQLSetPrimaryKey).times(1);
 		mySqlStmt.dropTableStmt(expectedTmpTableName);
 		EasyMock.expectLastCall().andReturn(expectedSQLDropTable).times(2);
 		mySqlStmt.dropTableStmt(expectedTableName + "_old");
@@ -540,8 +496,13 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.expectLastCall().andReturn(expectedBlockInsertSQL).times(1);
 		EasyMock.expectLastCall().andReturn(expectedBlockInsertSQLFinalize)
 				.times(1);
-		mySqlStmt.mergeTableStmt(expectedTableName, expectedTmpTableName, expectedUncTableName, primaryKey);
+		mySqlStmt.mergeTableStmt(expectedTableName, expectedTmpTableName,
+				expectedUncTableName, primaryKey);
 		EasyMock.expectLastCall().andReturn(expectedSQLCreateTableUnc).times(1);
+		mySqlStmt.setPrimaryKeyStmt(expectedUncTableName, primaryKey);
+		EasyMock.expectLastCall().andReturn(expectedAlterTableSetPrimaryKeySQL)
+				.times(1);
+
 		EasyMock.replay(mySqlStmt);
 
 		EasyMock.reset(mySqlDao);
@@ -563,28 +524,26 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		mySqlDao.executeSQLStatement(expectedBlockInsertSQLFinalize);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLSetPrimaryKey);
-		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		mySqlDao.getTableColumns(expectedTableName);
 		EasyMock.expectLastCall().andReturn(expectedTableColumns).times(1);
 		mySqlDao.isTableInDatabase(expectedTableName);
 		EasyMock.expectLastCall().andReturn(true).times(1);
 		mySqlDao.executeSQLStatement(expectedSQLCreateTableUnc);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
+		mySqlDao.executeSQLStatement(expectedAlterTableSetPrimaryKeySQL);
+		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		EasyMock.replay(mySqlDao);
 
 		long numberOfRows = 500000;
 		dbWriter.initImport(EPFExportType.INCREMENTAL, tableName,
-				columnsAndTypes, numberOfRows);
-
-		dbWriter.setPrimaryKey(expectedTableName, keyColumns);
+				columnsAndTypes, primaryKey, numberOfRows);
 
 		for (i = 0; i < expectedRows + 1; i++) {
 			dbWriter.insertRow(getInsertData(i));
 		}
 
 		dbWriter.finalizeImport();
-		
+
 		EasyMock.verify(mySqlStmt);
 		EasyMock.verify(mySqlDao);
 
@@ -601,22 +560,73 @@ public class EPFDbWriterMySqlTest {
 		// columnsAndTypes.size() == metaData.getColumnNameCount());
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testExecuteSQLStatementWithRetry() throws EPFDbException {
-		String expectedTableName = tablePrefix + tableName + "_tmp";
+		// Set up the test data elements
+		String expectedColumnsAndTypes = "`export_date` BIGINT, `application_id` INTEGER, `title` VARCHAR(1000), `recommended_age` VARCHAR(20), `artist_name` VARCHAR(1000), `seller_name` VARCHAR(1000), `company_url` VARCHAR(1000), `support_url` VARCHAR(1000), `view_url` VARCHAR(1000), `artwork_url_large` VARCHAR(1000), `artwork_url_small` VARCHAR(1000), `itunes_release_date` DATETIME, `copyright` VARCHAR(4000), `description` LONGTEXT, `version` VARCHAR(100), `itunes_version` VARCHAR(100), `download_size` BIGINT";
+		String expectedTableName = tablePrefix + tableName;
+		String expectedTmpTableName = tablePrefix + tableName + "_tmp";
+		String expectedSQLDropTable = String.format(
+				EPFDbWriterMySqlStmt.DROP_TABLE_STMT, expectedTmpTableName);
+		String expectedSQLDropTableOld = String.format(
+				EPFDbWriterMySqlStmt.DROP_TABLE_STMT, expectedTableName
+						+ "_old");
+		String expectedSQLCreateTable = String.format("CREATE TABLE %s (%s)",
+				expectedTmpTableName, expectedColumnsAndTypes);
+		// String expectedSQLCheckTable = String.format(
+		// "SELECT * FROM `%s` LIMIT 1", expectedTableName);
+		String expectedSQLRenameTable = String.format(
+				EPFDbWriterMySqlStmt.RENAME_TABLE_STMT, expectedTableName,
+				expectedTableName + "_old");
+		String expectedSQLRenameTable2 = String.format(
+				EPFDbWriterMySqlStmt.RENAME_TABLE_STMT, expectedTmpTableName,
+				expectedTableName);
+		
+		String expectedSQLSetPrimaryKey = String.format(EPFDbWriterMySqlStmt.PRIMARY_KEY_STMT,expectedTmpTableName,"application_id");
 
-		String expectedPrimaryKey = "";
-		Iterator<String> i = primaryKey.iterator();
-		while (i.hasNext()) {
-			expectedPrimaryKey += "`" + i.next() + "`";
-			if (i.hasNext()) {
-				expectedPrimaryKey += ",";
-			}
-		}
+		String expectedInsertColumns = getInsertColumns();
+		String expectedInsertValues = "";
 
-		String expectedSQLSetPrimaryKey = String.format(
-				EPFDbWriterMySqlStmt.PRIMARY_KEY_STMT, expectedTableName,
-				expectedPrimaryKey);
+		int i = 0;
+		expectedInsertValues += "(" + getInsertValues(i) + ")";
+		String[] expectedInsertData = getInsertData(i);
+		List<List<String>> expectedInsertBlock = new ArrayList<List<String>>();
+		expectedInsertBlock.add(Arrays.asList(expectedInsertData));
+		
+		String expectedInsertCommand = "INSERT";
+
+		String expectedBlockInsertSQLFinalize = String.format(
+				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, expectedInsertCommand,
+				expectedTableName, expectedInsertColumns, expectedInsertValues);
+
+		// Set up the mocks
+		// Set up mySqlStmt mock
+		EasyMock.reset(mySqlStmt);
+		mySqlStmt.setupColumnAndTypesMap(EasyMock.eq(columnsAndTypes),
+				(List<String>) EasyMock.isNull());
+		EasyMock.expectLastCall().andReturn(columnsAndTypes).times(1);
+		mySqlStmt.dropTableStmt(expectedTmpTableName);
+		EasyMock.expectLastCall().andReturn(expectedSQLDropTable).times(1);
+		mySqlStmt.dropTableStmt(expectedTableName + "_old");
+		EasyMock.expectLastCall().andReturn(expectedSQLDropTableOld).times(2);
+		mySqlStmt.createTableStmt(expectedTmpTableName, columnsAndTypes);
+		EasyMock.expectLastCall().andReturn(expectedSQLCreateTable).times(1);
+		mySqlStmt
+				.renameTableStmt(expectedTableName, expectedTableName + "_old");
+		EasyMock.expectLastCall().andReturn(expectedSQLRenameTable);
+		mySqlStmt.renameTableStmt(expectedTmpTableName, expectedTableName);
+		EasyMock.expectLastCall().andReturn(expectedSQLRenameTable2);
+		
+		mySqlStmt.insertRowStmt(expectedTmpTableName, columnsAndTypes,
+				expectedInsertBlock, expectedInsertCommand);
+		EasyMock.expectLastCall().andReturn(expectedBlockInsertSQLFinalize)
+				.times(1);
+		
+		mySqlStmt.setPrimaryKeyStmt(expectedTmpTableName, primaryKey);
+		EasyMock.expectLastCall().andReturn(expectedSQLSetPrimaryKey)
+				.times(1);
+		EasyMock.replay(mySqlStmt);
 
 		SQLReturnStatus successReturnStatus = new SQLReturnStatus();
 		successReturnStatus.setSuccess(true);
@@ -627,22 +637,41 @@ public class EPFDbWriterMySqlTest {
 		errorReturnStatus.setSqlStateCode("23000");
 		errorReturnStatus.setSqlExceptionCode(1205);
 
-		EasyMock.reset(mySqlStmt);
-		mySqlStmt.setPrimaryKeyStmt(expectedTableName, primaryKey);
-		EasyMock.expectLastCall().andReturn(expectedSQLSetPrimaryKey).times(1);
-		EasyMock.replay(mySqlStmt);
-		
+		// Set up mySqlDao mock
 		EasyMock.reset(mySqlDao);
 		mySqlDao.executeSQLStatement((String) EasyMock
-				.eq(expectedSQLSetPrimaryKey));
+				.eq(expectedSQLDropTable));
+		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
+		mySqlDao.executeSQLStatement((String) EasyMock
+				.eq(expectedSQLDropTableOld));
+		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
+		mySqlDao.executeSQLStatement((String) EasyMock
+				.eq(expectedSQLCreateTable));
+		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
+		mySqlDao.executeSQLStatement((String) EasyMock
+				.eq(expectedBlockInsertSQLFinalize));
 		EasyMock.expectLastCall().andReturn(errorReturnStatus).times(1);
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
 		mySqlDao.executeSQLStatement(EPFDbWriterMySql.UNLOCK_TABLES);
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
+		mySqlDao.executeSQLStatement(expectedSQLSetPrimaryKey);
+		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
+		mySqlDao.executeSQLStatement(expectedSQLDropTableOld);
+		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
+		mySqlDao.isTableInDatabase(expectedTableName);
+		EasyMock.expectLastCall().andReturn(true).times(1);
+		mySqlDao.executeSQLStatement(expectedSQLRenameTable);
+		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
+		mySqlDao.executeSQLStatement(expectedSQLRenameTable2);
+		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
 		EasyMock.replay(mySqlDao);
 
-		dbWriter.setPrimaryKey(expectedTableName, keyColumns);
+		// Test method call
+		dbWriter.initImport(EPFExportType.FULL, tableName, columnsAndTypes, primaryKey, 1L);
+		dbWriter.insertRow(expectedInsertData);
+		dbWriter.finalizeImport();
 
+		// Verify the mocks
 		EasyMock.verify(mySqlStmt);
 		EasyMock.verify(mySqlDao);
 	}

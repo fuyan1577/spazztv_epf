@@ -1,6 +1,7 @@
 {
 	"dbConnection" : {
-		"dbDriverClass":"com.mysql.jdbc.Driver",
+		"dbWriterClass":"com.spazztv.epf.adapter.EPFDbWriterMySql",
+		"dbDataSourceClass":"com.mysql.jdbc.Driver",
 		"dbMinConnections":5,
 		"dbMaxConnections":20,
 		"dbUrl": "jdbc:mysql://localhost/epf", 

@@ -12,6 +12,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.slf4j.Logger;
+
 import com.spazztv.epf.dao.EPFDbConfig;
 import com.spazztv.epf.dao.EPFDbException;
 import com.spazztv.epf.dao.EPFDbWriter;
@@ -39,7 +41,7 @@ public class EPFImportManager {
 		loadImportFileList(config.getDirectoryPaths());
 		loadImportThreads(dbConfig);
 	}
-
+	
 	private String createRegexPattern(List<String> list) {
 		String regexPattern = null;
 		if (list.size() > 0) {
@@ -127,13 +129,14 @@ public class EPFImportManager {
 		}
 	}
 	
-	public boolean isRunning() {
+	public boolean isRunning() throws EPFDbException {
 		for (Future<Runnable> f : importThreads){
 			if (!f.isDone()) {
 				return true;
 			}
 		}
 		threadPoolService.shutdown();
+		EPFDbWriterFactory.closeFactory();
 		return false;
 	}
 }

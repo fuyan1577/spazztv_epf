@@ -2,9 +2,6 @@ package com.spazztv.epf.dao;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import oracle.ucp.UniversalConnectionPoolAdapter;
 import oracle.ucp.UniversalConnectionPoolException;
@@ -37,22 +34,19 @@ public class EPFDbConnector {
 
 	private UniversalConnectionPoolManager mgr;
 	private PoolDataSource pds;
-
 	private EPFDbConfig dbConfig;
+	
+	private static EPFDbConnector instance;
 
-	public static Map<String, String> DB_FACTORY_CLASS_MAP = Collections
-			.unmodifiableMap(new HashMap<String, String>() {
-				private static final long serialVersionUID = 1L;
-				{
-					put("com.mysql.jdbc.Driver",
-							com.mysql.jdbc.jdbc2.optional.MysqlDataSource.class
-									.getName());
-				}
-			});
-
-	public EPFDbConnector(EPFDbConfig dbConfig) throws EPFDbException {
+	private EPFDbConnector(EPFDbConfig dbConfig) {
 		this.dbConfig = dbConfig;
-		openConnectionPool();
+	}
+	
+	public static EPFDbConnector getInstance(EPFDbConfig dbConfig) {
+		if (instance == null) {
+			instance = new EPFDbConnector(dbConfig);
+		}
+		return instance;
 	}
 
 	public final EPFDbConfig getEPFDbConfig() {
@@ -69,16 +63,8 @@ public class EPFDbConnector {
 			pds = PoolDataSourceFactory.getPoolDataSource();
 			pds.setConnectionPoolName(EPF_DB_POOL_NAME);
 
-			String factoryClassName = DB_FACTORY_CLASS_MAP.get(
-					dbConfig.getDbDataSource());
-			if (factoryClassName == null) {
-				throw new EPFDbException(String.format(
-						"Invalid/Unsupported Driver Class: %s",
-						dbConfig.getDbDataSource()));
-			}
-
-			pds.setConnectionFactoryClassName(factoryClassName);
-
+			pds.setConnectionFactoryClassName(dbConfig.getDbDataSourceClass());
+			
 			pds.setURL(dbConfig.getDbUrl());
 			pds.setUser(dbConfig.getUsername());
 			pds.setPassword(dbConfig.getPassword());
@@ -89,29 +75,35 @@ public class EPFDbConnector {
 			pds.setMinPoolSize(dbConfig.getMinConnections());
 			pds.setMaxPoolSize(dbConfig.getMaxConnections());
 
-		} catch (SQLException e) {
-			throw new EPFDbException(e.getMessage());
 		} catch (UniversalConnectionPoolException e) {
 			throw new EPFDbException(e.getMessage());
-			// } catch (ClassNotFoundException e) {
-			// throw new EPFDbException(e.getMessage());
+		} catch (SQLException e) {
+			throw new EPFDbException(e.getMessage());
 		}
-
 	}
 
 	public void closeConnectionPool() throws EPFDbException {
 		try {
-			mgr.purgeConnectionPool(EPF_DB_POOL_NAME);
+			if (mgr != null) {
+				mgr.purgeConnectionPool(EPF_DB_POOL_NAME);
+			}
 		} catch (UniversalConnectionPoolException e) {
 			throw new EPFDbException(e.getMessage());
 		}
 	}
 
-	public Connection getConnection() throws SQLException {
-		return pds.getConnection();
+	public synchronized Connection getConnection() throws EPFDbException {
+		if (pds == null) {
+			openConnectionPool();
+		}
+		try {
+			return pds.getConnection();
+		} catch (SQLException e) {
+			throw new EPFDbException(e.getMessage());
+		}
 	}
 
-	public void releaseConnection(Object connection) throws EPFDbException {
+	public synchronized void releaseConnection(Object connection) throws EPFDbException {
 		try {
 			((Connection) connection).close();
 			connection = null;

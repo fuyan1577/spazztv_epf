@@ -79,13 +79,14 @@ public class EPFDbWriterOracle extends EPFDbWriter {
 
 	@Override
 	public void initImport(EPFExportType exportType, String tableName,
-			LinkedHashMap<String, String> columnsAndTypes, long numberOfRows)
-			throws EPFDbException {
+			LinkedHashMap<String, String> columnsAndTypes,
+			List<String> primaryKey, long numberOfRows) throws EPFDbException {
 
 		this.tableName = getTablePrefix() + tableName;
 		// Default method is to create a temporary table and append data
 		this.impTableName = this.tableName + "_tmp";
 		this.uncTableName = null;
+		this.primaryKey = primaryKey;
 
 		setupColumnMap(columnsAndTypes, exportType);
 
@@ -179,11 +180,7 @@ public class EPFDbWriterOracle extends EPFDbWriter {
 				currentColumns);
 	}
 
-	@Override
-	public void setPrimaryKey(String tableName, String[] columnName)
-			throws EPFDbException {
-
-		primaryKey = Arrays.asList(columnName);
+	private void applyPrimaryKey(String tableName) throws EPFDbException {
 
 		String sqlAlterTable = sqlStmt.setPrimaryKeyStmt(tableName, primaryKey);
 
@@ -213,6 +210,8 @@ public class EPFDbWriterOracle extends EPFDbWriter {
 		if (processMode == ProcessMode.MERGE_RENAME) {
 			// Union Query with destination to the uncTableName
 			mergeTables(tableName, impTableName, uncTableName);
+			// Apply primary key
+			applyPrimaryKey(uncTableName);
 			// Rename uncTableName tableName
 			renameTableAndDrop(uncTableName, tableName);
 			// Drop impTableName
@@ -222,6 +221,8 @@ public class EPFDbWriterOracle extends EPFDbWriter {
 		}
 
 		if (processMode == ProcessMode.IMPORT_RENAME) {
+			// Apply primary key
+			applyPrimaryKey(impTableName);
 			// Rename tmpTableName tableName
 			renameTableAndDrop(impTableName, tableName);
 		}

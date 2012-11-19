@@ -83,13 +83,14 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 	@Override
 	public void initImport(EPFExportType exportType, String tableName,
-			LinkedHashMap<String, String> columnsAndTypes, long numberOfRows)
+			LinkedHashMap<String, String> columnsAndTypes, List<String> primaryKey, long numberOfRows)
 			throws EPFDbException {
 
 		this.tableName = getTablePrefix() + tableName;
 		// Default method is to create a temporary table and append data
 		this.impTableName = this.tableName + "_tmp";
 		this.uncTableName = null;
+		this.primaryKey = primaryKey;
 
 		setupColumnMap(columnsAndTypes, exportType);
 
@@ -185,16 +186,13 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 				columnsAndTypes, currentColumns);
 	}
 
-	@Override
-	public void setPrimaryKey(String tableName, String[] columnName)
-			throws EPFDbException {
-
-		primaryKey = Arrays.asList(columnName);
-		
-		String sqlAlterTable = mySqlStmt.setPrimaryKeyStmt(tableName,
-				primaryKey);
-
-		executeSQLStatementWithRetry(sqlAlterTable);
+	private void applyPrimaryKey(String tableName) throws EPFDbException {
+		if (primaryKey != null) {
+			String sqlAlterTable = mySqlStmt.setPrimaryKeyStmt(tableName,
+					primaryKey);
+	
+			executeSQLStatementWithRetry(sqlAlterTable);
+		}
 	}
 
 	@Override
@@ -254,10 +252,12 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	@Override
 	public void finalizeImport() throws EPFDbException {
 		flushInsertBuffer();
-
+		
 		if (processMode == ProcessMode.MERGE_RENAME) {
 			// Union Query with destination to the uncTableName
 			mergeTables(tableName, impTableName, uncTableName);
+			// Apply primary key
+			applyPrimaryKey(uncTableName);
 			// Rename uncTableName tableName
 			renameTableAndDrop(uncTableName, tableName);
 			// Drop impTableName
@@ -265,6 +265,8 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 		}
 
 		if (processMode == ProcessMode.IMPORT_RENAME) {
+			// Apply primary key
+			applyPrimaryKey(impTableName);
 			// Rename tmpTableName tableName
 			renameTableAndDrop(impTableName, tableName);
 		}
@@ -292,32 +294,32 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 		// Drop the oldTableName just in case it was left from a previous run
 		dropTable(oldTableName);
-		
+
 		SQLReturnStatus status;
-		
-		//If the destination table exists, temporarily rename it
+
+		// If the destination table exists, temporarily rename it
 		if (isTableInDatabase(destTableName)) {
 			status = renameTable(destTableName, oldTableName);
 		} else {
 			oldTableName = null;
 		}
-		
-		//Execute the main table rename
+
+		// Execute the main table rename
 		status = renameTable(srcTableName, destTableName);
-		
-		//If not successful, put back the old table and return
+
+		// If not successful, put back the old table and return
 		if (!status.isSuccess() && oldTableName != null) {
 			// Drop the oldTableName
 			renameTable(oldTableName, destTableName);
 			return;
 		}
-		
-		//Drop the old table if it exists
+
+		// Drop the old table if it exists
 		if (oldTableName != null) {
 			dropTable(oldTableName);
 		}
 	}
-	
+
 	private SQLReturnStatus renameTable(String oldTableName, String newTableName)
 			throws EPFDbException {
 		String sql = mySqlStmt.renameTableStmt(oldTableName, newTableName);

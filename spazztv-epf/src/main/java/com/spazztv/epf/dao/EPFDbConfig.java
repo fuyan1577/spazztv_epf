@@ -22,8 +22,8 @@ import com.spazztv.epf.EPFImporterException;
  */
 public class EPFDbConfig {
 	public static String DB_CONNECTION_POOL = "dbConnection";
-	public static String DB_DATA_SOURCE = "dbDataSource";
-	public static String DB_WRITER = "dbWriter";
+	public static String DB_DATA_SOURCE_CLASS = "dbDataSourceClass";
+	public static String DB_WRITER_CLASS = "dbWriterClass";
 	public static String DB_DEFAULT_CATALOG = "dbDefaultCatalog";
 	public static String DB_MIN_CONNECTIONS = "dbMinConnections";
 	public static String DB_MAX_CONNECTIONS = "dbMaxConnections";
@@ -31,8 +31,8 @@ public class EPFDbConfig {
 	public static String DB_USER = "dbUser";
 	public static String DB_PASSWORD = "dbPassword";
 
-	private String dbWriter;
-	private String dbDataSource;
+	private String dbWriterClass;
+	private String dbDataSourceClass;
 	private String defaultCatalog;
 	private String dbUrl;
 	private String username;
@@ -66,8 +66,8 @@ public class EPFDbConfig {
 		validDbConfig(connPoolObject);
 
 		// Required Values
-		dbWriter = verifyString(connPoolObject, DB_WRITER);
-		dbDataSource = verifyString(connPoolObject, DB_DATA_SOURCE);
+		dbWriterClass = verifyString(connPoolObject, DB_WRITER_CLASS);
+		dbDataSourceClass = verifyString(connPoolObject, DB_DATA_SOURCE_CLASS);
 		dbUrl = verifyString(connPoolObject, DB_URL);
 		username = verifyString(connPoolObject, DB_USER);
 		password = verifyString(connPoolObject, DB_PASSWORD);
@@ -90,8 +90,8 @@ public class EPFDbConfig {
 	}
 
 	public static boolean isValidConfigKey(String key) {
-		if (key.equals(DB_CONNECTION_POOL) || key.equals(DB_WRITER)
-				|| key.equals(DB_DATA_SOURCE) || key.equals(DB_DEFAULT_CATALOG)
+		if (key.equals(DB_CONNECTION_POOL) || key.equals(DB_WRITER_CLASS)
+				|| key.equals(DB_DATA_SOURCE_CLASS) || key.equals(DB_DEFAULT_CATALOG)
 				|| key.equals(DB_MIN_CONNECTIONS)
 				|| key.equals(DB_MAX_CONNECTIONS) || key.equals(DB_USER)
 				|| key.equals(DB_URL) || key.equals(DB_PASSWORD)) {
@@ -130,20 +130,20 @@ public class EPFDbConfig {
 		}
 	}
 
-	public String getDbWriter() {
-		return dbWriter;
+	public String getDbWriterClass() {
+		return dbWriterClass;
 	}
 
-	public void setDbWriter(String dbWriter) {
-		this.dbWriter = dbWriter;
+	public void setDbWriterClass(String dbWriterClass) {
+		this.dbWriterClass = dbWriterClass;
 	}
 
-	public String getDbDataSource() {
-		return dbDataSource;
+	public String getDbDataSourceClass() {
+		return dbDataSourceClass;
 	}
 
-	public void setDbDataSource(String dbDataSource) {
-		this.dbDataSource = dbDataSource;
+	public void setDbDataSourceClass(String dbDataSourceClass) {
+		this.dbDataSourceClass = dbDataSourceClass;
 	}
 
 	public String getDefaultCatalog() {

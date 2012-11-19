@@ -16,16 +16,16 @@ public class EPFDbConnectorTest {
 	private static EPFDbConfig dbConfig;
 
 	private Connection connection;
-	
+
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		dbConfig = new EPFDbConfig();
-		dbConfig.setDbDataSource("com.mysql.jdbc.Driver");
+		dbConfig.setDbDataSourceClass("com.mysql.jdbc.jdbc2.optional.MysqlDataSource");
 		dbConfig.setDbUrl("jdbc:mysql://localhost:3306/epf");
 		dbConfig.setUsername("webaccess");
 		dbConfig.setPassword("wsc2aofi");
 		if (connector == null) {
-			connector = new EPFDbConnector(dbConfig);
+			connector = EPFDbConnector.getInstance(dbConfig);
 		}
 		// --dburl jdbc:mysql://localhost:3306/epf -u webaccess -p wsc2aofi
 		// -l com.mysql.jdbc.Driver
@@ -35,38 +35,42 @@ public class EPFDbConnectorTest {
 	public static void tearDownAfterClass() throws Exception {
 		connector.closeConnectionPool();
 	}
-	
+
 	@Test
 	public void testDbDataSource() {
-		String factoryClassName = EPFDbConnector.DB_FACTORY_CLASS_MAP
-				.get(dbConfig.getDbDataSource());
+		String factoryClassName = dbConfig.getDbDataSourceClass();
 
 		Assert.assertTrue(String.format(
 				"Unable to retrieve DB Factory Class for %s",
-				dbConfig.getDbDataSource()), factoryClassName != null);
+				dbConfig.getDbDataSourceClass()), factoryClassName != null);
 	}
 
 	@Test
 	public void testOpenConnectionPool() throws EPFDbException {
-		Assert.assertTrue("Error instantiaating Connection Pool", connector != null);
+		Assert.assertTrue("Error instantiaating Connection Pool",
+				connector != null);
 	}
 
 	@Test
-	public void testOpenAndCloseConnection() throws EPFDbException, SQLException {
+	public void testOpenAndCloseConnection() throws EPFDbException,
+			SQLException {
 		connection = connector.getConnection();
-		Assert.assertTrue("Error retrieving connection from Pool", connection != null);
-		Assert.assertTrue("Error retrieving connection from Pool", !connection.isClosed());
+		Assert.assertTrue("Error retrieving connection from Pool",
+				connection != null);
+		Assert.assertTrue("Error retrieving connection from Pool",
+				!connection.isClosed());
 		connection.close();
-		Assert.assertTrue("Error closing connection from Pool", connection.isClosed());
+		Assert.assertTrue("Error closing connection from Pool",
+				connection.isClosed());
 	}
 
 	@Test
 	public void testConnectionQuery() throws EPFDbException, SQLException {
 		connection = connector.getConnection();
 		Statement stmt = connection.createStatement();
-		ResultSet result = stmt.executeQuery("select 'dummy_value' as dummy_column");
-		Assert.assertTrue("Invalid result set from test query",
-				result.next());
+		ResultSet result = stmt
+				.executeQuery("select 'dummy_value' as dummy_column");
+		Assert.assertTrue("Invalid result set from test query", result.next());
 		Assert.assertTrue("Invalid result set from test query",
 				result.getRow() == 1);
 		connection.close();

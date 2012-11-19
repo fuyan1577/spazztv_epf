@@ -15,9 +15,14 @@ import com.spazztv.epf.dao.EPFDbWriter;
  */
 public class EPFImportTask implements Runnable {
 
-	EPFImportTranslator importTranslator;
-	EPFDbWriter dbWriter;
-	long recordCount = 0;
+	private EPFImportTranslator importTranslator;
+	private EPFDbWriter dbWriter;
+	private long recordCount = 0;
+	private long lastLoggedCount = 0;
+	private long lastLoggedTime;
+	
+	public static long RECORD_GAP = 5000;
+	public long TIME_GAP = 120000; // milliseconds - 2 minutes
 
 	public EPFImportTask(String filePath, EPFDbWriter dbWriter)
 			throws FileNotFoundException, EPFFileFormatException {
@@ -32,6 +37,7 @@ public class EPFImportTask implements Runnable {
 			importData();
 			finalizeImport();
 		} catch (EPFDbException e) {
+			//Logger getTableName() - Import Error may not have completed
 			e.printStackTrace();
 		}
 	}
@@ -40,6 +46,7 @@ public class EPFImportTask implements Runnable {
 		dbWriter.initImport(importTranslator.getExportType(),
 				importTranslator.getTableName(),
 				importTranslator.getColumnAndTypes(),
+				importTranslator.getPrimaryKey(),
 				importTranslator.getTotalDataRecords());
 	}
 
@@ -48,13 +55,15 @@ public class EPFImportTask implements Runnable {
 			while (importTranslator.hasNextRecord()) {
 				recordCount++;
 				dbWriter.insertRow(importTranslator.nextRecord());
+				logProgress();
 			}
 			if (recordCount != importTranslator.getTotalDataRecords()) {
-				throw new EPFDbException(
-						String.format(
-								"Incorrect number of import records. Expecting %d, found %d",
+				String errMsg = String
+						.format("Incorrect number of import records. Expecting %d, found %d",
 								importTranslator.getTotalDataRecords(),
-								recordCount));
+								recordCount);
+				// Log dbConfig.getTableName() ${errMsg}
+				throw new EPFDbException(errMsg);
 			}
 		} catch (EPFDbException e) {
 			EPFImporterQueue.getInstance().setFailed(
@@ -63,9 +72,21 @@ public class EPFImportTask implements Runnable {
 		}
 	}
 
+	private void logProgress() {
+		if ((recordCount - lastLoggedCount) > RECORD_GAP) {
+			if ((System.currentTimeMillis() - lastLoggedTime) > TIME_GAP) {
+				lastLoggedCount = recordCount;
+				lastLoggedTime = System.currentTimeMillis();
+				// Log getTableName(): at %d of %d records...
+			}
+		}
+	}
+
 	public void finalizeImport() throws EPFDbException {
+		// Log dbConfig.getTableName() finalizing import
 		dbWriter.finalizeImport();
-		EPFImporterQueue.getInstance()
-				.setCompleted(importTranslator.getFilePath());
+		EPFImporterQueue.getInstance().setCompleted(
+				importTranslator.getFilePath());
+		// Log dbConfig.getTableName() import completed
 	}
 }

@@ -2,6 +2,7 @@ package com.spazztv.epf;
 
 import java.io.FileNotFoundException;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.easymock.EasyMock;
 import org.junit.Before;
@@ -28,6 +29,7 @@ public class EPFImportTaskTest {
 	EPFExportType exportType;
 	String tableName;
 	LinkedHashMap<String, String> columnsAndTypes;
+	List<String> primaryKey;
 
 	@Before
 	public void setUp() throws FileNotFoundException, EPFFileFormatException {
@@ -42,6 +44,7 @@ public class EPFImportTaskTest {
 		recordsExpected = importXlator.getTotalDataRecords();
 		exportType = importXlator.getExportType();
 		tableName = importXlator.getTableName();
+		primaryKey = importXlator.getPrimaryKey();
 		columnsAndTypes = importXlator.getColumnAndTypes();
 
 		importerQueue = EasyMock.createMock(EPFImporterQueue.class);
@@ -53,7 +56,7 @@ public class EPFImportTaskTest {
 	@Test
 	public void testSetupImportDataStore() throws EPFDbException {
 		EasyMock.reset(dbWriter);
-		dbWriter.initImport(exportType, tableName, columnsAndTypes,
+		dbWriter.initImport(exportType, tableName, columnsAndTypes, primaryKey,
 				recordsExpected);
 		EasyMock.expectLastCall().times(1);
 		EasyMock.replay(dbWriter);

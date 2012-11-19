@@ -3,6 +3,7 @@ package com.spazztv.epf.dao;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.easymock.EasyMock;
 import org.junit.Before;
@@ -19,12 +20,7 @@ public class EPFDbWriterTest {
 	class EPFDbWriterTestImpl extends EPFDbWriter {
 		@Override
 		public void initImport(EPFExportType exportType, String tableName,
-				LinkedHashMap<String, String> columnsAndTypes, long numberOfRows)
-				throws EPFDbException {
-		}
-
-		@Override
-		public void setPrimaryKey(String tableName, String[] columnName)
+				LinkedHashMap<String, String> columnsAndTypes, List<String> primaryKey, long numberOfRows)
 				throws EPFDbException {
 		}
 

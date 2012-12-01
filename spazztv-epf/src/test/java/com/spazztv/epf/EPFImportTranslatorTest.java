@@ -24,7 +24,7 @@ public class EPFImportTranslatorTest {
 	
 	@Test
 	public void testGetTotalRecordsExpected() {
-		long recordsExpected = importTranslator.getTotalDataRecords();
+		long recordsExpected = importTranslator.getTotalExpectedRecords();
 		Assert.assertTrue(String.format("Invalid records expected. Expecting %d, received %s",1299L,recordsExpected), recordsExpected == 1299L);
 	}
 
@@ -88,7 +88,7 @@ public class EPFImportTranslatorTest {
 	@Test
 	public void testNextDataRecord() {
 		//Testing the first 10 records to make sure they match the data patterns
-		long recordsExported = importTranslator.getTotalDataRecords();
+		long recordsExported = importTranslator.getTotalExpectedRecords();
 		long foundRecords = 0;
 		while (true) {
 			String[] row = importTranslator.nextRecord();

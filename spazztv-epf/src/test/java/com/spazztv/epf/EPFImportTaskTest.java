@@ -41,7 +41,7 @@ public class EPFImportTaskTest {
 		importTask = new EPFImportTask(storefrontEpfFile, dbWriter);
 
 		importXlator = new EPFImportTranslator(fileReader);
-		recordsExpected = importXlator.getTotalDataRecords();
+		recordsExpected = importXlator.getTotalExpectedRecords();
 		exportType = importXlator.getExportType();
 		tableName = importXlator.getTableName();
 		primaryKey = importXlator.getPrimaryKey();
@@ -69,7 +69,7 @@ public class EPFImportTaskTest {
 		EasyMock.reset(dbWriter);
 		dbWriter.insertRow(EasyMock.anyObject(String[].class));
 		EasyMock.expectLastCall().times(
-				(int) importXlator.getTotalDataRecords());
+				(int) importXlator.getTotalExpectedRecords());
 		EasyMock.replay(dbWriter);
 		importTask.importData();
 		EasyMock.verify(dbWriter);

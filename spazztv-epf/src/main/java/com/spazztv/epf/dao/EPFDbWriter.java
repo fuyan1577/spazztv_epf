@@ -182,4 +182,10 @@ public abstract class EPFDbWriter {
 	 */
 	public abstract int getTableColumnCount(String tableName)
 			throws EPFDbException;
+	
+	/**
+	 * Returns the number of rows inserted
+	 * @return rows inserted
+	 */
+	public abstract Long getTotalRowsInserted();
 }

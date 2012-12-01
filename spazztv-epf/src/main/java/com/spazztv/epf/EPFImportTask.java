@@ -47,7 +47,7 @@ public class EPFImportTask implements Runnable {
 				importTranslator.getTableName(),
 				importTranslator.getColumnAndTypes(),
 				importTranslator.getPrimaryKey(),
-				importTranslator.getTotalDataRecords());
+				importTranslator.getTotalExpectedRecords());
 	}
 
 	public void importData() throws EPFDbException {
@@ -57,12 +57,11 @@ public class EPFImportTask implements Runnable {
 				dbWriter.insertRow(importTranslator.nextRecord());
 				logProgress();
 			}
-			if (recordCount != importTranslator.getTotalDataRecords()) {
+			if (recordCount != importTranslator.getTotalExpectedRecords()) {
 				String errMsg = String
 						.format("Incorrect number of import records. Expecting %d, found %d",
-								importTranslator.getTotalDataRecords(),
+								importTranslator.getTotalExpectedRecords(),
 								recordCount);
-				// Log dbConfig.getTableName() ${errMsg}
 				throw new EPFDbException(errMsg);
 			}
 		} catch (EPFDbException e) {
@@ -88,5 +87,21 @@ public class EPFImportTask implements Runnable {
 		EPFImporterQueue.getInstance().setCompleted(
 				importTranslator.getFilePath());
 		// Log dbConfig.getTableName() import completed
+	}
+	
+	/**
+	 * EPFImportTranslator Getter for logger info
+	 * @return EPFImportTranslator
+	 */
+	public EPFImportTranslator getImportTranslator() {
+		return importTranslator;
+	}
+
+	/**
+	 * EPFDbWriter Getter for logger info
+	 * @return EPFDbWriter
+	 */
+	public EPFDbWriter getDbWriter() {
+		return dbWriter;
 	}
 }

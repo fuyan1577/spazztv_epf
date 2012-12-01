@@ -43,6 +43,11 @@ public class EPFDbWriterTest {
 				throws EPFDbException {
 			return 0;
 		}
+
+		@Override
+		public Long getTotalRowsInserted() {
+			return 0L;
+		}
 	}
 
 	@Before

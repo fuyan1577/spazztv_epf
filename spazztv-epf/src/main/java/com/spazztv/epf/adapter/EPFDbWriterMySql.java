@@ -60,6 +60,8 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 	private int insertBufferCount = 0;
 	private List<List<String>> insertBuffer;
+	
+	private long totalRowsInserted = 0;
 
 	private enum ProcessMode {
 		IMPORT_RENAME, APPEND, MERGE_RENAME
@@ -222,6 +224,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 				columnsAndTypes, insertBuffer, insertCommand);
 		executeSQLStatementWithRetry(insertStmt);
 
+		totalRowsInserted += insertBufferCount;
 		insertBufferCount = 0;
 	}
 
@@ -334,5 +337,10 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	@Override
 	public int getTableColumnCount(String tableName) throws EPFDbException {
 		return mySqlDao.getTableColumns(tableName).size();
+	}
+
+	@Override
+	public Long getTotalRowsInserted() {
+		return totalRowsInserted;
 	}
 }

@@ -15,8 +15,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.spazztv.epf.dao.EPFDbConfig;
-import com.spazztv.epf.dao.EPFDbConnector;
-import com.spazztv.epf.dao.EPFDbWriter;
 import com.spazztv.epf.dao.EPFDbWriterFactory;
 
 @RunWith(PowerMockRunner.class)

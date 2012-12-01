@@ -82,9 +82,9 @@ public class EPFImportTranslator {
 	 * Return the total number of records expected. This is the number of
 	 * records designated on the last line of the EPF Import file.
 	 * 
-	 * @return total data records
+	 * @return total expected records
 	 */
-	public long getTotalDataRecords() {
+	public long getTotalExpectedRecords() {
 		return epfFileReader.getRecordsWritten();
 	}
 

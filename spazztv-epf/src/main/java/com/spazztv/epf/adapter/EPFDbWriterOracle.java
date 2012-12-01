@@ -53,6 +53,8 @@ public class EPFDbWriterOracle extends EPFDbWriter {
 	private String tableName;
 	private String impTableName;
 	private String uncTableName;
+	
+	private long totalRecordsInserted = 0;
 
 	private LinkedHashMap<String, String> columnsAndTypes;
 	private List<String> primaryKey;
@@ -192,6 +194,7 @@ public class EPFDbWriterOracle extends EPFDbWriter {
 		String insertStmt = sqlStmt.insertRowStmt(impTableName,
 				columnsAndTypes, Arrays.asList(rowData));
 		executeSQLStatement(insertStmt);
+		totalRecordsInserted++;
 	}
 
 	private void executeSQLStatement(String sqlStmt) throws EPFDbException {
@@ -300,4 +303,11 @@ public class EPFDbWriterOracle extends EPFDbWriter {
 	public int getTableColumnCount(String tableName) throws EPFDbException {
 		return sqlDao.getTableColumns(tableName).size();
 	}
+
+	@Override
+	public Long getTotalRowsInserted() {
+		return totalRecordsInserted;
+	}
+	
+	
 }

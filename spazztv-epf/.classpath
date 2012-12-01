@@ -15,5 +15,8 @@
 	<classpathentry kind="lib" path="lib/easymock-3.1.jar"/>
 	<classpathentry kind="lib" path="lib/powermock-easymock-1.4.12-full.jar"/>
 	<classpathentry kind="lib" path="lib/commons-cli-1.2.jar"/>
+	<classpathentry kind="lib" path="C:/Program Files/Eclipse.Indigo/plugins/org.aspectj.runtime.source_1.7.0.20120703164200.jar"/>
+	<classpathentry kind="lib" path="C:/Program Files/Eclipse.Indigo/plugins/org.aspectj.runtime_1.7.0.20120703164200/aspectjrt.jar"/>
+	<classpathentry kind="con" path="org.eclipse.ajdt.core.ASPECTJRT_CONTAINER"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import com.spazztv.epf.dao.EPFDbWriter;
 
 /**
- * @author tjbillingsley
+ * @author Thomas Billingsley
  *
  */
 @Aspect("perthis(call(* com.spazztv.epf.EPFImportTask..*(..)))")

@@ -20,10 +20,10 @@ public class EPFFileReader {
 	public static String COMMENT_PREFIX = "#";
 	public static String RECORDS_WRITTEN_TAG = "recordsWritten:";
 
-	BufferedReader bFile;
-	String filePath;
-	long recordsWritten = 0;
-	long lastDataRecord = 0;
+	private BufferedReader bFile;
+	private String filePath;
+	private long recordsWritten = 0;
+	private long lastDataRecord = 0;
 
 	public EPFFileReader(String filePath) throws FileNotFoundException, EPFFileFormatException {
 		this.filePath = filePath;
@@ -148,6 +148,10 @@ public class EPFFileReader {
 
 	public long getRecordsWritten() {
 		return recordsWritten;
+	}
+	
+	public long getLastDataRecord() {
+		return lastDataRecord;
 	}
 
 	/**

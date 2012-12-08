@@ -30,6 +30,8 @@ public class EPFDbWriterMySqlDaoTest {
 
 	@Before
 	public void setUp() throws Exception {
+		System.setProperty("log4j.defaultInitOverride","Override");
+		
 		connector = EasyMock.createMock(EPFDbConnector.class);
 		connection = EasyMock.createMock(Connection.class);
 		statement = EasyMock.createMock(Statement.class);

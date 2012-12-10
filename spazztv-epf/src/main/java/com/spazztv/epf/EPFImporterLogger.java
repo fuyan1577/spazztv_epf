@@ -100,6 +100,10 @@ public class EPFImporterLogger {
 	public void afterLoadImportFileList(EPFImportManager importManager) {
 		Logger log = EPFImporter.getLogger();
 		log.info("EPFImporter Files To Be Imported...");
+		if (importManager.getFileList().size() <= 0) {
+			log.warn("  NO FILES FOUND FOR IMPORTING");
+			return;
+		}
 		for (String file : importManager.getFileList()) {
 			log.info("  {}", file);
 		}

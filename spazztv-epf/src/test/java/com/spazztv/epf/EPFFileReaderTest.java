@@ -13,10 +13,11 @@ public class EPFFileReaderTest {
 	EPFFileReader fileReader;
 	String genreEpfFile = "testdata/epf_files/genre";
 	String epfEPFInvalidFormatFile = "testdata/epf_files/invalid_epf_file";
+	String recordSeparator = EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT;
 
 	@Before
 	public void setUp() throws Exception {
-		fileReader = new EPFFileReader(genreEpfFile);
+		fileReader = new EPFFileReader(genreEpfFile,recordSeparator);
 	}
 	
 	@Test
@@ -24,7 +25,7 @@ public class EPFFileReaderTest {
 		boolean exceptionThrown = false;
 		try {
 			@SuppressWarnings("unused")
-			EPFFileReader localReader = new EPFFileReader(epfEPFInvalidFormatFile);
+			EPFFileReader localReader = new EPFFileReader(epfEPFInvalidFormatFile, recordSeparator);
 			@SuppressWarnings("unused")
 			EPFImportTranslator localXlator = new EPFImportTranslator(fileReader);
 		} catch (EPFFileFormatException e) {
@@ -35,7 +36,7 @@ public class EPFFileReaderTest {
 	
 	@Test
 	public void testEPFFileReader() throws FileNotFoundException, EPFFileFormatException {
-		EPFFileReader fileReader = new EPFFileReader(genreEpfFile);
+		EPFFileReader fileReader = new EPFFileReader(genreEpfFile, recordSeparator);
 		Assert.assertTrue("getFilePath returned the wrong value",
 				genreEpfFile.equals(fileReader.getFilePath()));
 	}

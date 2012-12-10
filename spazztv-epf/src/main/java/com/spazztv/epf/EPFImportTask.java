@@ -22,9 +22,9 @@ public class EPFImportTask implements Runnable {
 	public static long RECORD_GAP = 5000;
 	public long TIME_GAP = 120000; // milliseconds - 2 minutes
 
-	public EPFImportTask(String filePath, EPFDbWriter dbWriter)
+	public EPFImportTask(String filePath, String recordSeparator, EPFDbWriter dbWriter)
 			throws FileNotFoundException, EPFFileFormatException {
-		importTranslator = new EPFImportTranslator(new EPFFileReader(filePath));
+		importTranslator = new EPFImportTranslator(new EPFFileReader(filePath, recordSeparator));
 		this.dbWriter = dbWriter;
 	}
 

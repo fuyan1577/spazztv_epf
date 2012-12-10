@@ -39,7 +39,7 @@ public class EPFImportManager {
 		whiteListRegex = createRegexPattern(config.getWhiteList());
 		blackListRegex = createRegexPattern(config.getBlackList());
 		loadImportFileList(config.getDirectoryPaths());
-		loadImportThreads(dbConfig);
+		loadImportThreads(config, dbConfig);
 	}
 
 	private String createRegexPattern(List<String> list) {
@@ -63,7 +63,7 @@ public class EPFImportManager {
 
 		for (String directoryPath : directoryPaths) {
 			File dir = new File(directoryPath);
-			
+
 			FileFilter skipDirectoriesFilter = new FileFilter() {
 				public boolean accept(File file) {
 					return !file.isDirectory();
@@ -117,12 +117,13 @@ public class EPFImportManager {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void loadImportThreads(EPFDbConfig dbConfig) {
+	private void loadImportThreads(EPFConfig config, EPFDbConfig dbConfig) {
 		importThreads = new ArrayList<Future<Runnable>>();
 		for (String filePath : fileList) {
 			try {
 				EPFDbWriter dbWriter = EPFDbWriterFactory.getDbWriter(dbConfig);
-				EPFImportTask importTask = new EPFImportTask(filePath, dbWriter);
+				EPFImportTask importTask = new EPFImportTask(filePath,
+						config.getRecordSeparator(), dbWriter);
 				importThreads.add((Future<Runnable>) threadPoolService
 						.submit(importTask));
 			} catch (FileNotFoundException e) {

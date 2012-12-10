@@ -20,6 +20,7 @@ import com.spazztv.epf.dao.EPFDbWriter;
 public class EPFImportTaskTest {
 
 	String storefrontEpfFile = "testdata/epf_files/storefront";
+	String recordSeparator = EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT;
 	EPFImportTask importTask;
 	EPFImportTranslator importXlator;
 	EPFDbWriter dbWriter;
@@ -35,10 +36,10 @@ public class EPFImportTaskTest {
 	public void setUp() throws FileNotFoundException, EPFFileFormatException {
 		// Setting up importXlator to read the storefront data file
 		// Setting up dbWriter as a mock object
-		EPFFileReader fileReader = new EPFFileReader(storefrontEpfFile);
+		EPFFileReader fileReader = new EPFFileReader(storefrontEpfFile,recordSeparator);
 		dbWriter = EasyMock.createMock(EPFDbWriter.class);
 
-		importTask = new EPFImportTask(storefrontEpfFile, dbWriter);
+		importTask = new EPFImportTask(storefrontEpfFile, recordSeparator, dbWriter);
 
 		importXlator = new EPFImportTranslator(fileReader);
 		recordsExpected = importXlator.getTotalExpectedRecords();

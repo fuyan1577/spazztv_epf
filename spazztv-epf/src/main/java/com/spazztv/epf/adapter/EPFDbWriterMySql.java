@@ -45,7 +45,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 	public static int EXECUTE_SQL_STATEMENT_RETRIES = 30;
 	public static long MERGE_THRESHOLD = 500000;
-	public static int INSERT_BUFFER_SIZE = 200;
+	public static int INSERT_BUFFER_SIZE = 1;
 	public static int MAX_SQL_ATTEMPTS = 3;
 
 	private EPFDbWriterMySqlStmt mySqlStmt;

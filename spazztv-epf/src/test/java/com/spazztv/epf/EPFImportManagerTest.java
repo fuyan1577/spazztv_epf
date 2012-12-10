@@ -1,6 +1,8 @@
 package com.spazztv.epf;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -38,8 +40,9 @@ public class EPFImportManagerTest {
 	private Future<Runnable> future2;
 	private List<String> expectedWhiteList;
 	private List<String> expectedBlackList;
-	private String[] expectedFileList;
+	private File[] expectedFileList;
 	private List<String> expectedFinalList;
+	private FileFilter skipDirectoriesFilter;
 
 	@SuppressWarnings("unchecked")
 	@Before
@@ -60,8 +63,20 @@ public class EPFImportManagerTest {
 		expectedBlackList.add("listitem3");
 		expectedBlackList.add("listitem4");
 
-		expectedFileList = new String[] { "listitem1", "listitem2",
-				"listitem3", "listitem4" };
+		expectedFileList = new File[0];
+		List<File> tmpFileList = new ArrayList<File>();
+		tmpFileList.add(new File("listitem1"));
+		tmpFileList.add(new File("listitem2"));
+		tmpFileList.add(new File("listitem3"));
+		tmpFileList.add(new File("listitem4"));
+		tmpFileList.add(new File("listitem5"));
+		expectedFileList = tmpFileList.toArray(new File[0]);
+		
+		skipDirectoriesFilter = new FileFilter() {
+			public boolean accept(File file) {
+				return !file.isDirectory();
+			}
+		};		
 
 		expectedFinalList = new ArrayList<String>();
 		expectedFinalList.add("listitem1");
@@ -72,7 +87,7 @@ public class EPFImportManagerTest {
 		config.setBlackList(expectedBlackList);
 		config.setWhiteList(expectedWhiteList);
 		config.setMaxThreads(8);
-		ArrayList<String>dirPaths = new ArrayList<String>();
+		ArrayList<String> dirPaths = new ArrayList<String>();
 		dirPaths.add("./");
 		config.setDirectoryPaths(dirPaths);
 
@@ -86,20 +101,20 @@ public class EPFImportManagerTest {
 	@Test
 	public void testEPFImportManager() throws Exception {
 		EasyMock.reset(file);
-		file.list();
+		file.listFiles(EasyMock.eq(skipDirectoriesFilter));
 		EasyMock.expectLastCall().andReturn(expectedFileList).times(1);
 		EasyMock.replay(file);
-		
+
 		File file1 = EasyMock.createMock(File.class);
 		file1.getPath();
 		EasyMock.expectLastCall().andReturn("./listitem1");
 		EasyMock.replay(file1);
-		
+
 		File file2 = EasyMock.createMock(File.class);
 		file2.getPath();
 		EasyMock.expectLastCall().andReturn("./listitem2");
 		EasyMock.replay(file2);
-		
+
 		EasyMock.reset(service);
 		service.submit(importTask1);
 		EasyMock.expectLastCall().andReturn(future1).times(1);
@@ -128,31 +143,34 @@ public class EPFImportManagerTest {
 
 		PowerMock.reset(EPFDbWriterFactory.class);
 		PowerMock.mockStatic(EPFDbWriterFactory.class);
-		EasyMock.expect(
-				EPFDbWriterFactory.getDbWriter(dbConfig)).andReturn(dbWriter).times(2);
+		EasyMock.expect(EPFDbWriterFactory.getDbWriter(dbConfig))
+				.andReturn(dbWriter).times(2);
 		EPFDbWriterFactory.closeFactory();
 		PowerMock.expectLastCall().times(1);
 		PowerMock.replay(EPFDbWriterFactory.class);
 
-		PowerMock.expectNew(EPFImportTask.class, "./listitem1", dbWriter)
-				.andReturn(importTask1).times(1);
-		PowerMock.expectNew(EPFImportTask.class, "./listitem2", dbWriter)
-				.andReturn(importTask2).times(1);
+		PowerMock
+				.expectNew(EPFImportTask.class, "./listitem1", "\\x02",
+						dbWriter).andReturn(importTask1).times(1);
+		PowerMock
+				.expectNew(EPFImportTask.class, "./listitem2", "\\x02",
+						dbWriter).andReturn(importTask2).times(1);
 		PowerMock.replay(EPFImportTask.class);
 
-		PowerMock.expectNew(File.class, config.getDirectoryPaths().get(0)).andReturn(
-				file);
-		PowerMock.expectNew(File.class, file, "listitem1").andReturn(
-				file1);
-		PowerMock.expectNew(File.class, file, "listitem2").andReturn(
-				file2);
+		PowerMock.expectNew(File.class, config.getDirectoryPaths().get(0))
+				.andReturn(file);
+		PowerMock.expectNew(File.class, file, "listitem1").andReturn(file1);
+		PowerMock.expectNew(File.class, file, "listitem2").andReturn(file2);
 		PowerMock.replay(File.class);
 
 		importManager = new EPFImportManager(config, dbConfig);
-		
-		Assert.assertTrue("Invalid response: expected isRunning() = true",importManager.isRunning());
-		Assert.assertTrue("Invalid response: expected isRunning() = true",importManager.isRunning());
-		Assert.assertFalse("Invalid response: expected isRunning() = false",importManager.isRunning());
+
+		Assert.assertTrue("Invalid response: expected isRunning() = true",
+				importManager.isRunning());
+		Assert.assertTrue("Invalid response: expected isRunning() = true",
+				importManager.isRunning());
+		Assert.assertFalse("Invalid response: expected isRunning() = false",
+				importManager.isRunning());
 
 		PowerMock.verify(EPFDbWriterFactory.class);
 		PowerMock.verify(EPFImportTask.class);

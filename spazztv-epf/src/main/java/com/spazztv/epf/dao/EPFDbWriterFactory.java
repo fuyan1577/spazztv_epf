@@ -66,6 +66,9 @@ public class EPFDbWriterFactory {
 	 * @throws EPFDbException
 	 */
 	public static void closeFactory() throws EPFDbException {
+		if (factory == null) {
+			return;
+		}
 		factory.getConnector().closeConnectionPool();
 	}
 

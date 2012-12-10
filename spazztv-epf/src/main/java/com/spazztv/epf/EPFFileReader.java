@@ -24,12 +24,15 @@ public class EPFFileReader {
 	private String filePath;
 	private long recordsWritten = 0;
 	private long lastDataRecord = 0;
+	private String recordSeparator;
 
-	public EPFFileReader(String filePath) throws FileNotFoundException, EPFFileFormatException {
+	public EPFFileReader(String filePath, String recordSeparator) throws FileNotFoundException,
+			EPFFileFormatException {
 		this.filePath = filePath;
 		FileInputStream fstream = new FileInputStream(filePath);
 		DataInputStream in = new DataInputStream(fstream);
 		bFile = new BufferedReader(new InputStreamReader(in));
+		this.recordSeparator = recordSeparator;
 		loadRecordsWritten();
 	}
 
@@ -75,25 +78,32 @@ public class EPFFileReader {
 	 * @throws IOException
 	 */
 	public String nextDataLine() throws IOException {
-		String rec;
+		String line;
+		StringBuffer record = new StringBuffer();
 		while (true) {
 			try {
-				rec = bFile.readLine();
-				if (rec == null) {
+				line = bFile.readLine();
+				if (line == null) {
 					break;
 				}
-				if (!rec.startsWith(COMMENT_PREFIX)) {
-					break;
+				if (!line.startsWith(COMMENT_PREFIX)) {
+					if (record.length() > 0) {
+						record.append("\n");
+					}
+					record.append(line);
+					if (line.matches(".*" + recordSeparator + "$")) {
+						break;
+					}
 				}
 			} catch (IOException e) {
-				rec = null;
+				line = null;
 				break;
 			}
 		}
-		if (rec != null) {
+		if (line != null) {
 			lastDataRecord++;
 		}
-		return rec;
+		return record.toString();
 	}
 
 	/**
@@ -108,7 +118,7 @@ public class EPFFileReader {
 	 * @param totalRecordsPrefix
 	 *            the prefix of the totalRecords line
 	 * @return
-	 * @throws EPFFileFormatException 
+	 * @throws EPFFileFormatException
 	 */
 	private String getRecordsWrittenLine() throws EPFFileFormatException {
 		String row;
@@ -149,7 +159,7 @@ public class EPFFileReader {
 	public long getRecordsWritten() {
 		return recordsWritten;
 	}
-	
+
 	public long getLastDataRecord() {
 		return lastDataRecord;
 	}

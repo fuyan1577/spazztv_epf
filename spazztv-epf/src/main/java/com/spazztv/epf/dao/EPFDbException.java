@@ -10,7 +10,8 @@ package com.spazztv.epf.dao;
  * 
  */
 public class EPFDbException extends Exception {
-	String err;
+	private static final long serialVersionUID = -3861587718045698586L;
+	private String err;
 
 	public EPFDbException() {
 		super();

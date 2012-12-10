@@ -1,39 +1,20 @@
 <project>
 	<property name="projectname" value="spazztv-epf-importer" />
-	<property name="ajc" value="org.aspectj.tools.ant.taskdefs.Ajc11CompilerAdapter" />
 
 	<target name="clean">
 		<delete dir="build" />
 		<delete file="build/${projectname}.jar" />
 	</target>
 
-	<target name="compile" depends="clean">
+	<target name="make-jar" depends="clean">
 		<mkdir dir="build" />
-		<javac debug="false" includeantruntime="false" srcdir="src/main" destdir="build">
-			<classpath>
-				<pathelement path="${classpath}" />
-				<fileset dir="lib">
-					<include name="aspectjrt.jar" />
-					<include name="ucp.jar" />
-					<include name="commons-cli-1.2.jar" />
-					<include name="commons-codec-1.6.jar" />
-					<include name="easymock-3.1.jar" />
-					<include name="json-simple-1.1.1.jar" />
-					<include name="mysql-connector-java-5.1.21-bin.jar" />
-					<include name="powermock-easymock-1.4.12-full.jar" />
-					<include name="slf4j-api-1.7.2.jar" />
-					<include name="logback-classic-1.0.9.jar" />
-					<include name="logback-core-1.0.9.jar" />
-				</fileset>
-			</classpath>
-		</javac>
 		<copy todir="build">
-			<fileset dir="src" includes="**/*.properties" />
+			<fileset dir="target/classes" includes="**/*.class" />
 		</copy>
 		<jar destfile="build/${projectname}.jar" basedir="build" />
 	</target>
 
-	<target name="dist" depends="compile">
+	<target name="dist" depends="make-jar">
 		<zip destfile="${projectname}.zip">
 			<zipfileset filemode="755" dir="./build" includes="${projectname}.jar" fullpath="${projectname}.jar" />
 

@@ -11,6 +11,10 @@ package com.spazztv.epf;
  * 
  */
 public class EPFFileFormatException extends Exception {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -7058935729747920203L;
 	String err;
 
 	public EPFFileFormatException() {

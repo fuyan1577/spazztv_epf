@@ -33,6 +33,41 @@
 		<jar destfile="build/${projectname}.jar" basedir="build" />
 	</target>
 
+	<target name="ajc-compile" depends="clean">
+		<ajc srcdir="src/main" destDir="build" includeantruntime="false" incremental="true">
+			<sourceroots>
+				<pathelement location="src/main/java" />
+			</sourceroots>
+			<inpath>
+				<pathelement location="./build" />
+			</inpath>
+			<classpath>
+				<pathelement path="${classpath}" />
+				<fileset dir="lib">
+					<include name="aspectjrt.jar" />
+					<include name="ucp.jar" />
+					<include name="commons-cli-1.2.jar" />
+					<include name="commons-codec-1.6.jar" />
+					<include name="easymock-3.1.jar" />
+					<include name="json-simple-1.1.1.jar" />
+					<include name="mysql-connector-java-5.1.21-bin.jar" />
+					<include name="powermock-easymock-1.4.12-full.jar" />
+					<include name="slf4j-api-1.7.2.jar" />
+					<include name="logback-classic-1.0.9.jar" />
+					<include name="logback-core-1.0.9.jar" />
+				</fileset>
+			</classpath>
+		</ajc>
+
+		<java classname="org.smart.app.Main">
+			<classpath>
+				<pathelement location="${home.dir}/tools/aspectj/lib/aspectjrt.jar" />
+				<pathelement location="${home.dir}/ec/int/persist.jar" />
+				<pathelement location="${home.dir}/output/application.jar" />
+			</classpath>
+		</java>
+	</target>	
+
 	<target name="dist" depends="compile">
 		<zip destfile="${projectname}.zip">
 			<zipfileset filemode="755" dir="./build" includes="${projectname}.jar" fullpath="${projectname}.jar" />

@@ -26,7 +26,7 @@ public class EPFImportTaskLogger {
 		importTranslator = importTask.getImportTranslator();
 		String importFile = importTranslator.getFilePath();
 		Logger log = EPFImporter.getLogger();
-		log.info("%s - EPF Import Task launching",importFile);
+		log.info("{} - EPF Import Task launching",importFile);
 	}
 	
     @After("    call(void com.spazztv.epf.EPFImportTask.setupImportDataStore(..)) ")
@@ -35,16 +35,16 @@ public class EPFImportTaskLogger {
     	importTranslator = ((EPFImportTask)importTask).getImportTranslator();
     	totalExpectedRecords = importTranslator.getTotalExpectedRecords();
 		Logger log = EPFImporter.getLogger();
-        log.info("%s - Beggining import, total records to import: %d",importTranslator.getTableName(),totalExpectedRecords);
+        log.info("{} - Beginning import, total records to import: {}",importTranslator.getTableName(),totalExpectedRecords);
     }
 
     @After("    call(void com.spazztv.epf.EPFImportTask.finalizeImport(..)) ")
     public void afterFinalizeImport(JoinPoint joinPoint) {
     	Object importTask = joinPoint.getTarget();
-    	EPFDbWriter dbWriter = ((EPFImportTask)importTask).getDbWriter();;
+    	EPFDbWriter dbWriter = ((EPFImportTask)importTask).getDbWriter();
     	importTranslator = ((EPFImportTask)importTask).getImportTranslator();
     	totalExpectedRecords = importTranslator.getTotalExpectedRecords();
 		Logger log = EPFImporter.getLogger();
-        log.info("%s - Import completed, %d of %d records imported",importTranslator.getTableName(),totalExpectedRecords,dbWriter.getTotalRowsInserted());
+        log.info("{} - Import completed, {} of {} records imported",importTranslator.getTableName(),dbWriter.getTotalRowsInserted(),totalExpectedRecords);
     }
 }

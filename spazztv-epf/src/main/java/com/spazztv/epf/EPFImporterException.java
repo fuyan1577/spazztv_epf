@@ -10,7 +10,8 @@ package com.spazztv.epf;
  * 
  */
 public class EPFImporterException extends Exception {
-	String err;
+	private static final long serialVersionUID = -5222837073443813105L;
+	private String err;
 
 	public EPFImporterException() {
 		super();

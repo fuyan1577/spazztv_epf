@@ -3,6 +3,7 @@ package com.spazztv.epf;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -47,6 +48,8 @@ public class EPFImporter {
 	}
 
 	public static void printUsage() {
+//		EPFImporter [ Options: [ short {f=[ option: f field_separator  [ARG] :: "The field separator" ], d=[ option: d db_config  [ARG] :: "The configuration file path and name. Defaults to EPFConfig.json in the local directory" ], b=[ option: b blacklist  [ARG] :: "A regular expression to add to the whiteList; repeated -b arguments will append" ], c=[ option: c config  [ARG] :: "The configuration file path and name. Defaults to EPFConfig.json in the local directory" ], a=[ option: a allowextensions  :: "Include files with dots in their names in the import" ], l=[ option: l dbdriver  [ARG] :: "The JDBC Driver Class name" ], k=[ option: k skipkeyviolators  :: "Ignore inserts which would violate a primary key constraint; only applies to full imports" ], dburl=[ option: dburl  [ARG] :: "The name of the database to connect to" ], dbwriter=[ option: dbwriter  [ARG] :: "The JDBC DataSource Class name" ], w=[ option: w whitelist  [ARG] :: "A regular expression to add to the whiteList; repeated -w arguments will append" ], u=[ option: u dbuser  [ARG] :: "The user which will execute the database commands; must have table create/drop priveleges" ], t=[ option: t max_threads  [ARG] :: "The maximum concurrently executing threads. Default to 8" ], s=[ option: s snapshot  [ARG] :: "The snapshot file for allowing restarts" ], r=[ option: r record_separator  [ARG] :: "The record separator" ], p=[ option: p dbpassword  [ARG] :: "The user's password for the database" ], x=[ option: x tableprefix  [ARG] :: "Optional prefix which will be added to all table names, e.g. 'MyPrefix_video_translation'" ]} ] [ long {dbdriver=[ option: l dbdriver  [ARG] :: "The JDBC Driver Class name" ], allowextensions=[ option: a allowextensions  :: "Include files with dots in their names in the import" ], db_config=[ option: d db_config  [ARG] :: "The configuration file path and name. Defaults to EPFConfig.json in the local directory" ], snapshot=[ option: s snapshot  [ARG] :: "The snapshot file for allowing restarts" ], tableprefix=[ option: x tableprefix  [ARG] :: "Optional prefix which will be added to all table names, e.g. 'MyPrefix_video_translation'" ], flat=[ option: f flat  :: "Import EPF Flat files, using values from EPFFlat.config if not overridden" ], dbuser=[ option: u dbuser  [ARG] :: "The user which will execute the database commands; must have table create/drop priveleges" ], field_separator=[ option: f field_separator  [ARG] :: "The field separator" ], resume=[ option: r resume  :: "Resume the most recent import according to the relevant .json status file (EPFStatusIncremental.json if -i, otherwise EPFStatusFull.json);" ], dbpassword=[ option: p dbpassword  [ARG] :: "The user's password for the database" ], blacklist=[ option: b blacklist  [ARG] :: "A regular expression to add to the whiteList; repeated -b arguments will append" ], config=[ option: c config  [ARG] :: "The configuration file path and name. Defaults to EPFConfig.json in the local directory" ], record_separator=[ option: r record_separator  [ARG] :: "The record separator" ], max_threads=[ option: t max_threads  [ARG] :: "The maximum concurrently executing threads. Default to 8" ], whitelist=[ option: w whitelist  [ARG] :: "A regular expression to add to the whiteList; repeated -w arguments will append" ], skipkeyviolators=[ option: k skipkeyviolators  :: "Ignore inserts which would violate a primary key constraint; only applies to full imports" ]} ]		
+		
 		System.out
 				.println("usage: EPFDbImporter [-fxrak] [-d db_host] [-u db_user] [-p db_password] [-n db_name]");
 		System.out
@@ -112,7 +115,7 @@ public class EPFImporter {
 		config.setDirectoryPaths(Arrays.asList(line.getArgs()));
 	}
 
-	public Options getOptions() {
+	public static Options getOptions() {
 		Options options = new Options();
 		options.addOption("f", "flat", false,
 				"\"Import EPF Flat files, using values from EPFFlat.config if not overridden\"");
@@ -243,7 +246,7 @@ public class EPFImporter {
 		CommandLineParser parser = new PosixParser();
 		// Get the command line arguments
 		CommandLine line = parser.parse(getOptions(), args);
-
+		
 		// Load the configurations
 		String configFile = line.getOptionValue("config");
 		if (configFile != null) {
@@ -263,9 +266,6 @@ public class EPFImporter {
 
 		// Override the configurations with any specified command line args
 		updateConfigWithCommandLineArguments(line);
-
-		// Verify the configuration
-		// verifyDbConfig();
 	}
 
 	public void runImporterJob() throws EPFDbException {

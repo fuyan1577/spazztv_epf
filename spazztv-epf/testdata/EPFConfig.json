@@ -2,13 +2,13 @@
     "dbConnection": {
     	"dbDriverClass": "com.mysql.jdbc.Driver",
 	    "dbUrl": "com.jdbc.mysql:localhost/epf", 
-	    "dbUser": "webaccess", 
-	    "dbPassword": "wsc2aofi"
+	    "dbUser": "epftest", 
+	    "dbPassword": "epftest"
     },
     "tablePrefix": "epf", 
     "allowExtensions": false, 
     "blackList": [
-        "^\\."
+        "invalid_epf_file"
     ], 
     "whiteList": [
         ".*?"

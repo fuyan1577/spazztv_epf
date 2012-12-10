@@ -4,6 +4,7 @@
 package com.spazztv.epf;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -32,14 +33,15 @@ public class EPFImportManager {
 	private List<Future<Runnable>> importThreads;
 
 	public EPFImportManager(EPFConfig config, EPFDbConfig dbConfig) {
-		threadPoolService = Executors.newFixedThreadPool(config.getMaxThreads());
-		
+		threadPoolService = Executors
+				.newFixedThreadPool(config.getMaxThreads());
+
 		whiteListRegex = createRegexPattern(config.getWhiteList());
 		blackListRegex = createRegexPattern(config.getBlackList());
 		loadImportFileList(config.getDirectoryPaths());
 		loadImportThreads(dbConfig);
 	}
-	
+
 	private String createRegexPattern(List<String> list) {
 		String regexPattern = null;
 		if (list.size() > 0) {
@@ -58,17 +60,22 @@ public class EPFImportManager {
 
 	private void loadImportFileList(List<String> directoryPaths) {
 		fileList = new ArrayList<String>();
-		
+
 		for (String directoryPath : directoryPaths) {
 			File dir = new File(directoryPath);
-	
-			String[] dirFileName = dir.list();
-			if (dirFileName != null) {
-				for (int i = 0; i < dirFileName.length; i++) {
+			
+			FileFilter skipDirectoriesFilter = new FileFilter() {
+				public boolean accept(File file) {
+					return !file.isDirectory();
+				}
+			};
+
+			File[] dirFile = dir.listFiles(skipDirectoriesFilter);
+			if (dirFile != null) {
+				for (int i = 0; i < dirFile.length; i++) {
 					// Get filename of file or directory
-					if (isValidImportFile(dirFileName[i])) {
-						File dirFile = new File(dir,dirFileName[i]);
-						fileList.add(dirFile.getPath());
+					if (isValidImportFile(dirFile[i].getName())) {
+						fileList.add(dirFile[i].getPath());
 					}
 				}
 			}
@@ -116,7 +123,8 @@ public class EPFImportManager {
 			try {
 				EPFDbWriter dbWriter = EPFDbWriterFactory.getDbWriter(dbConfig);
 				EPFImportTask importTask = new EPFImportTask(filePath, dbWriter);
-				importThreads.add((Future<Runnable>) threadPoolService.submit(importTask));
+				importThreads.add((Future<Runnable>) threadPoolService
+						.submit(importTask));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			} catch (EPFFileFormatException e) {
@@ -126,9 +134,9 @@ public class EPFImportManager {
 			}
 		}
 	}
-	
+
 	public boolean isRunning() throws EPFDbException {
-		for (Future<Runnable> f : importThreads){
+		for (Future<Runnable> f : importThreads) {
 			if (!f.isDone()) {
 				return true;
 			}
@@ -136,5 +144,14 @@ public class EPFImportManager {
 		threadPoolService.shutdown();
 		EPFDbWriterFactory.closeFactory();
 		return false;
+	}
+
+	/**
+	 * FileList getter for Job Logger Advice.
+	 * 
+	 * @return the fileList
+	 */
+	public List<String> getFileList() {
+		return fileList;
 	}
 }

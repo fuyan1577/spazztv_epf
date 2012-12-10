@@ -25,9 +25,12 @@ public class EPFImportTranslatorLogger {
 		Logger log = EPFImporter.getLogger();
 		if (((importTranslator.getLastRecordRead() - lastLoggedRecord) > RECORD_LOG_COUNT)
 				|| ((System.currentTimeMillis() - lastLoggedTimestamp) > TIMESTAMP_LOG_COUNT)) {
-			log.info("%s - Import completed, %d of %d records imported",
-					importTranslator.getTableName(), importTranslator.getTotalExpectedRecords(),
-					importTranslator.getLastRecordRead());
+			log.info("{} - {} of {} records imported",
+					importTranslator.getTableName(),
+					importTranslator.getLastRecordRead(),
+					importTranslator.getTotalExpectedRecords());
+			lastLoggedRecord = importTranslator.getLastRecordRead();
+			lastLoggedTimestamp = System.currentTimeMillis();
 		}
 	}
 }

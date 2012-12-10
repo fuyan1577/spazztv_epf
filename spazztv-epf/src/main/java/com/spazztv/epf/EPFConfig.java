@@ -59,9 +59,11 @@ public class EPFConfig {
 	public EPFConfig() {
 		whiteList = new ArrayList<String>();
 		blackList = new ArrayList<String>();
+		directoryPaths = new ArrayList<String>();
 
 		whiteList.add(".*?");
 		blackList.add("^\\.");
+		directoryPaths.add("./");
 		allowExtensions = false;
 		tablePrefix = "epf";
 	}

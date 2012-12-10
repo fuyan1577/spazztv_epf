@@ -16,7 +16,7 @@ import com.spazztv.epf.dao.EPFDbException;
 import com.spazztv.epf.dao.EPFDbWriter;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ EPFImporterQueue.class, EPFDbWriter.class})
+@PrepareForTest({ EPFImporterQueue.class, EPFDbWriter.class })
 public class EPFImportTaskTest {
 
 	String storefrontEpfFile = "testdata/epf_files/storefront";
@@ -80,8 +80,12 @@ public class EPFImportTaskTest {
 		EasyMock.reset(dbWriter);
 		dbWriter.finalizeImport();
 		EasyMock.expectLastCall().times(1);
+		// The following call is used by the logger aspect and is added here in
+		// case logging in turned on during testing
+		EasyMock.expect(dbWriter.getTotalRowsInserted()).andReturn(155L)
+				.anyTimes();
 		EasyMock.replay(dbWriter);
-		
+
 		EasyMock.reset(importerQueue);
 		importerQueue.setCompleted(storefrontEpfFile);
 		EasyMock.expectLastCall().times(1);
@@ -89,12 +93,11 @@ public class EPFImportTaskTest {
 
 		PowerMock.mockStatic(EPFImporterQueue.class);
 		EPFImporterQueue.getInstance();
-		EasyMock.expectLastCall()
-				.andReturn(importerQueue).times(1);
+		EasyMock.expectLastCall().andReturn(importerQueue).times(1);
 		PowerMock.replay(EPFImporterQueue.class);
-		
+
 		importTask.finalizeImport();
-		
+
 		PowerMock.verify(EPFImporterQueue.class);
 		EasyMock.verify(dbWriter);
 		EasyMock.verify(importerQueue);

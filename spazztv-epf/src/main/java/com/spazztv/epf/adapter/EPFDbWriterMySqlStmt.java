@@ -169,23 +169,23 @@ public class EPFDbWriterMySqlStmt {
 
 	private String formatInsertRow(Map<String, String> columnsAndTypes,
 			List<String> rowData) {
-		String row = "";
+		StringBuffer row = new StringBuffer();
 		Object[] cTypes = columnsAndTypes.values().toArray();
 		for (int i = 0; i < rowData.size(); i++) {
 			// Include only columns mapped in columnMap
 			if (i < cTypes.length) {
 				if (rowData.get(i).length() == 0) {
-					row += "NULL";
+					row.append("NULL");
 				} else if (!UNQUOTED_TYPES.contains((String) cTypes[i])) {
-					row += "'" + rowData.get(i).replaceAll("'", "''") + "'";
+					row.append("'" + rowData.get(i).replaceAll("'", "''") + "'");
 				} else {
-					row += rowData.get(i);
+					row.append(rowData.get(i));
 				}
 				if (i + 1 < rowData.size()) {
-					row += ",";
+					row.append(",");
 				}
 			}
 		}
-		return row;
+		return row.toString();
 	}
 }

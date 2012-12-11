@@ -172,11 +172,9 @@ public class EPFImportTranslator {
 		if (!epfFileReader.hasNextDataRecord()) {
 			return null;
 		}
-		String nextRow = null;
-		try {
-			nextRow = epfFileReader.nextDataLine();
+		String nextRow = epfFileReader.nextDataLine();
+		if (nextRow != null) {
 			lastRecordNum++;
-		} catch (IOException e) {
 		}
 		return nextRow;
 	}
@@ -274,7 +272,7 @@ public class EPFImportTranslator {
 			}
 			r = r.replaceFirst(".*" + requiredPrefix, "");
 		}
-		
+
 		return r.split(fieldDelim);
 	}
 
@@ -322,7 +320,7 @@ public class EPFImportTranslator {
 			exportType = EPFExportType.INCREMENTAL;
 		}
 	}
-	
+
 	public String getFilePath() {
 		return epfFileReader.getFilePath();
 	}

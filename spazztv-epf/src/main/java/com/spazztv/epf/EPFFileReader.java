@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 
+import org.apache.commons.lang3.StringEscapeUtils;
+
 /**
  * This is an interface which consolidates the random and buffered access of the
  * EPF Import file.
@@ -24,15 +26,16 @@ public class EPFFileReader {
 	private String filePath;
 	private long recordsWritten = 0;
 	private long lastDataRecord = 0;
-	private String recordSeparator;
+	private char recordSeparatorChar;
 
-	public EPFFileReader(String filePath, String recordSeparator) throws FileNotFoundException,
-			EPFFileFormatException {
+	public EPFFileReader(String filePath, String recordSeparator)
+			throws FileNotFoundException, EPFFileFormatException {
 		this.filePath = filePath;
 		FileInputStream fstream = new FileInputStream(filePath);
 		DataInputStream in = new DataInputStream(fstream);
 		bFile = new BufferedReader(new InputStreamReader(in));
-		this.recordSeparator = recordSeparator;
+		recordSeparatorChar = StringEscapeUtils.unescapeXml(recordSeparator)
+				.toCharArray()[0];
 		loadRecordsWritten();
 	}
 
@@ -72,35 +75,47 @@ public class EPFFileReader {
 	 * reading to the end of the line or the end of file and return the data as
 	 * a String.
 	 * 
+	 * <p>
+	 * Note: Apple's EPF Relational Data Feed has records delimited by an
+	 * &0002; followed by a \n. The configuration indicates that the delimiter
+	 * is only the &0002; and no '\n'. To handle this, the logic of this
+	 * method skips all '\n' characters when beginning a new record.
+	 * 
 	 * @see java.io.RandomAccessFile#readLine()
 	 * 
 	 * @return String of data read
 	 * @throws IOException
 	 */
-	public String nextDataLine() throws IOException {
-		String line;
+	public String nextDataLine() {
 		StringBuffer record = new StringBuffer();
+		char[] nextChar = new char[1];
+		// Read the next non-comment input record
 		while (true) {
 			try {
-				line = bFile.readLine();
-				if (line == null) {
-					break;
-				}
-				if (!line.startsWith(COMMENT_PREFIX)) {
-					if (record.length() > 0) {
-						record.append("\n");
-					}
-					record.append(line);
-					if (line.matches(".*" + recordSeparator + "$")) {
+				// Read in the next block - read until separatorChar
+				while (bFile.read(nextChar, 0, 1) > 0) {
+					if (nextChar[0] == recordSeparatorChar) {
 						break;
 					}
+					if (record.length() > 0) {
+						record.append(nextChar[0]);
+						// Record blocks may not begin with '\n'
+					} else if (nextChar[0] != '\n') {
+						record.append(nextChar[0]);
+					}
+				}
+				if (record.toString().startsWith(COMMENT_PREFIX)) {
+					// If this is a comment record, initialize it and read the
+					// next record
+					record.delete(0, record.length());
+				} else {
+					break;
 				}
 			} catch (IOException e) {
-				line = null;
-				break;
+				return null;
 			}
 		}
-		if (line != null) {
+		if (record.length() > 0) {
 			lastDataRecord++;
 		}
 		return record.toString();

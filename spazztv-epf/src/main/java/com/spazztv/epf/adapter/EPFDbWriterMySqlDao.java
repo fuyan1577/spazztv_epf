@@ -29,7 +29,6 @@ public class EPFDbWriterMySqlDao {
 		SQLReturnStatus sqlStatus = new SQLReturnStatus();
 
 		Connection connection = null;
-
 		Statement st;
 		try {
 			connection = dbWriter.getConnection();

@@ -40,10 +40,10 @@ public class EPFConfig {
 	public static String EPF_FIELD_SEPARATOR = "fieldSep";
 
 	public static int EPF_MAX_THREADS_DEFAULT = 8;
-	public static String EPF_FIELD_SEPARATOR_DEFAULT = "\\x01";
-	public static String EPF_RECORD_SEPARATOR_DEFAULT = "\\x02";
-	public static String EPF_FLAT_FIELD_SEPARATOR_DEFAULT = "\\t";
-	public static String EPF_FLAT_RECORD_SEPARATOR_DEFAULT = "\\n";
+	public static String EPF_FIELD_SEPARATOR_DEFAULT = "&#0001;";
+	public static String EPF_RECORD_SEPARATOR_DEFAULT = "&#0002;";
+	public static String EPF_FLAT_FIELD_SEPARATOR_DEFAULT = "&#0009;"; // \t
+	public static String EPF_FLAT_RECORD_SEPARATOR_DEFAULT = "&#0010;"; // \n
 
 	private List<String> whiteList;
 	private List<String> blackList;

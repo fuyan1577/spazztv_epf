@@ -35,13 +35,13 @@ public class EPFDbConnector {
 	private UniversalConnectionPoolManager mgr;
 	private PoolDataSource pds;
 	private EPFDbConfig dbConfig;
-	
+
 	private static EPFDbConnector instance;
 
 	private EPFDbConnector(EPFDbConfig dbConfig) {
 		this.dbConfig = dbConfig;
 	}
-	
+
 	public static EPFDbConnector getInstance(EPFDbConfig dbConfig) {
 		if (instance == null) {
 			instance = new EPFDbConnector(dbConfig);
@@ -64,10 +64,14 @@ public class EPFDbConnector {
 			pds.setConnectionPoolName(EPF_DB_POOL_NAME);
 
 			pds.setConnectionFactoryClassName(dbConfig.getDbDataSourceClass());
-			
+
 			pds.setURL(dbConfig.getDbUrl());
 			pds.setUser(dbConfig.getUsername());
 			pds.setPassword(dbConfig.getPassword());
+
+			if (dbConfig.getDbDataSourceOptions().size() > 0) {
+				pds.setConnectionProperties(dbConfig.getDbDataSourceOptions());
+			}
 
 			mgr.createConnectionPool((UniversalConnectionPoolAdapter) pds);
 
@@ -103,7 +107,8 @@ public class EPFDbConnector {
 		}
 	}
 
-	public synchronized void releaseConnection(Object connection) throws EPFDbException {
+	public synchronized void releaseConnection(Object connection)
+			throws EPFDbException {
 		try {
 			((Connection) connection).close();
 			connection = null;

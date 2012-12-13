@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.util.Properties;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -23,6 +24,7 @@ import com.spazztv.epf.EPFImporterException;
 public class EPFDbConfig {
 	public static String DB_CONNECTION_POOL = "dbConnection";
 	public static String DB_DATA_SOURCE_CLASS = "dbDataSourceClass";
+	public static String DB_DATA_SOURCE_OPTIONS = "dbDataSourceOptions";
 	public static String DB_WRITER_CLASS = "dbWriterClass";
 	public static String DB_DEFAULT_CATALOG = "dbDefaultCatalog";
 	public static String DB_MIN_CONNECTIONS = "dbMinConnections";
@@ -33,6 +35,7 @@ public class EPFDbConfig {
 
 	private String dbWriterClass;
 	private String dbDataSourceClass;
+	private Properties dbDataSourceOptions;
 	private String defaultCatalog;
 	private String dbUrl;
 	private String username;
@@ -41,17 +44,17 @@ public class EPFDbConfig {
 	private Integer maxConnections = 8;
 
 	public EPFDbConfig() {
-		dbUrl = "jdbc:mysql://localhost:3306/epf";
-		username = "epftest";
-		password = "epftest";
+		dbDataSourceOptions = new Properties();
 	}
 
 	public EPFDbConfig(File configFile) throws IOException,
 			EPFImporterException {
+		this();
 		String configJson = loadConfigFile(configFile);
 		parseConfiguration(configJson);
 	}
 
+	@SuppressWarnings("unchecked")
 	public void parseConfiguration(String configJson)
 			throws EPFImporterException {
 		JSONParser parser = new JSONParser();
@@ -78,6 +81,15 @@ public class EPFDbConfig {
 				DB_MIN_CONNECTIONS, EPFDbConnector.DEFAULT_MIN_CONNECTIONS);
 		maxConnections = verifyIntegerDefault(connPoolObject,
 				DB_MAX_CONNECTIONS, EPFDbConnector.DEFAULT_MAX_CONNECTIONS);
+
+		dbDataSourceOptions.clear();
+		if (connPoolObject.containsKey(DB_DATA_SOURCE_OPTIONS)) {
+			JSONObject dbDataSourceOptions = (JSONObject)connPoolObject.get(DB_DATA_SOURCE_OPTIONS);
+			for (Object key : dbDataSourceOptions.keySet()) {
+			    Object val = dbDataSourceOptions.get(key);
+			    dbDataSourceOptions.put(key, val);
+			}			
+		}
 	}
 
 	private void validDbConfig(JSONObject configObj)
@@ -91,10 +103,12 @@ public class EPFDbConfig {
 
 	public static boolean isValidConfigKey(String key) {
 		if (key.equals(DB_CONNECTION_POOL) || key.equals(DB_WRITER_CLASS)
-				|| key.equals(DB_DATA_SOURCE_CLASS) || key.equals(DB_DEFAULT_CATALOG)
+				|| key.equals(DB_DATA_SOURCE_CLASS)
+				|| key.equals(DB_DEFAULT_CATALOG)
 				|| key.equals(DB_MIN_CONNECTIONS)
 				|| key.equals(DB_MAX_CONNECTIONS) || key.equals(DB_USER)
-				|| key.equals(DB_URL) || key.equals(DB_PASSWORD)) {
+				|| key.equals(DB_URL) || key.equals(DB_PASSWORD)
+				|| key.equals(DB_DATA_SOURCE_OPTIONS)) {
 			return true;
 		}
 		return false;
@@ -113,7 +127,7 @@ public class EPFDbConfig {
 		if (connPoolObject.get(key) == null) {
 			return defaultValue;
 		}
-		Long val = (Long)connPoolObject.get(key);
+		Long val = (Long) connPoolObject.get(key);
 		return (Integer) val.intValue();
 	}
 
@@ -152,6 +166,14 @@ public class EPFDbConfig {
 
 	public void setDefaultCatalog(String defaultCatalog) {
 		this.defaultCatalog = defaultCatalog;
+	}
+
+	public Properties getDbDataSourceOptions() {
+		return dbDataSourceOptions;
+	}
+
+	public void setDbDataSourceOptions(Properties dbDataSourceOptions) {
+		this.dbDataSourceOptions = dbDataSourceOptions;
 	}
 
 	public String getDbUrl() {

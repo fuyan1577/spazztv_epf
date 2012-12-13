@@ -2,6 +2,7 @@ package com.spazztv.epf.adapter;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -24,16 +25,16 @@ public class EPFDbWriterMySqlDao {
 		this.dbWriter = dbWriter;
 	}
 
-	public SQLReturnStatus executeSQLStatement(String sqlStmt)
+	public SQLReturnStatus executeSQLStatement(String sqlStmt, List<List<String>> insertBuffer)
 			throws EPFDbException {
 		SQLReturnStatus sqlStatus = new SQLReturnStatus();
 
 		Connection connection = null;
-		Statement st;
 		try {
 			connection = dbWriter.getConnection();
-			st = connection.createStatement();
-			st.execute(sqlStmt);
+			PreparedStatement ps = connection.prepareStatement(sqlStmt);
+			setSqlValues(ps,insertBuffer);
+			ps.execute();
 			sqlStatus.setSuccess(true);
 		} catch (SQLException e1) {
 			sqlStatus.setSuccess(false);
@@ -43,6 +44,30 @@ public class EPFDbWriterMySqlDao {
 		}
 		dbWriter.releaseConnection(connection);
 		return sqlStatus;
+	}
+	
+	private void setSqlValues(PreparedStatement ps, List<List<String>> insertBuffer) throws SQLException {
+		if (insertBuffer == null) {
+			return;
+		}
+		int i = 1;
+		int row = 0;
+		int wtf = 0;
+		for (List<String>rowValues : insertBuffer) {
+			row++;
+			if (rowValues.size() != 17) {
+				System.out.println(String.format("RowValues Size: %d", rowValues.size()));
+				wtf = wtf + 0;
+			}
+			wtf += rowValues.size();
+			for (String fieldValue : rowValues) {
+				ps.setString(i,fieldValue);
+				i++;
+				if (i >= 3392) {
+					i = i + 0;
+				}
+			}
+		}
 	}
 
 	/**

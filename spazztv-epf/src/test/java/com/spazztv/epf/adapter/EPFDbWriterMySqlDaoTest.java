@@ -2,6 +2,7 @@ package com.spazztv.epf.adapter;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -24,6 +25,7 @@ public class EPFDbWriterMySqlDaoTest {
 	private EPFDbConnector connector;
 	private Connection connection;
 	private Statement statement;
+	private PreparedStatement preparedStatement;
 	private ResultSet resultSet;
 	private ResultSetMetaData metaData;
 	private DatabaseMetaData dbMetaData;
@@ -35,6 +37,7 @@ public class EPFDbWriterMySqlDaoTest {
 		connector = EasyMock.createMock(EPFDbConnector.class);
 		connection = EasyMock.createMock(Connection.class);
 		statement = EasyMock.createMock(Statement.class);
+		preparedStatement = EasyMock.createMock(PreparedStatement.class);
 		resultSet = EasyMock.createMock(ResultSet.class);
 		dbMetaData = EasyMock.createMock(DatabaseMetaData.class);
 		metaData = EasyMock.createMock(ResultSetMetaData.class);
@@ -56,20 +59,20 @@ public class EPFDbWriterMySqlDaoTest {
 		EasyMock.replay(connector);
 
 		EasyMock.reset(connection);
-		connection.createStatement();
-		EasyMock.expectLastCall().andReturn(statement).times(1);
+		connection.prepareStatement(expectedStatement);
+		EasyMock.expectLastCall().andReturn(preparedStatement).times(1);
 		EasyMock.replay(connection);
 
-		EasyMock.reset(statement);
-		statement.execute(expectedStatement);
+		EasyMock.reset(preparedStatement);
+		preparedStatement.execute();
 		EasyMock.expectLastCall().andReturn(true).times(1);
-		EasyMock.replay(statement);
+		EasyMock.replay(preparedStatement);
 
-		mySqlDao.executeSQLStatement(expectedStatement);
+		mySqlDao.executeSQLStatement(expectedStatement, null);
 
 		EasyMock.verify(connector);
 		EasyMock.verify(connection);
-		EasyMock.verify(statement);
+		EasyMock.verify(preparedStatement);
 	}
 
 	@Test
@@ -85,8 +88,8 @@ public class EPFDbWriterMySqlDaoTest {
 		EasyMock.replay(connector);
 
 		EasyMock.reset(connection);
-		connection.createStatement();
-		EasyMock.expectLastCall().andReturn(statement).times(1);
+		connection.prepareStatement(expectedStatement);
+		EasyMock.expectLastCall().andReturn(preparedStatement).times(1);
 		EasyMock.replay(connection);
 
 		// Set statement to throw a SQLException to return an invalid status
@@ -100,14 +103,14 @@ public class EPFDbWriterMySqlDaoTest {
 		EasyMock.expectLastCall().andReturn(expectedErrorCode).times(2);
 		EasyMock.replay(expectedException);
 
-		EasyMock.reset(statement);
-		statement.execute(expectedStatement);
+		EasyMock.reset(preparedStatement);
+		preparedStatement.execute();
 		EasyMock.expectLastCall().andThrow(expectedException);
-		EasyMock.replay(statement);
+		EasyMock.replay(preparedStatement);
 
 		boolean expectedSuccess = false;
 		SQLReturnStatus actual = mySqlDao
-				.executeSQLStatement(expectedStatement);
+				.executeSQLStatement(expectedStatement, null);
 
 		Assert.assertTrue(
 				"Statement should have returned isSuccess() == false",
@@ -127,7 +130,7 @@ public class EPFDbWriterMySqlDaoTest {
 				expectedErrorCode == actual.getSqlExceptionCode());
 		EasyMock.verify(connector);
 		EasyMock.verify(connection);
-		EasyMock.verify(statement);
+		EasyMock.verify(preparedStatement);
 	}
 
 	@Test

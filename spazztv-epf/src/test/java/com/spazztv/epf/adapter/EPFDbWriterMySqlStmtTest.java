@@ -164,7 +164,7 @@ public class EPFDbWriterMySqlStmtTest {
 			if (buf.length() > 0) {
 				buf.append(",");
 			}
-			buf.append("(" + getInsertValues(i) + ")");
+			buf.append("(" + getInsertValuesPreparedStatement(i) + ")");
 			insertValues.add((List<String>) Arrays.asList(row));
 		}
 
@@ -246,17 +246,12 @@ public class EPFDbWriterMySqlStmtTest {
 		return columns;
 	}
 
-	public String getInsertValues(int rowNumber) {
+	public String getInsertValuesPreparedStatement(int rowNumber) {
 		String[] rowData = getInsertData(rowNumber);
-		Object[] columnTypes = columnsAndTypes.values().toArray();
 		StringBuffer values = new StringBuffer();
 
 		for (int i = 0; i < rowData.length; i++) {
-			if (EPFDbWriterMySqlStmt.UNQUOTED_TYPES.contains(columnTypes[i])) {
-				values.append(rowData[i]);
-			} else {
-				values.append("'" + rowData[i] + "'");
-			}
+			values.append("?");
 			if (i + 1 < rowData.length) {
 				values.append(",");
 			}

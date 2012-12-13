@@ -79,7 +79,11 @@ public class EPFImporterLogger {
 		log.info("  DB Default Catalog: {}",dbConfig.getDefaultCatalog());
 		log.info("  DB URL: {}",dbConfig.getDbUrl());
 		log.info("  DB Username: {}",dbConfig.getUsername());
-		log.info("  DB Password: {}",dbConfig.getPassword().replaceAll(".", "*"));
+		String pw = null;
+		if (dbConfig.getPassword() != null) {
+			pw = dbConfig.getPassword().replaceAll(".", "*");
+		}
+		log.info("  DB Password: {}",pw);
 		log.info("  Min Connections: {}",dbConfig.getMinConnections());
 		log.info("  Max Connections: {}",dbConfig.getMaxConnections());
 	}

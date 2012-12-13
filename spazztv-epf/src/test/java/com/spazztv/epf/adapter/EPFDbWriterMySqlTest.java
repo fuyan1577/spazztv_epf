@@ -96,10 +96,13 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.replay(mySqlStmt);
 
 		EasyMock.reset(mySqlDao);
-		mySqlDao.executeSQLStatement((String) EasyMock.eq(expectedSQLDropTable));
+		mySqlDao.executeSQLStatement(
+				(String) EasyMock.eq(expectedSQLDropTable),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement((String) EasyMock
-				.eq(expectedSQLCreateTable));
+		mySqlDao.executeSQLStatement(
+				(String) EasyMock.eq(expectedSQLCreateTable),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		EasyMock.replay(mySqlDao);
 
@@ -142,6 +145,7 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.verify(mySqlDao);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testInitImport3() throws EPFDbException, SQLException {
 		String expectedColumnsAndTypes = "`export_date` BIGINT, `application_id` INTEGER, `title` VARCHAR(1000), `recommended_age` VARCHAR(20), `artist_name` VARCHAR(1000), `seller_name` VARCHAR(1000), `company_url` VARCHAR(1000), `support_url` VARCHAR(1000), `view_url` VARCHAR(1000), `artwork_url_large` VARCHAR(1000), `artwork_url_small` VARCHAR(1000), `itunes_release_date` DATETIME, `copyright` VARCHAR(4000), `description` LONGTEXT, `version` VARCHAR(100), `itunes_version` VARCHAR(100), `download_size` BIGINT";
@@ -180,13 +184,17 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.reset(mySqlDao);
 		mySqlDao.isTableInDatabase(expectedTableName);
 		EasyMock.expectLastCall().andReturn(true).times(1);
-		mySqlDao.executeSQLStatement((String) EasyMock.eq(expectedSQLDropTable));
+		mySqlDao.executeSQLStatement(
+				(String) EasyMock.eq(expectedSQLDropTable),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement((String) EasyMock
-				.eq(expectedSQLDropTable2));
+		mySqlDao.executeSQLStatement(
+				(String) EasyMock.eq(expectedSQLDropTable2),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement((String) EasyMock
-				.eq(expectedSQLCreateTable));
+		mySqlDao.executeSQLStatement(
+				(String) EasyMock.eq(expectedSQLCreateTable),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		mySqlDao.getTableColumns(expectedTableName);
 		EasyMock.expectLastCall().andReturn(expectedTableColumns).times(1);
@@ -225,7 +233,9 @@ public class EPFDbWriterMySqlTest {
 		String expectedBlockInsertSQL;
 		String expectedBlockInsertSQLFinalize;
 		String expectedInsertColumns = getInsertColumns();
-		String expectedInsertValues = "";
+		List<List<String>> expectedInsertData = new ArrayList<List<String>>();
+		List<List<String>> expectedInsertDataFinalize = new ArrayList<List<String>>();
+		String expectedInsertPreparedValues = "";
 		String expectedAlterTableSetPrimaryKeySQL = String.format(
 				EPFDbWriterMySqlStmt.PRIMARY_KEY_STMT, expectedTmpTableName,
 				primaryKey);
@@ -233,23 +243,25 @@ public class EPFDbWriterMySqlTest {
 		StringBuffer buf = new StringBuffer();
 		int i;
 		for (i = 0; i < expectedRows; i++) {
-			buf.append("(" + getInsertValues(i) + ")");
+			expectedInsertData.add(Arrays.asList(getInsertData(i)));
+			buf.append("(" + getInsertPreparedValues(i) + ")");
 			if (i + 1 < expectedRows) {
 				buf.append(",");
 			}
 		}
 
-		expectedInsertValues = buf.toString();
-
+		expectedInsertPreparedValues = buf.toString();
 		expectedBlockInsertSQL = String.format(
 				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, "INSERT",
 				expectedTmpTableName, expectedInsertColumns,
-				expectedInsertValues);
-		expectedInsertValues = "(" + getInsertValues(i) + ")";
+				expectedInsertPreparedValues);
+
+		expectedInsertPreparedValues = "(" + getInsertPreparedValues(i) + ")";
+		expectedInsertDataFinalize.add(Arrays.asList(getInsertData(i)));
 		expectedBlockInsertSQLFinalize = String.format(
 				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, "INSERT",
 				expectedTmpTableName, expectedInsertColumns,
-				expectedInsertValues);
+				expectedInsertPreparedValues);
 
 		SQLReturnStatus returnStatus = new SQLReturnStatus();
 		returnStatus.setSuccess(true);
@@ -284,21 +296,21 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.reset(mySqlDao);
 		mySqlDao.isTableInDatabase(expectedTableName);
 		EasyMock.expectLastCall().andReturn(true).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLDropTable);
+		mySqlDao.executeSQLStatement(expectedSQLDropTable, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLDropTableOld);
+		mySqlDao.executeSQLStatement(expectedSQLDropTableOld, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(2);
-		mySqlDao.executeSQLStatement(expectedSQLCreateTable);
+		mySqlDao.executeSQLStatement(expectedSQLCreateTable, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLRenameTable);
+		mySqlDao.executeSQLStatement(expectedSQLRenameTable, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLRenameTable2);
+		mySqlDao.executeSQLStatement(expectedSQLRenameTable2, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedBlockInsertSQL);
+		mySqlDao.executeSQLStatement(expectedBlockInsertSQL, expectedInsertData);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedBlockInsertSQLFinalize);
+		mySqlDao.executeSQLStatement(expectedBlockInsertSQLFinalize, expectedInsertDataFinalize);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedAlterTableSetPrimaryKeySQL);
+		mySqlDao.executeSQLStatement(expectedAlterTableSetPrimaryKeySQL, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		EasyMock.replay(mySqlDao);
 
@@ -326,23 +338,28 @@ public class EPFDbWriterMySqlTest {
 		String expectedBlockInsertSQL;
 		String expectedBlockInsertSQLFinalize;
 		String expectedInsertColumns = getInsertColumns();
-		String expectedInsertValues = "";
+		String expectedInsertPreparedValues = "";
+		List<List<String>> expectedInsertData = new ArrayList<List<String>>();
+		List<List<String>> expectedInsertDataFinalize = new ArrayList<List<String>>();
 
 		int i;
 		for (i = 0; i < expectedRows; i++) {
-			expectedInsertValues += "(" + getInsertValues(i) + ")";
+			expectedInsertPreparedValues += "(" + getInsertPreparedValues(i) + ")";
+			expectedInsertData.add(Arrays.asList(getInsertData(i)));
 			if (i + 1 < expectedRows) {
-				expectedInsertValues += ",";
+				expectedInsertPreparedValues += ",";
 			}
 		}
-
+		
 		expectedBlockInsertSQL = String.format(
 				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, "REPLACE",
-				expectedTableName, expectedInsertColumns, expectedInsertValues);
-		expectedInsertValues = "(" + getInsertValues(i) + ")";
+				expectedTableName, expectedInsertColumns, expectedInsertPreparedValues);
+
+		expectedInsertDataFinalize.add(Arrays.asList(getInsertData(i)));
+		expectedInsertPreparedValues = "(" + getInsertPreparedValues(i) + ")";
 		expectedBlockInsertSQLFinalize = String.format(
 				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, "REPLACE",
-				expectedTableName, expectedInsertColumns, expectedInsertValues);
+				expectedTableName, expectedInsertColumns, expectedInsertPreparedValues);
 
 		List<String> expectedTableColumns = new ArrayList<String>();
 		for (String columnName : columnsAndTypes.keySet()) {
@@ -368,11 +385,13 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.reset(mySqlDao);
 		mySqlDao.isTableInDatabase(expectedTableName);
 		EasyMock.expectLastCall().andReturn(true).times(1);
-		mySqlDao.executeSQLStatement((String) EasyMock
-				.eq(expectedBlockInsertSQL));
+		mySqlDao.executeSQLStatement(
+				(String) EasyMock.eq(expectedBlockInsertSQL),
+				(List<List<String>>) EasyMock.eq(expectedInsertData));
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement((String) EasyMock
-				.eq(expectedBlockInsertSQLFinalize));
+		mySqlDao.executeSQLStatement(
+				(String) EasyMock.eq(expectedBlockInsertSQLFinalize),
+				(List<List<String>>) EasyMock.eq(expectedInsertDataFinalize));
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		mySqlDao.getTableColumns(expectedTableName);
 		EasyMock.expectLastCall().andReturn(expectedTableColumns).times(1);
@@ -418,13 +437,16 @@ public class EPFDbWriterMySqlTest {
 
 		int expectedRows = 200;
 		String expectedInsertColumns = getInsertColumns();
-		String expectedInsertValues = "";
+		String expectedInsertPreparedValues = "";
+		List<List<String>> expectedInsertData = new ArrayList<List<String>>();
+		List<List<String>> expectedInsertDataFinalize = new ArrayList<List<String>>();
 
 		int i;
 		for (i = 0; i < expectedRows; i++) {
-			expectedInsertValues += "(" + getInsertValues(i) + ")";
+			expectedInsertData.add(Arrays.asList(getInsertData(i)));
+			expectedInsertPreparedValues += "(" + getInsertPreparedValues(i) + ")";
 			if (i + 1 < expectedRows) {
-				expectedInsertValues += ",";
+				expectedInsertPreparedValues += ",";
 			}
 		}
 
@@ -432,7 +454,7 @@ public class EPFDbWriterMySqlTest {
 		String expectedBlockInsertSQL = String.format(
 				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, "INSERT",
 				expectedTmpTableName, expectedInsertColumns,
-				expectedInsertValues);
+				expectedInsertPreparedValues);
 
 		String expectedAlterTableSetPrimaryKeySQL = String.format(
 				EPFDbWriterMySqlStmt.PRIMARY_KEY_STMT, expectedUncTableName,
@@ -440,11 +462,12 @@ public class EPFDbWriterMySqlTest {
 
 		// Use 1 more record to create the insert statement for the
 		// finalizeImport() call
-		expectedInsertValues = "(" + getInsertValues(i) + ")";
+		expectedInsertDataFinalize.add(Arrays.asList(getInsertData(i)));
+		expectedInsertPreparedValues = "(" + getInsertPreparedValues(i) + ")";
 		String expectedBlockInsertSQLFinalize = String.format(
 				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, "INSERT",
 				expectedTmpTableName, expectedInsertColumns,
-				expectedInsertValues);
+				expectedInsertPreparedValues);
 
 		// Create the final union merge query
 		String expectedUnionJoin = String.format(
@@ -508,29 +531,29 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.reset(mySqlDao);
 		mySqlDao.isTableInDatabase(expectedTableName);
 		EasyMock.expectLastCall().andReturn(true).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLDropTable);
+		mySqlDao.executeSQLStatement(expectedSQLDropTable, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(2);
-		mySqlDao.executeSQLStatement(expectedSQLDropTableOld);
+		mySqlDao.executeSQLStatement(expectedSQLDropTableOld, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(2);
-		mySqlDao.executeSQLStatement(expectedSQLDropTableUnc);
+		mySqlDao.executeSQLStatement(expectedSQLDropTableUnc, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLCreateTable);
+		mySqlDao.executeSQLStatement(expectedSQLCreateTable, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLRenameTable);
+		mySqlDao.executeSQLStatement(expectedSQLRenameTable, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLRenameTableUnc);
+		mySqlDao.executeSQLStatement(expectedSQLRenameTableUnc, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedBlockInsertSQL);
+		mySqlDao.executeSQLStatement(expectedBlockInsertSQL, expectedInsertData);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedBlockInsertSQLFinalize);
+		mySqlDao.executeSQLStatement(expectedBlockInsertSQLFinalize, expectedInsertDataFinalize);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		mySqlDao.getTableColumns(expectedTableName);
 		EasyMock.expectLastCall().andReturn(expectedTableColumns).times(1);
 		mySqlDao.isTableInDatabase(expectedTableName);
 		EasyMock.expectLastCall().andReturn(true).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLCreateTableUnc);
+		mySqlDao.executeSQLStatement(expectedSQLCreateTableUnc, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedAlterTableSetPrimaryKeySQL);
+		mySqlDao.executeSQLStatement(expectedAlterTableSetPrimaryKeySQL, null);
 		EasyMock.expectLastCall().andReturn(returnStatus).times(1);
 		EasyMock.replay(mySqlDao);
 
@@ -582,23 +605,25 @@ public class EPFDbWriterMySqlTest {
 		String expectedSQLRenameTable2 = String.format(
 				EPFDbWriterMySqlStmt.RENAME_TABLE_STMT, expectedTmpTableName,
 				expectedTableName);
-		
-		String expectedSQLSetPrimaryKey = String.format(EPFDbWriterMySqlStmt.PRIMARY_KEY_STMT,expectedTmpTableName,"application_id");
+
+		String expectedSQLSetPrimaryKey = String.format(
+				EPFDbWriterMySqlStmt.PRIMARY_KEY_STMT, expectedTmpTableName,
+				"application_id");
 
 		String expectedInsertColumns = getInsertColumns();
-		String expectedInsertValues = "";
+		String expectedInsertPreparedValues = "";
+		List<List<String>> expectedInsertDataFinalize = new ArrayList<List<String>>();
 
 		int i = 0;
-		expectedInsertValues += "(" + getInsertValues(i) + ")";
-		String[] expectedInsertData = getInsertData(i);
-		List<List<String>> expectedInsertBlock = new ArrayList<List<String>>();
-		expectedInsertBlock.add(Arrays.asList(expectedInsertData));
-		
+		expectedInsertPreparedValues += "(" + getInsertPreparedValues(i) + ")";
+		expectedInsertDataFinalize.add(Arrays.asList(getInsertData(i)));
+		String[] insertData = getInsertData(i);
+
 		String expectedInsertCommand = "INSERT";
 
 		String expectedBlockInsertSQLFinalize = String.format(
 				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, expectedInsertCommand,
-				expectedTableName, expectedInsertColumns, expectedInsertValues);
+				expectedTableName, expectedInsertColumns, expectedInsertPreparedValues);
 
 		// Set up the mocks
 		// Set up mySqlStmt mock
@@ -617,15 +642,14 @@ public class EPFDbWriterMySqlTest {
 		EasyMock.expectLastCall().andReturn(expectedSQLRenameTable);
 		mySqlStmt.renameTableStmt(expectedTmpTableName, expectedTableName);
 		EasyMock.expectLastCall().andReturn(expectedSQLRenameTable2);
-		
+
 		mySqlStmt.insertRowStmt(expectedTmpTableName, columnsAndTypes,
-				expectedInsertBlock, expectedInsertCommand);
+				expectedInsertDataFinalize, expectedInsertCommand);
 		EasyMock.expectLastCall().andReturn(expectedBlockInsertSQLFinalize)
 				.times(1);
-		
+
 		mySqlStmt.setPrimaryKeyStmt(expectedTmpTableName, primaryKey);
-		EasyMock.expectLastCall().andReturn(expectedSQLSetPrimaryKey)
-				.times(1);
+		EasyMock.expectLastCall().andReturn(expectedSQLSetPrimaryKey).times(1);
 		EasyMock.replay(mySqlStmt);
 
 		SQLReturnStatus successReturnStatus = new SQLReturnStatus();
@@ -639,36 +663,47 @@ public class EPFDbWriterMySqlTest {
 
 		// Set up mySqlDao mock
 		EasyMock.reset(mySqlDao);
-		mySqlDao.executeSQLStatement((String) EasyMock
-				.eq(expectedSQLDropTable));
+		mySqlDao.executeSQLStatement(
+				(String) EasyMock.eq(expectedSQLDropTable),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
-		mySqlDao.executeSQLStatement((String) EasyMock
-				.eq(expectedSQLDropTableOld));
+		mySqlDao.executeSQLStatement(
+				(String) EasyMock.eq(expectedSQLDropTableOld),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
-		mySqlDao.executeSQLStatement((String) EasyMock
-				.eq(expectedSQLCreateTable));
+		mySqlDao.executeSQLStatement(
+				(String) EasyMock.eq(expectedSQLCreateTable),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
-		mySqlDao.executeSQLStatement((String) EasyMock
-				.eq(expectedBlockInsertSQLFinalize));
+		mySqlDao.executeSQLStatement(
+				(String) EasyMock.eq(expectedBlockInsertSQLFinalize),
+				(List<List<String>>) EasyMock.eq(expectedInsertDataFinalize));
 		EasyMock.expectLastCall().andReturn(errorReturnStatus).times(1);
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
-		mySqlDao.executeSQLStatement(EPFDbWriterMySql.UNLOCK_TABLES);
+		mySqlDao.executeSQLStatement(
+				EasyMock.eq(EPFDbWriterMySql.UNLOCK_TABLES),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLSetPrimaryKey);
+		mySqlDao.executeSQLStatement(EasyMock.eq(expectedSQLSetPrimaryKey),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLDropTableOld);
+		mySqlDao.executeSQLStatement(EasyMock.eq(expectedSQLDropTableOld),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
 		mySqlDao.isTableInDatabase(expectedTableName);
 		EasyMock.expectLastCall().andReturn(true).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLRenameTable);
+		mySqlDao.executeSQLStatement(EasyMock.eq(expectedSQLRenameTable),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
-		mySqlDao.executeSQLStatement(expectedSQLRenameTable2);
+		mySqlDao.executeSQLStatement(EasyMock.eq(expectedSQLRenameTable2),
+				(List<List<String>>) EasyMock.isNull());
 		EasyMock.expectLastCall().andReturn(successReturnStatus).times(1);
 		EasyMock.replay(mySqlDao);
 
 		// Test method call
-		dbWriter.initImport(EPFExportType.FULL, tableName, columnsAndTypes, primaryKey, 1L);
-		dbWriter.insertRow(expectedInsertData);
+		dbWriter.initImport(EPFExportType.FULL, tableName, columnsAndTypes,
+				primaryKey, 1L);
+		dbWriter.insertRow(insertData);
 		dbWriter.finalizeImport();
 
 		// Verify the mocks
@@ -701,6 +736,20 @@ public class EPFDbWriterMySqlTest {
 			} else {
 				values.append("'" + rowData[i] + "'");
 			}
+			if (i + 1 < rowData.length) {
+				values.append(",");
+			}
+		}
+
+		return values.toString();
+	}
+
+	public String getInsertPreparedValues(int rowNumber) {
+		String[] rowData = getInsertData(rowNumber);
+		StringBuffer values = new StringBuffer();
+
+		for (int i = 0; i < rowData.length; i++) {
+			values.append("?");
 			if (i + 1 < rowData.length) {
 				values.append(",");
 			}

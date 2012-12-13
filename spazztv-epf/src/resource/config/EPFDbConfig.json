@@ -6,6 +6,11 @@
 		"dbMaxConnections":20,
 		"dbUrl": "jdbc:mysql://localhost/epf", 
 		"dbUser": "epftest",
-		"dbPassword": "epftest"
+		"dbPassword": "epftest",
+		"dbDataSourceOptions" : {
+			"cachePrepStmts":true,
+			"prepStmtCacheSize":20,
+			"prepStmtCacheSqlLimit":8192
+		}
 	}
 }

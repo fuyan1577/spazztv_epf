@@ -7,6 +7,11 @@
 		"dbMaxConnections":20,
 		"dbUrl": "jdbc:mysql://localhost/epfdatabase", 
 		"dbUser": "mockusername",
-		"dbPassword": "mockpassword"
+		"dbPassword": "mockpassword",
+		"dbDataSourceOptions" : {
+			"cachePrepStmts":true,
+			"prepStmtCacheSize":20,
+			"prepStmtCacheSqlLimit":8192
+		}
 	}
 }

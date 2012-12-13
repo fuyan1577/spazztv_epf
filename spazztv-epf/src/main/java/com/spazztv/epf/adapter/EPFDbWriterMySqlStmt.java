@@ -23,6 +23,15 @@ public class EPFDbWriterMySqlStmt {
 	public static String UNION_CREATE_WHERE = "WHERE %s.export_date <= %s.export_date";
 	public static String UNION_CREATE_JOIN = "AND %s.%s = %s.%s ";
 
+	private String insertTable;
+	private String insertCommand;
+	private int insertColumnCount = 0;
+	private int insertRowCount;
+	private String insertStatementSql;
+	private String insertColumnStmt;
+	private LinkedHashMap<String, String> insertColumnsAndTypes;
+
+
 	public static Map<String, String> TRANSLATION_MAP = Collections
 			.unmodifiableMap(new HashMap<String, String>() {
 				private static final long serialVersionUID = 1L;
@@ -93,18 +102,17 @@ public class EPFDbWriterMySqlStmt {
 		return actualColAndTypes;
 	}
 
-	public String setPrimaryKeyStmt(String tableName, List<String> keyColumns)
-			{
+	public String setPrimaryKeyStmt(String tableName, List<String> keyColumns) {
 
 		String primaryKeyColumns = "";
 
 		Iterator<String> i = keyColumns.iterator();
 		while (i.hasNext()) {
-			primaryKeyColumns += "`" + (String)i.next() + "`";
+			primaryKeyColumns += "`" + (String) i.next() + "`";
 			if (i.hasNext()) {
 				primaryKeyColumns += ",";
 			}
-			
+
 		}
 
 		return String.format(PRIMARY_KEY_STMT, tableName, primaryKeyColumns);
@@ -114,17 +122,57 @@ public class EPFDbWriterMySqlStmt {
 			LinkedHashMap<String, String> columnsAndTypes,
 			List<List<String>> insertValues, String insertCommand) {
 
-		String insertBuffer = "";
+		if (insertValues == null) {
+			return null;
+		}
+		if (insertValues.size() == 0) {
+			return null;
+		}
 
-		for (List<String> rowValues : insertValues) {
-			if (insertBuffer.length() > 0) {
-				insertBuffer += ",";
+		if (!tableName.equals(insertTable)
+				|| insertRowCount != insertValues.size()
+				|| insertColumnCount != insertValues.get(0).size()
+				|| !insertCommand.equals(this.insertCommand)
+				|| !columnsAndTypes.equals(insertColumnsAndTypes)) {
+			insertStatementSql = createInsertPreparedStatmentSQL(tableName,
+					columnsAndTypes, insertValues, insertCommand);
+			insertTable = tableName;
+			insertColumnsAndTypes = columnsAndTypes;
+			this.insertCommand = insertCommand;
+			insertRowCount = insertValues.size();
+			insertColumnCount = insertValues.get(0).size();
+		}
+
+		return insertStatementSql;
+	}
+
+	private String createInsertPreparedStatmentSQL(String tableName,
+			LinkedHashMap<String, String> columnsAndTypes,
+			List<List<String>> insertValues, String insertCommand) {
+
+		StringBuffer s = new StringBuffer();
+		s.append("(");
+		for (int i = 0; i < insertValues.get(0).size(); i++) {
+			if (s.length() > 1) {
+				s.append(",");
 			}
-			insertBuffer += "(" + formatInsertRow(columnsAndTypes, rowValues) + ")";
+			s.append("?");
+		}
+		s.append(")");
+
+		insertColumnStmt = s.toString();
+
+		StringBuffer insertBuffer = new StringBuffer();
+
+		for (int i = 0; i < insertValues.size(); i++) {
+			if (insertBuffer.length() > 0) {
+				insertBuffer.append(",");
+			}
+			insertBuffer.append(insertColumnStmt);
 		}
 
 		return String.format(INSERT_SQL_STMT, insertCommand, tableName,
-				columnNames(columnsAndTypes), insertBuffer);
+				columnNames(columnsAndTypes), insertBuffer.toString());
 	}
 
 	public String mergeTableStmt(String tableName, String incTableName,
@@ -165,27 +213,5 @@ public class EPFDbWriterMySqlStmt {
 			concatList.append("`" + word + "`");
 		}
 		return concatList.toString();
-	}
-
-	private String formatInsertRow(Map<String, String> columnsAndTypes,
-			List<String> rowData) {
-		StringBuffer row = new StringBuffer();
-		Object[] cTypes = columnsAndTypes.values().toArray();
-		for (int i = 0; i < rowData.size(); i++) {
-			// Include only columns mapped in columnMap
-			if (i < cTypes.length) {
-				if (rowData.get(i).length() == 0) {
-					row.append("NULL");
-				} else if (!UNQUOTED_TYPES.contains((String) cTypes[i])) {
-					row.append("'" + rowData.get(i).replaceAll("'", "''") + "'");
-				} else {
-					row.append(rowData.get(i));
-				}
-				if (i + 1 < rowData.size()) {
-					row.append(",");
-				}
-			}
-		}
-		return row.toString();
 	}
 }

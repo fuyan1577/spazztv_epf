@@ -129,9 +129,9 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 		while (true) {
 			attempts++;
 			if (attempts == 2) {
-				mySqlDao.executeSQLStatement(UNLOCK_TABLES);
+				mySqlDao.executeSQLStatement(UNLOCK_TABLES, null);
 			}
-			status = mySqlDao.executeSQLStatement(sqlDrop);
+			status = mySqlDao.executeSQLStatement(sqlDrop, null);
 			if (status.isSuccess()) {
 				break;
 			} else if ((status.getSqlExceptionCode() == MysqlErrorNumbers.ER_LOCK_WAIT_TIMEOUT)
@@ -160,7 +160,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			throws EPFDbException {
 		String createTableStmt = mySqlStmt.createTableStmt(tableName,
 				columnsAndTypes);
-		mySqlDao.executeSQLStatement(createTableStmt);
+		mySqlDao.executeSQLStatement(createTableStmt, null);
 	}
 
 	/**
@@ -193,7 +193,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			String sqlAlterTable = mySqlStmt.setPrimaryKeyStmt(tableName,
 					primaryKey);
 	
-			executeSQLStatementWithRetry(sqlAlterTable);
+			executeSQLStatementWithRetry(sqlAlterTable, null);
 		}
 	}
 
@@ -222,36 +222,37 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 		String insertStmt = mySqlStmt.insertRowStmt(impTableName,
 				columnsAndTypes, insertBuffer, insertCommand);
-		executeSQLStatementWithRetry(insertStmt);
+		executeSQLStatementWithRetry(insertStmt,insertBuffer);
 
 		totalRowsInserted += insertBufferCount;
 		insertBufferCount = 0;
 	}
 
-	private void executeSQLStatementWithRetry(String sqlStmt)
+	private void executeSQLStatementWithRetry(String sqlStmt, List<List<String>> insertBuffer)
 			throws EPFDbException {
 		int attempts = 0;
 		while (true) {
 			attempts++;
 			if (attempts == 2) {
-				mySqlDao.executeSQLStatement(UNLOCK_TABLES);
+				mySqlDao.executeSQLStatement(UNLOCK_TABLES,null);
 			} else if (attempts > MAX_SQL_ATTEMPTS) {
 				throw new EPFDbException(String.format(
 						"Error executing SQL Statement: %s", sqlStmt));
 			}
-			SQLReturnStatus status = mySqlDao.executeSQLStatement(sqlStmt);
+			SQLReturnStatus status = mySqlDao.executeSQLStatement(sqlStmt,insertBuffer);
 			if (status.isSuccess()) {
 				break;
 			} else if (status.getSqlExceptionCode() != MysqlErrorNumbers.ER_LOCK_WAIT_TIMEOUT) {
 				throw new EPFDbException(
 						String.format(
-								"Error executing SQL Statement: \"%s...\", sqlStmt.substring(40), SQLState %s, MySQLError %d",
+								"Error executing SQL Statement: \"%s\", sqlStmt.substring(40), SQLState %s, MySQLError %d",
+								sqlStmt,
 								status.getSqlStateCode(),
 								status.getSqlExceptionCode()));
 			}
 		}
 	}
-
+	
 	@Override
 	public void finalizeImport() throws EPFDbException {
 		flushInsertBuffer();
@@ -288,7 +289,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 		String mergeTableSql = mySqlStmt.mergeTableStmt(tableName,
 				incTableName, unionTableName, primaryKey);
 
-		executeSQLStatementWithRetry(mergeTableSql);
+		executeSQLStatementWithRetry(mergeTableSql, null);
 	}
 
 	private void renameTableAndDrop(String srcTableName, String destTableName)
@@ -326,7 +327,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	private SQLReturnStatus renameTable(String oldTableName, String newTableName)
 			throws EPFDbException {
 		String sql = mySqlStmt.renameTableStmt(oldTableName, newTableName);
-		return mySqlDao.executeSQLStatement(sql);
+		return mySqlDao.executeSQLStatement(sql, null);
 	}
 
 	@Override

@@ -90,5 +90,6 @@ public class EPFDbConfigTest {
 		Assert.assertNotNull("Invalid dbPassword",config.getPassword());
 		Assert.assertNotNull("Invalid dbMinConnections",config.getMinConnections());
 		Assert.assertNotNull("Invalid dbMaxConnections",config.getMaxConnections());
+		Assert.assertNotNull("Invalid dbDataSourceOptions",config.getDbDataSourceOptions());
 	}
 }

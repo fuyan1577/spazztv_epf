@@ -1,6 +1,6 @@
 package com.spazztv.epf;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -21,6 +21,7 @@ public class EPFImportTaskTest {
 
 	String storefrontEpfFile = "testdata/epf_files/storefront";
 	String recordSeparator = EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT;
+	String fieldSeparator = EPFConfig.EPF_FIELD_SEPARATOR_DEFAULT;
 	EPFImportTask importTask;
 	EPFImportTranslator importXlator;
 	EPFDbWriter dbWriter;
@@ -33,13 +34,15 @@ public class EPFImportTaskTest {
 	List<String> primaryKey;
 
 	@Before
-	public void setUp() throws FileNotFoundException, EPFFileFormatException {
+	public void setUp() throws IOException, EPFFileFormatException {
 		// Setting up importXlator to read the storefront data file
 		// Setting up dbWriter as a mock object
-		EPFFileReader fileReader = new EPFFileReader(storefrontEpfFile,recordSeparator);
+		EPFFileReader fileReader = new EPFFileReader(storefrontEpfFile,
+				fieldSeparator, recordSeparator);
 		dbWriter = EasyMock.createMock(EPFDbWriter.class);
 
-		importTask = new EPFImportTask(storefrontEpfFile, recordSeparator, dbWriter);
+		importTask = new EPFImportTask(storefrontEpfFile, fieldSeparator,
+				recordSeparator, dbWriter);
 
 		importXlator = new EPFImportTranslator(fileReader);
 		recordsExpected = importXlator.getTotalExpectedRecords();

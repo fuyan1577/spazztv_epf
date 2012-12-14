@@ -1,6 +1,7 @@
 package com.spazztv.epf;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,8 +27,6 @@ import java.util.List;
  */
 public class EPFImportTranslator {
 	private EPFFileReader epfFileReader;
-	private String recordDelim = DEFAULT_ROW_SEPARATOR;
-	private String fieldDelim = DEFAULT_FIELD_SEPARATOR;
 
 	private String tableName;
 	private List<String> columnNames;
@@ -41,9 +40,6 @@ public class EPFImportTranslator {
 	public static String PRIMARY_KEY_TAG = "primaryKey:";
 	public static String DATA_TYPES_TAG = "dbTypes:";
 	public static String EXPORT_MODE_TAG = "exportMode:";
-	public static String DEFAULT_FIELD_SEPARATOR = "\\x01";
-	public static String DEFAULT_ROW_SEPARATOR = "\\x02";
-	public static String DEFAULT_FLAT_SEPARATOR = "\\t";
 
 	// (eFile, recordDelim='\x02\n',
 	// fieldDelim='\x01')
@@ -155,28 +151,14 @@ public class EPFImportTranslator {
 	 */
 	public String[] nextRecord() {
 		// Data rows have no prefix...
-		return splitRow(nextDataRowString(), null);
-	}
-
-	/**
-	 * Read until the next row is found or the end of file is reached.
-	 * <p>
-	 * If the skipComments option is true, this reads and returns the next
-	 * uncommented row of data.
-	 * 
-	 * @param skipComments
-	 *            If true, skips all commented lines
-	 * @return the next row of data or null on end of file
-	 */
-	private String nextDataRowString() {
 		if (!epfFileReader.hasNextDataRecord()) {
 			return null;
 		}
-		String nextRow = epfFileReader.nextDataLine();
-		if (nextRow != null) {
+		String[] nextRecord = epfFileReader.nextDataRecord();
+		if (nextRecord != null) {
 			lastRecordNum++;
 		}
-		return nextRow;
+		return nextRecord;
 	}
 
 	/**
@@ -218,20 +200,22 @@ public class EPFImportTranslator {
 	private void loadRecordDefinitions() throws EPFFileFormatException {
 		try {
 			epfFileReader.rewind();
-			String nextRow = epfFileReader.nextHeaderLine();
-			if (nextRow.matches(".+\\t.+")) {
+			String[] nextRecord = epfFileReader.nextHeaderRecord();
+			if (nextRecord[0].matches(".+\\t.+")) {
 				exportType = EPFExportType.FLAT;
 			}
-			parseColumnNames(nextRow);
+			parseColumnNames(nextRecord);
 
 			for (int i = 0; i < 6; i++) {
-				nextRow = epfFileReader.nextHeaderLine();
-				if (nextRow.startsWith(COMMENT_CHAR + PRIMARY_KEY_TAG)) {
-					parsePrimaryKey(nextRow);
-				} else if (nextRow.startsWith(COMMENT_CHAR + DATA_TYPES_TAG)) {
-					parseDataTypes(nextRow);
-				} else if (nextRow.startsWith(COMMENT_CHAR + EXPORT_MODE_TAG)) {
-					parseExportType(nextRow);
+				nextRecord = epfFileReader.nextHeaderRecord();
+				if (nextRecord[0].startsWith(COMMENT_CHAR + PRIMARY_KEY_TAG)) {
+					parsePrimaryKey(nextRecord);
+				} else if (nextRecord[0].startsWith(COMMENT_CHAR
+						+ DATA_TYPES_TAG)) {
+					parseDataTypes(nextRecord);
+				} else if (nextRecord[0].startsWith(COMMENT_CHAR
+						+ EXPORT_MODE_TAG)) {
+					parseExportType(nextRecord);
 				}
 			}
 			epfFileReader.rewind();
@@ -259,21 +243,21 @@ public class EPFImportTranslator {
 	 *            optional required prefix string
 	 * @return parsed data list
 	 */
-	private String[] splitRow(String row, String requiredPrefix) {
+	private List<String> parseRecord(String[] row, String requiredPrefix) {
 		if (row == null) {
 			return null;
 		}
-		String r = row.split(recordDelim)[0];
+		String r = row[0];
 		if (requiredPrefix != null) {
 			if (!r.contains(requiredPrefix)) {
 				throw new RuntimeException("Row from "
 						+ epfFileReader.getFilePath()
 						+ "does not have requiredPrefix: " + requiredPrefix);
 			}
-			r = r.replaceFirst(".*" + requiredPrefix, "");
+			row[0] = r.replaceFirst(".*" + requiredPrefix, "");
 		}
 
-		return r.split(fieldDelim);
+		return Arrays.asList(row);
 	}
 
 	/**
@@ -282,8 +266,12 @@ public class EPFImportTranslator {
 	 * 
 	 * @param row
 	 */
-	private void parseColumnNames(String row) {
-		columnNames = Arrays.asList(splitRow(row, COMMENT_CHAR));
+	private void parseColumnNames(String[] row) {
+		columnNames = new ArrayList<String>();
+		columnNames.add(row[0].substring(1, row[0].length()));
+		for (int i = 1; i < row.length; i++) {
+			columnNames.add(row[i]);
+		}
 	}
 
 	/**
@@ -292,8 +280,8 @@ public class EPFImportTranslator {
 	 * 
 	 * @param row
 	 */
-	private void parsePrimaryKey(String row) {
-		primaryKey = Arrays.asList(splitRow(row, PRIMARY_KEY_TAG));
+	private void parsePrimaryKey(String[] row) {
+		primaryKey = parseRecord(row, PRIMARY_KEY_TAG);
 	}
 
 	/**
@@ -302,8 +290,8 @@ public class EPFImportTranslator {
 	 * 
 	 * @param row
 	 */
-	private void parseDataTypes(String row) {
-		dataTypes = Arrays.asList(splitRow(row, COMMENT_CHAR + DATA_TYPES_TAG));
+	private void parseDataTypes(String[] row) {
+		dataTypes = parseRecord(row, COMMENT_CHAR + DATA_TYPES_TAG);
 	}
 
 	/**
@@ -312,11 +300,11 @@ public class EPFImportTranslator {
 	 * 
 	 * @param row
 	 */
-	private void parseExportType(String row) {
-		String[] dTypes = splitRow(row, COMMENT_CHAR + EXPORT_MODE_TAG);
-		String eMode = dTypes[0];
+	private void parseExportType(String[] row) {
+		List<String> dTypes = parseRecord(row, COMMENT_CHAR + EXPORT_MODE_TAG);
+		String eMode = dTypes.get(0);
 		exportType = EPFExportType.FULL;
-		if (eMode == EPFExportType.INCREMENTAL.toString()) {
+		if (EPFExportType.INCREMENTAL.toString().equals(eMode)) {
 			exportType = EPFExportType.INCREMENTAL;
 		}
 	}

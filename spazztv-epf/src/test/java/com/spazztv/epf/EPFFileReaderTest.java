@@ -1,6 +1,5 @@
 package com.spazztv.epf;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import junit.framework.Assert;
@@ -14,29 +13,37 @@ public class EPFFileReaderTest {
 	String genreEpfFile = "testdata/epf_files/genre";
 	String epfEPFInvalidFormatFile = "testdata/epf_files/invalid_epf_file";
 	String recordSeparator = EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT;
+	String fieldSeparator = EPFConfig.EPF_FIELD_SEPARATOR_DEFAULT;
 
 	@Before
 	public void setUp() throws Exception {
-		fileReader = new EPFFileReader(genreEpfFile,recordSeparator);
+		fileReader = new EPFFileReader(genreEpfFile, fieldSeparator,
+				recordSeparator);
 	}
-	
+
 	@Test
-	public void testEPFFileFormatException() throws FileNotFoundException {
+	public void testEPFFileFormatException() throws IOException {
 		boolean exceptionThrown = false;
 		try {
 			@SuppressWarnings("unused")
-			EPFFileReader localReader = new EPFFileReader(epfEPFInvalidFormatFile, recordSeparator);
+			EPFFileReader localReader = new EPFFileReader(
+					epfEPFInvalidFormatFile, fieldSeparator, recordSeparator);
 			@SuppressWarnings("unused")
-			EPFImportTranslator localXlator = new EPFImportTranslator(fileReader);
+			EPFImportTranslator localXlator = new EPFImportTranslator(
+					fileReader);
 		} catch (EPFFileFormatException e) {
 			exceptionThrown = true;
 		}
-		Assert.assertTrue("Expecting an EPFFileFormatException, exception was not thrown on an invalid file", exceptionThrown == true);
+		Assert.assertTrue(
+				"Expecting an EPFFileFormatException, exception was not thrown on an invalid file",
+				exceptionThrown == true);
 	}
-	
+
 	@Test
-	public void testEPFFileReader() throws FileNotFoundException, EPFFileFormatException {
-		EPFFileReader fileReader = new EPFFileReader(genreEpfFile, recordSeparator);
+	public void testEPFFileReader() throws IOException,
+			EPFFileFormatException {
+		EPFFileReader fileReader = new EPFFileReader(genreEpfFile,
+				fieldSeparator, recordSeparator);
 		Assert.assertTrue("getFilePath returned the wrong value",
 				genreEpfFile.equals(fileReader.getFilePath()));
 	}
@@ -45,26 +52,28 @@ public class EPFFileReaderTest {
 	public void testGetRecordsExported() throws IOException {
 		long foundRecordsExported = fileReader.getRecordsWritten();
 		long expectedRecordsExported = 1299L;
-		Assert.assertTrue(String.format("Invalid recordsExported expected %d, found %d",expectedRecordsExported, foundRecordsExported),
+		Assert.assertTrue(String.format(
+				"Invalid recordsExported expected %d, found %d",
+				expectedRecordsExported, foundRecordsExported),
 				expectedRecordsExported == foundRecordsExported);
 	}
 
 	@Test
 	public void testRewind() throws IOException {
 		fileReader.rewind();
-		String nextHeaderLine = fileReader.nextHeaderLine();
+		String[] nextHeaderLine = fileReader.nextHeaderRecord();
 		Assert.assertTrue("Invalid record after rewind", nextHeaderLine != null);
 		Assert.assertTrue("Invalid record after rewind",
-				nextHeaderLine.startsWith("#export_date"));
+				nextHeaderLine[0].startsWith("#export_date"));
 	}
 
 	@Test
 	public void testNextHeaderLine() throws IOException {
 		fileReader.rewind();
-		String nextHeaderLine = fileReader.nextHeaderLine();
+		String[] nextHeaderLine = fileReader.nextHeaderRecord();
 		Assert.assertTrue("Invalid record after rewind", nextHeaderLine != null);
 		Assert.assertTrue("Invalid record after rewind",
-				nextHeaderLine.startsWith("#export_date"));
+				nextHeaderLine[0].startsWith("#export_date"));
 	}
 
 	@Test
@@ -72,19 +81,23 @@ public class EPFFileReaderTest {
 		fileReader.rewind();
 
 		long recordsWritten = fileReader.getRecordsWritten();
-		
+
 		fileReader.rewind();
 		int t = 0;
 		while (fileReader.hasNextDataRecord()) {
-			String nextDataLine = fileReader.nextDataLine();
+			String[] nextDataLine = fileReader.nextDataRecord();
 			if (nextDataLine != null) {
 				t++;
 			}
-			Assert.assertTrue("Invalid data record, expecting data, found NULL",
+			Assert.assertTrue(
+					"Invalid data record, expecting data, found NULL",
 					nextDataLine != null);
-			Assert.assertTrue("Invalid data record, expecting data matching %^\\d+\\x01.+$",
-					nextDataLine.matches("^\\d+\\x01.+$"));
+			Assert.assertTrue(
+					"Invalid data record, expecting data matching %^\\d+\\x01.+$",
+					nextDataLine[0].matches("^\\d+$"));
 		}
-		Assert.assertTrue(String.format("Incorrect total records. Expected %d, Found %d",recordsWritten,t),(t == recordsWritten));
+		Assert.assertTrue(String.format(
+				"Incorrect total records. Expected %d, Found %d",
+				recordsWritten, t), (t == recordsWritten));
 	}
 }

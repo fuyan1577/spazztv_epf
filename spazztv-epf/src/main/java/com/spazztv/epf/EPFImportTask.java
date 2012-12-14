@@ -3,7 +3,7 @@
  */
 package com.spazztv.epf;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import com.spazztv.epf.dao.EPFDbException;
 import com.spazztv.epf.dao.EPFDbWriter;
@@ -22,9 +22,9 @@ public class EPFImportTask implements Runnable {
 	public static long RECORD_GAP = 5000;
 	public long TIME_GAP = 120000; // milliseconds - 2 minutes
 
-	public EPFImportTask(String filePath, String recordSeparator, EPFDbWriter dbWriter)
-			throws FileNotFoundException, EPFFileFormatException {
-		importTranslator = new EPFImportTranslator(new EPFFileReader(filePath, recordSeparator));
+	public EPFImportTask(String filePath, String fieldSeparator, String recordSeparator, EPFDbWriter dbWriter)
+			throws IOException, EPFFileFormatException {
+		importTranslator = new EPFImportTranslator(new EPFFileReader(filePath, fieldSeparator, recordSeparator));
 		this.dbWriter = dbWriter;
 	}
 

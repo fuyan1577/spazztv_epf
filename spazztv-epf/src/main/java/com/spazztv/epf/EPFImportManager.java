@@ -5,7 +5,7 @@ package com.spazztv.epf;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -123,10 +123,11 @@ public class EPFImportManager {
 			try {
 				EPFDbWriter dbWriter = EPFDbWriterFactory.getDbWriter(dbConfig);
 				EPFImportTask importTask = new EPFImportTask(filePath,
+						config.getFieldSeparator(),
 						config.getRecordSeparator(), dbWriter);
 				importThreads.add((Future<Runnable>) threadPoolService
 						.submit(importTask));
-			} catch (FileNotFoundException e) {
+			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (EPFFileFormatException e) {
 				e.printStackTrace();

@@ -112,7 +112,6 @@ public class EPFDbWriterMySqlStmt {
 			if (i.hasNext()) {
 				primaryKeyColumns += ",";
 			}
-
 		}
 
 		return String.format(PRIMARY_KEY_STMT, tableName, primaryKeyColumns);

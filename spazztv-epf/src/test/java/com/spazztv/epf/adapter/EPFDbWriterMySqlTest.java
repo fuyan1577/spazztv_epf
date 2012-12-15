@@ -243,7 +243,7 @@ public class EPFDbWriterMySqlTest {
 		StringBuffer buf = new StringBuffer();
 		int i;
 		for (i = 0; i < expectedRows; i++) {
-			expectedInsertData.add(Arrays.asList(getInsertData(i)));
+			expectedInsertData.add(getInsertData(i));
 			buf.append("(" + getInsertPreparedValues(i) + ")");
 			if (i + 1 < expectedRows) {
 				buf.append(",");
@@ -257,7 +257,7 @@ public class EPFDbWriterMySqlTest {
 				expectedInsertPreparedValues);
 
 		expectedInsertPreparedValues = "(" + getInsertPreparedValues(i) + ")";
-		expectedInsertDataFinalize.add(Arrays.asList(getInsertData(i)));
+		expectedInsertDataFinalize.add(getInsertData(i));
 		expectedBlockInsertSQLFinalize = String.format(
 				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, "INSERT",
 				expectedTmpTableName, expectedInsertColumns,
@@ -345,7 +345,7 @@ public class EPFDbWriterMySqlTest {
 		int i;
 		for (i = 0; i < expectedRows; i++) {
 			expectedInsertPreparedValues += "(" + getInsertPreparedValues(i) + ")";
-			expectedInsertData.add(Arrays.asList(getInsertData(i)));
+			expectedInsertData.add(getInsertData(i));
 			if (i + 1 < expectedRows) {
 				expectedInsertPreparedValues += ",";
 			}
@@ -355,7 +355,7 @@ public class EPFDbWriterMySqlTest {
 				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, "REPLACE",
 				expectedTableName, expectedInsertColumns, expectedInsertPreparedValues);
 
-		expectedInsertDataFinalize.add(Arrays.asList(getInsertData(i)));
+		expectedInsertDataFinalize.add(getInsertData(i));
 		expectedInsertPreparedValues = "(" + getInsertPreparedValues(i) + ")";
 		expectedBlockInsertSQLFinalize = String.format(
 				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, "REPLACE",
@@ -443,7 +443,7 @@ public class EPFDbWriterMySqlTest {
 
 		int i;
 		for (i = 0; i < expectedRows; i++) {
-			expectedInsertData.add(Arrays.asList(getInsertData(i)));
+			expectedInsertData.add(getInsertData(i));
 			expectedInsertPreparedValues += "(" + getInsertPreparedValues(i) + ")";
 			if (i + 1 < expectedRows) {
 				expectedInsertPreparedValues += ",";
@@ -462,7 +462,7 @@ public class EPFDbWriterMySqlTest {
 
 		// Use 1 more record to create the insert statement for the
 		// finalizeImport() call
-		expectedInsertDataFinalize.add(Arrays.asList(getInsertData(i)));
+		expectedInsertDataFinalize.add(getInsertData(i));
 		expectedInsertPreparedValues = "(" + getInsertPreparedValues(i) + ")";
 		String expectedBlockInsertSQLFinalize = String.format(
 				EPFDbWriterMySqlStmt.INSERT_SQL_STMT, "INSERT",
@@ -616,8 +616,8 @@ public class EPFDbWriterMySqlTest {
 
 		int i = 0;
 		expectedInsertPreparedValues += "(" + getInsertPreparedValues(i) + ")";
-		expectedInsertDataFinalize.add(Arrays.asList(getInsertData(i)));
-		String[] insertData = getInsertData(i);
+		expectedInsertDataFinalize.add(getInsertData(i));
+		List<String> insertData = getInsertData(i);
 
 		String expectedInsertCommand = "INSERT";
 
@@ -726,17 +726,16 @@ public class EPFDbWriterMySqlTest {
 	}
 
 	public String getInsertValues(int rowNumber) {
-		String[] rowData = getInsertData(rowNumber);
-		Object[] columnTypes = columnsAndTypes.values().toArray();
+		List<String> rowData = getInsertData(rowNumber);
 		StringBuffer values = new StringBuffer();
 
-		for (int i = 0; i < rowData.length; i++) {
-			if (EPFDbWriterMySqlStmt.UNQUOTED_TYPES.contains(columnTypes[i])) {
-				values.append(rowData[i]);
+		for (int i = 0; i < rowData.size(); i++) {
+			if (EPFDbWriterMySqlStmt.UNQUOTED_TYPES.contains(columnsAndTypes.get(i))) {
+				values.append(rowData.get(i));
 			} else {
-				values.append("'" + rowData[i] + "'");
+				values.append("'" + rowData.get(i) + "'");
 			}
-			if (i + 1 < rowData.length) {
+			if (i + 1 < rowData.size()) {
 				values.append(",");
 			}
 		}
@@ -745,12 +744,12 @@ public class EPFDbWriterMySqlTest {
 	}
 
 	public String getInsertPreparedValues(int rowNumber) {
-		String[] rowData = getInsertData(rowNumber);
+		List<String> rowData = getInsertData(rowNumber);
 		StringBuffer values = new StringBuffer();
 
-		for (int i = 0; i < rowData.length; i++) {
+		for (int i = 0; i < rowData.size(); i++) {
 			values.append("?");
-			if (i + 1 < rowData.length) {
+			if (i + 1 < rowData.size()) {
 				values.append(",");
 			}
 		}
@@ -758,7 +757,7 @@ public class EPFDbWriterMySqlTest {
 		return values.toString();
 	}
 
-	public String[] getInsertData(int rowNumber) {
+	public List<String> getInsertData(int rowNumber) {
 		String[] columnData = new String[17];
 		// Primary Key
 		columnData[2 - 1] = String.valueOf(rowNumber); // columnsAndTypes.put("application_id",
@@ -801,6 +800,6 @@ public class EPFDbWriterMySqlTest {
 									// "VARCHAR(100)");
 		columnData[16 - 1] = "v12341234"; // columnsAndTypes.put("itunes_version",
 											// "VARCHAR(100)");
-		return columnData;
+		return Arrays.asList(columnData);
 	}
 }

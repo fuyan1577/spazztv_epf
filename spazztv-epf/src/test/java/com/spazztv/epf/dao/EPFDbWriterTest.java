@@ -25,7 +25,7 @@ public class EPFDbWriterTest {
 		}
 
 		@Override
-		public void insertRow(String[] rowData) throws EPFDbException {
+		public void insertRow(List<String> rowData) throws EPFDbException {
 		}
 
 		@Override

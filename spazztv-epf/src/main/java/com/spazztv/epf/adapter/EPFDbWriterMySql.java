@@ -1,7 +1,6 @@
 package com.spazztv.epf.adapter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -198,11 +197,11 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	}
 
 	@Override
-	public void insertRow(String[] rowData) throws EPFDbException {
+	public void insertRow(List<String> rowData) throws EPFDbException {
 		if (insertBufferCount <= 0) {
 			insertBuffer = new ArrayList<List<String>>();
 		}
-		insertBuffer.add(Arrays.asList(rowData));
+		insertBuffer.add(rowData);
 		insertBufferCount++;
 		if (insertBufferCount >= INSERT_BUFFER_SIZE) {
 			flushInsertBuffer();

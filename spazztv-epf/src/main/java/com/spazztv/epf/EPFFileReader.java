@@ -59,24 +59,24 @@ public class EPFFileReader {
 	 * @return String of data read
 	 * @throws IOException
 	 */
-	public String[] nextHeaderRecord() throws IOException {
-		String[] record;
+	public List<String> nextHeaderRecord() throws IOException {
+		List<String> record;
 		while (true) {
 			record = nextRecord();
 			if (record == null) {
 				break;
 			}
-			if (record.length < 1) {
+			if (record.size() < 1) {
 				break;
 			}
-			if (record[0].startsWith(COMMENT_PREFIX)) {
+			if (record.get(0).startsWith(COMMENT_PREFIX)) {
 				break;
 			}
 		}
 		return record;
 	}
 
-	public String[] nextRecord() {
+	public List<String> nextRecord() {
 		StringBuffer fieldBuffer = new StringBuffer();
 		List<String> record = new ArrayList<String>();
 		char[] nextChar = new char[1];
@@ -96,7 +96,7 @@ public class EPFFileReader {
 		} catch (IOException e) {
 			return null;
 		}
-		return record.toArray(new String[0]);
+		return record;
 	}
 
 	/**
@@ -115,22 +115,22 @@ public class EPFFileReader {
 	 * @return String of data read
 	 * @throws IOException
 	 */
-	public String[] nextDataRecord() {
-		String[] record;
+	public List<String> nextDataRecord() {
+		List<String> record;
 		// Read the next non-comment input record
 		while (true) {
 			// Read in the next block - read until separatorChar
 			if ((record = nextRecord()) == null) {
 				break;
 			}
-			if (record.length < 1) {
+			if (record.size() < 1) {
 				break;
 			}
-			if (!record[0].toString().startsWith(COMMENT_PREFIX)) {
+			if (!record.get(0).startsWith(COMMENT_PREFIX)) {
 				break;
 			}
 		}
-		if (record.length > 0) {
+		if (record.size() > 0) {
 			lastDataRecord++;
 		}
 		return record;

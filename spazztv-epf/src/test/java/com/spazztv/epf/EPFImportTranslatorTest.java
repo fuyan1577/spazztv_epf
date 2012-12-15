@@ -15,6 +15,8 @@ public class EPFImportTranslatorTest {
 	EPFFileReader fileReader;
 	String recordSeparator = EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT;
 	String fieldSeparator = EPFConfig.EPF_FIELD_SEPARATOR_DEFAULT;
+	String recordSeparatorFlat = EPFConfig.EPF_FLAT_RECORD_SEPARATOR_DEFAULT;
+	String fieldSeparatorFlat = EPFConfig.EPF_FLAT_FIELD_SEPARATOR_DEFAULT;
 	String genreEpfFile = "testdata/epf_files/genre";
 	String tvEpisodeGuide = "testdata/epf_flat_files/tvEpisode-usa.txt";
 
@@ -32,7 +34,7 @@ public class EPFImportTranslatorTest {
 
 	@Test
 	public void testGetLastRecordRead() {
-		String[] row = null;
+		List<String> row = null;
 		for (int i = 0; i < 10; i++) {
 			row = importTranslator.nextRecord();
 			Assert.assertTrue("Invalid record returned", row != null);
@@ -50,7 +52,7 @@ public class EPFImportTranslatorTest {
 		String foundTableName = localXlator.getTableName();
 		Assert.assertTrue(String.format("Invalid table name, expecting %s, found %s",expectedTableName,foundTableName),expectedTableName.equals(foundTableName));
 		
-		localReader = new EPFFileReader(tvEpisodeGuide, fieldSeparator, recordSeparator);
+		localReader = new EPFFileReader(tvEpisodeGuide, fieldSeparatorFlat, recordSeparatorFlat);
 		localXlator = new EPFImportTranslator(localReader);
 		expectedTableName = "tv_episode_usa";
 		foundTableName = localXlator.getTableName();
@@ -83,7 +85,7 @@ public class EPFImportTranslatorTest {
 	@Test
 	public void testGetExportType() {
 		EPFExportType foundExportType = importTranslator.getExportType();
-		EPFExportType expectedExportType = EPFExportType.FULL;
+		EPFExportType expectedExportType = EPFExportType.INCREMENTAL;
 		Assert.assertTrue(String.format("Invalid getExportType() - expecting %s, found %s",expectedExportType.toString(),foundExportType.toString()),expectedExportType == foundExportType);
 	}
 
@@ -93,17 +95,17 @@ public class EPFImportTranslatorTest {
 		long recordsExported = importTranslator.getTotalExpectedRecords();
 		long foundRecords = 0;
 		while (true) {
-			String[] row = importTranslator.nextRecord();
+			List<String> row = importTranslator.nextRecord();
 			if (row == null) {
 				break;
 			}
 			foundRecords++;
 			//Genre test data fields
 			//{export_date=BIGINT, genre_id=INTEGER, parent_id=INTEGER, name=VARCHAR(200)}
-			String exportDate = row[0];
-			String genreId = row[1];
-			String parentId = row[2]; 
-			String genreName = row[3];
+			String exportDate = row.get(0);
+			String genreId = row.get(1);
+			String parentId = row.get(2); 
+			String genreName = row.get(3);
 			Assert.assertTrue(String.format("Invalid data returned for exportDate, expecting \\d+, found %s",exportDate),exportDate.matches("\\d+"));
 			Assert.assertTrue(String.format("Invalid data returned for genreId, expecting \\d+, found %s",genreId),genreId.matches("\\d+"));
 			if (parentId.length() > 0) {

@@ -11,10 +11,10 @@
 	<classpathentry kind="lib" path="lib/objenesis-tck-1.2.jar"/>
 	<classpathentry kind="lib" path="lib/cglib-nodep-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-api-1.7.2.jar"/>
-	<classpathentry kind="lib" path="lib/aspectjrt.jar"/>
 	<classpathentry kind="lib" path="lib/logback-classic-1.0.9.jar"/>
 	<classpathentry kind="lib" path="lib/logback-core-1.0.9.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang3-3.1.jar"/>
+	<classpathentry kind="lib" path="lib/aspectjrt.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="lib/easymock-3.1.jar"/>
 	<classpathentry kind="lib" path="lib/powermock-easymock-1.4.12-full.jar"/>

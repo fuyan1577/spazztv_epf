@@ -1,6 +1,7 @@
 package com.spazztv.epf;
 
 import java.io.IOException;
+import java.util.List;
 
 import junit.framework.Assert;
 
@@ -61,19 +62,21 @@ public class EPFFileReaderTest {
 	@Test
 	public void testRewind() throws IOException {
 		fileReader.rewind();
-		String[] nextHeaderLine = fileReader.nextHeaderRecord();
+		List<String> nextHeaderLine = fileReader.nextHeaderRecord();
 		Assert.assertTrue("Invalid record after rewind", nextHeaderLine != null);
+		Assert.assertTrue("Invalid record after rewind", nextHeaderLine.size() > 0);
 		Assert.assertTrue("Invalid record after rewind",
-				nextHeaderLine[0].startsWith("#export_date"));
+				nextHeaderLine.get(0).startsWith("#export_date"));
 	}
 
 	@Test
 	public void testNextHeaderLine() throws IOException {
 		fileReader.rewind();
-		String[] nextHeaderLine = fileReader.nextHeaderRecord();
+		List<String> nextHeaderLine = fileReader.nextHeaderRecord();
 		Assert.assertTrue("Invalid record after rewind", nextHeaderLine != null);
+		Assert.assertTrue("Invalid record after rewind", nextHeaderLine.size() > 0);
 		Assert.assertTrue("Invalid record after rewind",
-				nextHeaderLine[0].startsWith("#export_date"));
+				nextHeaderLine.get(0).startsWith("#export_date"));
 	}
 
 	@Test
@@ -85,7 +88,7 @@ public class EPFFileReaderTest {
 		fileReader.rewind();
 		int t = 0;
 		while (fileReader.hasNextDataRecord()) {
-			String[] nextDataLine = fileReader.nextDataRecord();
+			List<String> nextDataLine = fileReader.nextDataRecord();
 			if (nextDataLine != null) {
 				t++;
 			}
@@ -94,7 +97,7 @@ public class EPFFileReaderTest {
 					nextDataLine != null);
 			Assert.assertTrue(
 					"Invalid data record, expecting data matching %^\\d+\\x01.+$",
-					nextDataLine[0].matches("^\\d+$"));
+					nextDataLine.get(0).matches("^\\d+$"));
 		}
 		Assert.assertTrue(String.format(
 				"Incorrect total records. Expected %d, Found %d",

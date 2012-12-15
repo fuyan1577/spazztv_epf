@@ -150,7 +150,7 @@ public abstract class EPFDbWriter {
 	 * @param rowData
 	 *            - a String[] array of column data comprising one row
 	 */
-	public abstract void insertRow(String[] rowData) throws EPFDbException;
+	public abstract void insertRow(List<String> rowData) throws EPFDbException;
 
 	/**
 	 * Finalize any table insert optimization. The original EPF Python script

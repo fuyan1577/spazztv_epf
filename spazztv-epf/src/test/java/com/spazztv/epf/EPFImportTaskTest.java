@@ -68,10 +68,11 @@ public class EPFImportTaskTest {
 		EasyMock.verify(dbWriter);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testImportData() throws EPFDbException {
 		EasyMock.reset(dbWriter);
-		dbWriter.insertRow(EasyMock.anyObject(String[].class));
+		dbWriter.insertRow(EasyMock.anyObject(List.class));
 		EasyMock.expectLastCall().times(
 				(int) importXlator.getTotalExpectedRecords());
 		EasyMock.replay(dbWriter);

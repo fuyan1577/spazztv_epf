@@ -129,10 +129,10 @@ public class EPFImportManagerTest {
 		PowerMock.replay(EPFDbWriterFactory.class);
 
 		PowerMock
-				.expectNew(EPFImportTask.class, "listitem1", "&#0002;",
+				.expectNew(EPFImportTask.class, "listitem1", "&#0001;", "&#0002;",
 						dbWriter).andReturn(importTask1).times(1);
 		PowerMock
-				.expectNew(EPFImportTask.class, "listitem2", "&#0002;",
+				.expectNew(EPFImportTask.class, "listitem2", "&#0001;", "&#0002;",
 						dbWriter).andReturn(importTask2).times(1);
 		PowerMock.replay(EPFImportTask.class);
 

@@ -1,6 +1,5 @@
 package com.spazztv.epf.adapter;
 
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -190,9 +189,9 @@ public class EPFDbWriterOracle extends EPFDbWriter {
 	}
 
 	@Override
-	public void insertRow(String[] rowData) throws EPFDbException {
+	public void insertRow(List<String> rowData) throws EPFDbException {
 		String insertStmt = sqlStmt.insertRowStmt(impTableName,
-				columnsAndTypes, Arrays.asList(rowData));
+				columnsAndTypes, rowData);
 		executeSQLStatement(insertStmt);
 		totalRecordsInserted++;
 	}

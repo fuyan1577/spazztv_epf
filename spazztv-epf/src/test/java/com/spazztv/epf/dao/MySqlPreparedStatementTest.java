@@ -15,7 +15,7 @@ public class MySqlPreparedStatementTest {
 
 	public MySqlPreparedStatementTest() {
 		dbConfig = new EPFDbConfig();
-		dbConfig.setDbUrl("jdbc:mysql://localhost/epf");
+		dbConfig.setDbUrl("jdbc:mysql://localhost/epf?useUnicode=yes&characterEncoding=utf8");
 		dbConfig.setDbWriterClass("com.spazztv.epf.adapter.EPFDbWriterMySql");
 		dbConfig.setDbDataSourceClass("com.mysql.jdbc.jdbc2.optional.MysqlDataSource");
 		dbConfig.setMinConnections(5);
@@ -35,7 +35,8 @@ public class MySqlPreparedStatementTest {
 			st.execute(getCreateTable());
 			PreparedStatement ps = connection
 					.prepareStatement("insert into epf.test (`id`,`field1`,`total`,`create_dt_tm`) values (?, ?, ?, ?)");
-			for (int i = 1; i < 10; i++) {
+			int i;
+			for (i = 1; i < 10; i++) {
 				ps.setString(1, Integer.toString(i));
 				ps.setString(2, String.format("value %d", i));
 				ps.setString(3, Integer.toString(i * 1234));
@@ -43,6 +44,16 @@ public class MySqlPreparedStatementTest {
 						(new Timestamp(System.currentTimeMillis()).toString()));
 				ps.execute();
 			}
+			//UTF-8 Test
+			ps.setString(1,Integer.toString(i));
+			String utf8String = String.format("Οδυσσέα %d", i);
+			utf8String = "Οδυσσέα 10";
+			ps.setString(2, utf8String);
+			ps.setString(3, Integer.toString(i * 1234));
+			ps.setString(4,
+					(new Timestamp(System.currentTimeMillis()).toString()));
+			ps.execute();
+			
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

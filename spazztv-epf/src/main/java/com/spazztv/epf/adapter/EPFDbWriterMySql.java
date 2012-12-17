@@ -59,7 +59,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 	private int insertBufferCount = 0;
 	private List<List<String>> insertBuffer;
-	
+
 	private long totalRowsInserted = 0;
 
 	private enum ProcessMode {
@@ -84,8 +84,8 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 	@Override
 	public void initImport(EPFExportType exportType, String tableName,
-			LinkedHashMap<String, String> columnsAndTypes, List<String> primaryKey, long numberOfRows)
-			throws EPFDbException {
+			LinkedHashMap<String, String> columnsAndTypes,
+			List<String> primaryKey, long numberOfRows) throws EPFDbException {
 
 		this.tableName = getTablePrefix() + tableName;
 		// Default method is to create a temporary table and append data
@@ -191,7 +191,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 		if (primaryKey != null) {
 			String sqlAlterTable = mySqlStmt.setPrimaryKeyStmt(tableName,
 					primaryKey);
-	
+
 			executeSQLStatementWithRetry(sqlAlterTable, null);
 		}
 	}
@@ -201,10 +201,27 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 		if (insertBufferCount <= 0) {
 			insertBuffer = new ArrayList<List<String>>();
 		}
+		checkDateColumns(rowData);
 		insertBuffer.add(rowData);
 		insertBufferCount++;
 		if (insertBufferCount >= INSERT_BUFFER_SIZE) {
 			flushInsertBuffer();
+		}
+	}
+
+	private void checkDateColumns(List<String> rowData) {
+		if (columnsAndTypes.size() != rowData.size()) {
+			return;
+		}
+
+		int i = 0;
+		for (String colType : columnsAndTypes.values()) {
+			if (rowData.get(i) != null) {
+				if ((dateFieldTypes.containsKey(colType)) && (rowData.get(i).length() > 0)) {
+					rowData.set(i,rowData.get(i).replaceAll(" ","-"));
+				}
+			}
+			i++;
 		}
 	}
 
@@ -221,41 +238,41 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 		String insertStmt = mySqlStmt.insertRowStmt(impTableName,
 				columnsAndTypes, insertBuffer, insertCommand);
-		executeSQLStatementWithRetry(insertStmt,insertBuffer);
+		executeSQLStatementWithRetry(insertStmt, insertBuffer);
 
 		totalRowsInserted += insertBufferCount;
 		insertBufferCount = 0;
 	}
 
-	private void executeSQLStatementWithRetry(String sqlStmt, List<List<String>> insertBuffer)
-			throws EPFDbException {
+	private void executeSQLStatementWithRetry(String sqlStmt,
+			List<List<String>> insertBuffer) throws EPFDbException {
 		int attempts = 0;
 		while (true) {
 			attempts++;
 			if (attempts == 2) {
-				mySqlDao.executeSQLStatement(UNLOCK_TABLES,null);
+				mySqlDao.executeSQLStatement(UNLOCK_TABLES, null);
 			} else if (attempts > MAX_SQL_ATTEMPTS) {
 				throw new EPFDbException(String.format(
 						"Error executing SQL Statement: %s", sqlStmt));
 			}
-			SQLReturnStatus status = mySqlDao.executeSQLStatement(sqlStmt,insertBuffer);
+			SQLReturnStatus status = mySqlDao.executeSQLStatement(sqlStmt,
+					insertBuffer);
 			if (status.isSuccess()) {
 				break;
 			} else if (status.getSqlExceptionCode() != MysqlErrorNumbers.ER_LOCK_WAIT_TIMEOUT) {
 				throw new EPFDbException(
 						String.format(
 								"Error executing SQL Statement: \"%s\", sqlStmt.substring(40), SQLState %s, MySQLError %d",
-								sqlStmt,
-								status.getSqlStateCode(),
+								sqlStmt, status.getSqlStateCode(),
 								status.getSqlExceptionCode()));
 			}
 		}
 	}
-	
+
 	@Override
 	public void finalizeImport() throws EPFDbException {
 		flushInsertBuffer();
-		
+
 		if (processMode == ProcessMode.MERGE_RENAME) {
 			// Union Query with destination to the uncTableName
 			mergeTables(tableName, impTableName, uncTableName);

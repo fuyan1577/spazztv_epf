@@ -4,6 +4,7 @@
 package com.spazztv.epf.dao;
 
 import java.sql.Connection;
+import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -56,8 +57,15 @@ public abstract class EPFDbWriter {
 	private EPFDbConnector connector;
 	private String tablePrefix = "";
 	private boolean skipKeyViolators;
+	
+	public static Hashtable<String,Boolean> dateFieldTypes;
 
 	public EPFDbWriter() {
+		dateFieldTypes = new Hashtable<String,Boolean>();
+		dateFieldTypes.put("DATE", true);
+		dateFieldTypes.put("DATETIME", true);
+		dateFieldTypes.put("TIME", true);
+		dateFieldTypes.put("TIMESTAMP", true);
 	}
 
 	/**

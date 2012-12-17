@@ -4,7 +4,7 @@
 		"dbDataSourceClass":"com.mysql.jdbc.jdbc2.optional.MysqlDataSource",
 		"dbMinConnections":5,
 		"dbMaxConnections":20,
-		"dbUrl": "jdbc:mysql://localhost/epf", 
+		"dbUrl": "jdbc:mysql://localhost/epf?useUnicode=yes&characterEncoding=utf8", 
 		"dbUser": "epftest",
 		"dbPassword": "epftest",
 		"dbDataSourceOptions" : {

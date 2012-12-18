@@ -51,21 +51,15 @@ public class EPFDbWriterMySqlDao {
 			return;
 		}
 		int i = 1;
-		int row = 0;
-		int wtf = 0;
 		for (List<String>rowValues : insertBuffer) {
-			row++;
-			if (rowValues.size() != 17) {
-				System.out.println(String.format("RowValues Size: %d", rowValues.size()));
-				wtf = wtf + 0;
-			}
-			wtf += rowValues.size();
 			for (String fieldValue : rowValues) {
-				ps.setString(i,fieldValue);
-				i++;
-				if (i >= 3392) {
-					i = i + 0;
+				ps.setString(i, null);
+				if (fieldValue != null) {
+					if (fieldValue.length() > 0) {
+						ps.setString(i,fieldValue);
+					}
 				}
+				i++;
 			}
 		}
 	}

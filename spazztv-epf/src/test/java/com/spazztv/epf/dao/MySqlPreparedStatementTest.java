@@ -1,10 +1,17 @@
 package com.spazztv.epf.dao;
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.Arrays;
+import java.util.List;
 
 public class MySqlPreparedStatementTest {
 
@@ -15,7 +22,7 @@ public class MySqlPreparedStatementTest {
 
 	public MySqlPreparedStatementTest() {
 		dbConfig = new EPFDbConfig();
-		dbConfig.setDbUrl("jdbc:mysql://localhost/epf?useUnicode=yes&characterEncoding=utf8");
+		dbConfig.setDbUrl("jdbc:mysql://localhost/epf");
 		dbConfig.setDbWriterClass("com.spazztv.epf.adapter.EPFDbWriterMySql");
 		dbConfig.setDbDataSourceClass("com.mysql.jdbc.jdbc2.optional.MysqlDataSource");
 		dbConfig.setMinConnections(5);
@@ -44,8 +51,8 @@ public class MySqlPreparedStatementTest {
 						(new Timestamp(System.currentTimeMillis()).toString()));
 				ps.execute();
 			}
-			//UTF-8 Test
-			ps.setString(1,Integer.toString(i));
+			// UTF-8 Test
+			ps.setString(1, Integer.toString(i));
 			String utf8String = String.format("Οδυσσέα %d", i);
 			utf8String = "Οδυσσέα 10";
 			ps.setString(2, utf8String);
@@ -53,7 +60,7 @@ public class MySqlPreparedStatementTest {
 			ps.setString(4,
 					(new Timestamp(System.currentTimeMillis()).toString()));
 			ps.execute();
-			
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -81,6 +88,51 @@ public class MySqlPreparedStatementTest {
 		connector.releaseConnection(connection);
 	}
 
+	public void sqlStatementTest3() {
+		BufferedReader bFile = null;
+		String filePath = "testdata/utf8_test.dat";
+		String characterEncoding = "UTF-8";
+		FileInputStream fstream;
+		Connection connection = null;
+		try {
+			fstream = new FileInputStream(filePath);
+			DataInputStream in = new DataInputStream(fstream);
+			bFile = new BufferedReader(new InputStreamReader(in,
+					characterEncoding));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		while (true) {
+			try {
+				String row = bFile.readLine();
+				if (row == null) {
+					break;
+				}
+				if (row.length() < 1) {
+					break;
+				}
+				List<String> rowFields = Arrays.asList(row.split(String
+						.valueOf('\t')));
+				connection = connector.getConnection();
+				PreparedStatement ps = connection
+						.prepareStatement("insert into epf.test (`id`,`field1`,`total`,`create_dt_tm`) values (?,?,?,?)");
+				ps.setString(1, rowFields.get(0));
+				ps.setString(2, rowFields.get(1));
+				ps.setString(3, rowFields.get(2));
+				ps.setString(4,
+						(new Timestamp(System.currentTimeMillis()).toString()));
+				ps.execute();
+
+			} catch (IOException e) {
+				break;
+			} catch (SQLException e) {
+				e.printStackTrace();
+			} catch (EPFDbException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	private String getDropTable() {
 		return "drop table if exists epf.test";
 	}
@@ -96,5 +148,6 @@ public class MySqlPreparedStatementTest {
 		MySqlPreparedStatementTest test = new MySqlPreparedStatementTest();
 		test.sqlStatementTest();
 		test.sqlStatementTest2();
+		test.sqlStatementTest3();
 	}
 }

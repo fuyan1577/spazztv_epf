@@ -41,6 +41,7 @@ public class EPFDbWriterMySqlDao {
 			sqlStatus.setSqlStateCode(SQL92StateCode.getSQLStateCode(e1
 					.getSQLState()));
 			sqlStatus.setSqlExceptionCode(e1.getErrorCode());
+			sqlStatus.setDescription(e1.getMessage());
 		}
 		dbWriter.releaseConnection(connection);
 		return sqlStatus;

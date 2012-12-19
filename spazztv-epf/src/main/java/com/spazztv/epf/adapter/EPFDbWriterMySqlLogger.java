@@ -4,6 +4,7 @@
 package com.spazztv.epf.adapter;
 
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -41,5 +42,13 @@ public class EPFDbWriterMySqlLogger {
 		Logger log = EPFImporter.getLogger();
 		log.error("EPFImporter MySql Statement: {}", sqlStmt);
 		log.error("EPFImporter MySql Error", error);
+	}
+	
+	@AfterReturning(pointcut = "call(* com.spazztv.epf.adapter.EPFDbWriterMySqlDao.executeSQLStatement(..))", returning = "sqlStatus")
+	public void afterExecuteSQLStatement(SQLReturnStatus sqlStatus) {
+		if (sqlStatus.getDescription() != null) {
+			Logger log = EPFImporter.getLogger();
+			log.warn("EPFImporter MySql Error: {}", sqlStatus.getDescription());
+		}
 	}
 }

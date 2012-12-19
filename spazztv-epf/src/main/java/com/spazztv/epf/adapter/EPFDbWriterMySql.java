@@ -44,8 +44,8 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 	public static int EXECUTE_SQL_STATEMENT_RETRIES = 30;
 	public static long MERGE_THRESHOLD = 500000;
-	//public static int INSERT_BUFFER_SIZE = 200;
-	//TODO - Remove test version of INSERT_BUFFER_SIZE
+	// public static int INSERT_BUFFER_SIZE = 200;
+	// TODO - Remove test version of INSERT_BUFFER_SIZE
 	public static int INSERT_BUFFER_SIZE = 1;
 	public static int MAX_SQL_ATTEMPTS = 3;
 
@@ -219,8 +219,9 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 		int i = 0;
 		for (String colType : columnsAndTypes.values()) {
 			if (rowData.get(i) != null) {
-				if ((dateFieldTypes.containsKey(colType)) && (rowData.get(i).length() > 0)) {
-					rowData.set(i,rowData.get(i).replaceAll(" ","-"));
+				if ((dateFieldTypes.containsKey(colType))
+						&& (rowData.get(i).length() > 0)) {
+					rowData.set(i, rowData.get(i).replaceAll(" ", "-"));
 				}
 			}
 			i++;
@@ -260,6 +261,10 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			SQLReturnStatus status = mySqlDao.executeSQLStatement(sqlStmt,
 					insertBuffer);
 			if (status.isSuccess()) {
+				break;
+			} else if ((status.getSqlExceptionCode() == MysqlErrorNumbers.ER_TRUNCATED_WRONG_VALUE_FOR_FIELD)
+					|| (status.getSqlExceptionCode() == MysqlErrorNumbers.ER_INVALID_CHARACTER_STRING)) {
+				//Skip records with invalid characters
 				break;
 			} else if (status.getSqlExceptionCode() != MysqlErrorNumbers.ER_LOCK_WAIT_TIMEOUT) {
 				throw new EPFDbException(

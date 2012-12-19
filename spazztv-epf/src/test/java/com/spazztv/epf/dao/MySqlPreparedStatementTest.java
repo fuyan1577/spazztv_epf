@@ -15,7 +15,7 @@ import java.util.List;
 
 public class MySqlPreparedStatementTest {
 
-	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s) ENGINE=MyISAM DEFAULT CHARSET=utf8";
+	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4";
 
 	private EPFDbConnector connector;
 	private EPFDbConfig dbConfig;

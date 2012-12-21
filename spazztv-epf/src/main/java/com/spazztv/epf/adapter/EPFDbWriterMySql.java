@@ -52,12 +52,8 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	private EPFDbWriterMySqlStmt mySqlStmt;
 	private EPFDbWriterMySqlDao mySqlDao;
 
-	private String tableName;
 	private String impTableName;
 	private String uncTableName;
-
-	private LinkedHashMap<String, String> columnsAndTypes;
-	private List<String> primaryKey;
 
 	private int insertBufferCount = 0;
 	private List<List<String>> insertBuffer;
@@ -89,27 +85,28 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			LinkedHashMap<String, String> columnsAndTypes,
 			List<String> primaryKey, long numberOfRows) throws EPFDbException {
 
-		this.tableName = getTablePrefix() + tableName;
+		super.initImport(exportType, tableName, columnsAndTypes, primaryKey, numberOfRows);
+		
+		this.setTableName(getTablePrefix() + tableName);
 		// Default method is to create a temporary table and append data
-		this.impTableName = this.tableName + "_tmp";
+		this.impTableName = getTableName() + "_tmp";
 		this.uncTableName = null;
-		this.primaryKey = primaryKey;
 
 		setupColumnMap(columnsAndTypes, exportType);
 
 		if (exportType == EPFExportType.FULL) {
 			processMode = ProcessMode.IMPORT_RENAME;
 		} else {
-			if (!mySqlDao.isTableInDatabase(this.tableName)) {
+			if (!mySqlDao.isTableInDatabase(getTableName())) {
 				throw new EPFDbException("Table not found - cannot append data");
 			}
 			if (numberOfRows < MERGE_THRESHOLD) {
 				// Append directly to the existing table
 				processMode = ProcessMode.APPEND;
-				this.impTableName = this.tableName;
+				this.impTableName = getTableName();
 			} else {
 				processMode = ProcessMode.MERGE_RENAME;
-				uncTableName = this.tableName + "_unc";
+				uncTableName = getTableName() + "_unc";
 				dropTable(uncTableName);
 			}
 		}
@@ -183,16 +180,16 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 		List<String> currentColumns = null;
 		if ((exportType == EPFExportType.INCREMENTAL)
 				|| (exportType == EPFExportType.FLAT)) {
-			currentColumns = mySqlDao.getTableColumns(tableName);
+			currentColumns = mySqlDao.getTableColumns(getTableName());
 		}
-		this.columnsAndTypes = mySqlStmt.setupColumnAndTypesMap(
-				columnsAndTypes, currentColumns);
+		setColumnsAndTypes(mySqlStmt.setupColumnAndTypesMap(
+				columnsAndTypes, currentColumns));
 	}
 
 	private void applyPrimaryKey(String tableName) throws EPFDbException {
-		if (primaryKey != null) {
+		if (getPrimaryKey() != null) {
 			String sqlAlterTable = mySqlStmt.setPrimaryKeyStmt(tableName,
-					primaryKey);
+					getPrimaryKey());
 
 			executeSQLStatementWithRetry(sqlAlterTable, null);
 		}
@@ -212,12 +209,12 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 	}
 
 	private void checkDateColumns(List<String> rowData) {
-		if (columnsAndTypes.size() != rowData.size()) {
+		if (getColumnsAndTypes().size() != rowData.size()) {
 			return;
 		}
 
 		int i = 0;
-		for (String colType : columnsAndTypes.values()) {
+		for (String colType : getColumnsAndTypes().values()) {
 			if (rowData.get(i) != null) {
 				if ((dateFieldTypes.containsKey(colType))
 						&& (rowData.get(i).length() > 0)) {
@@ -240,7 +237,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 		}
 
 		String insertStmt = mySqlStmt.insertRowStmt(impTableName,
-				columnsAndTypes, insertBuffer, insertCommand);
+				getColumnsAndTypes(), insertBuffer, insertCommand);
 		executeSQLStatementWithRetry(insertStmt, insertBuffer);
 
 		totalRowsInserted += insertBufferCount;
@@ -264,14 +261,15 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 				break;
 			} else if ((status.getSqlExceptionCode() == MysqlErrorNumbers.ER_TRUNCATED_WRONG_VALUE_FOR_FIELD)
 					|| (status.getSqlExceptionCode() == MysqlErrorNumbers.ER_INVALID_CHARACTER_STRING)) {
-				//Skip records with invalid characters
+				// Skip records with invalid characters
 				break;
 			} else if (status.getSqlExceptionCode() != MysqlErrorNumbers.ER_LOCK_WAIT_TIMEOUT) {
 				throw new EPFDbException(
 						String.format(
-								"Error executing SQL Statement: \"%s\", sqlStmt.substring(40), SQLState %s, MySQLError %d",
+								"Error executing SQL Statement: \"%s\", sqlStmt.substring(40), SQLState %s, MySQLError %d, Record %d",
 								sqlStmt, status.getSqlStateCode(),
-								status.getSqlExceptionCode()));
+								status.getSqlExceptionCode(),
+								this.totalRowsInserted + 1));
 			}
 		}
 	}
@@ -282,11 +280,11 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 		if (processMode == ProcessMode.MERGE_RENAME) {
 			// Union Query with destination to the uncTableName
-			mergeTables(tableName, impTableName, uncTableName);
+			mergeTables(getTableName(), impTableName, uncTableName);
 			// Apply primary key
 			applyPrimaryKey(uncTableName);
 			// Rename uncTableName tableName
-			renameTableAndDrop(uncTableName, tableName);
+			renameTableAndDrop(uncTableName, getTableName());
 			// Drop impTableName
 			dropTable(impTableName);
 		}
@@ -295,7 +293,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			// Apply primary key
 			applyPrimaryKey(impTableName);
 			// Rename tmpTableName tableName
-			renameTableAndDrop(impTableName, tableName);
+			renameTableAndDrop(impTableName, getTableName());
 		}
 	}
 
@@ -310,7 +308,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			String unionTableName) throws EPFDbException {
 
 		String mergeTableSql = mySqlStmt.mergeTableStmt(tableName,
-				incTableName, unionTableName, primaryKey);
+				incTableName, unionTableName, getPrimaryKey());
 
 		executeSQLStatementWithRetry(mergeTableSql, null);
 	}

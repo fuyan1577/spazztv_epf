@@ -31,7 +31,6 @@ public class EPFDbWriterMySqlStmt {
 	private String insertColumnStmt;
 	private LinkedHashMap<String, String> insertColumnsAndTypes;
 
-
 	public static Map<String, String> TRANSLATION_MAP = Collections
 			.unmodifiableMap(new HashMap<String, String>() {
 				private static final long serialVersionUID = 1L;

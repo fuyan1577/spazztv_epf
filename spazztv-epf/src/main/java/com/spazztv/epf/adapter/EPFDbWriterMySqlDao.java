@@ -1,5 +1,6 @@
 package com.spazztv.epf.adapter;
 
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -13,27 +14,27 @@ import java.util.List;
 import com.spazztv.epf.dao.EPFDbException;
 import com.spazztv.epf.dao.EPFDbWriter;
 
-
 public class EPFDbWriterMySqlDao {
 
 	public static String COLUMN_NAMES_SQL = "SELECT * FROM `%s` LIMIT 1";
 
 	private EPFDbWriter dbWriter;
-	
+
 	public EPFDbWriterMySqlDao(EPFDbWriter dbWriter) {
 		super();
 		this.dbWriter = dbWriter;
 	}
 
-	public SQLReturnStatus executeSQLStatement(String sqlStmt, List<List<String>> insertBuffer)
-			throws EPFDbException {
+	public SQLReturnStatus executeSQLStatement(String sqlStmt,
+			List<List<String>> insertBuffer) throws EPFDbException {
 		SQLReturnStatus sqlStatus = new SQLReturnStatus();
 
 		Connection connection = null;
+		PreparedStatement ps = null;
 		try {
 			connection = dbWriter.getConnection();
-			PreparedStatement ps = connection.prepareStatement(sqlStmt);
-			setSqlValues(ps,insertBuffer);
+			ps = connection.prepareStatement(sqlStmt);
+			setSqlValues(ps, insertBuffer);
 			ps.execute();
 			sqlStatus.setSuccess(true);
 		} catch (SQLException e1) {
@@ -42,25 +43,42 @@ public class EPFDbWriterMySqlDao {
 					.getSQLState()));
 			sqlStatus.setSqlExceptionCode(e1.getErrorCode());
 			sqlStatus.setDescription(e1.getMessage());
+		} finally {
+			try {
+				if (ps != null)
+					ps.close();
+			} catch (SQLException e) {
+				// Ignore
+			}
 		}
 		dbWriter.releaseConnection(connection);
 		return sqlStatus;
 	}
+
+	private final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 	
-	private void setSqlValues(PreparedStatement ps, List<List<String>> insertBuffer) throws SQLException {
+	private void setSqlValues(PreparedStatement ps,
+			List<List<String>> insertBuffer) throws SQLException {
 		if (insertBuffer == null) {
 			return;
 		}
 		int i = 1;
-		for (List<String>rowValues : insertBuffer) {
+		int c = 0;
+		for (List<String> rowValues : insertBuffer) {
+			c = 0;
 			for (String fieldValue : rowValues) {
 				ps.setString(i, null);
 				if (fieldValue != null) {
 					if (fieldValue.length() > 0) {
-						ps.setString(i,fieldValue);
+						if (c != 13) {
+							ps.setString(i, fieldValue);
+						} else {
+							ps.setBytes(i, fieldValue.getBytes(UTF8_CHARSET));
+						}
 					}
 				}
 				i++;
+				c++;
 			}
 		}
 	}

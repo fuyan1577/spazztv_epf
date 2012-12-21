@@ -58,6 +58,12 @@ public abstract class EPFDbWriter {
 	private String tablePrefix = "";
 	private boolean skipKeyViolators;
 	
+	private EPFExportType exportType;
+	private String tableName;
+	private LinkedHashMap<String,String>columnsAndTypes;
+	private List<String> primaryKey;
+	private long numberOfRows;
+	
 	public static Hashtable<String,Boolean> dateFieldTypes;
 
 	public EPFDbWriter() {
@@ -142,10 +148,16 @@ public abstract class EPFDbWriter {
 	 * @param numberOfRows
 	 *            Number of rows in the import file
 	 */
-	public abstract void initImport(EPFExportType exportType, String tableName,
-			LinkedHashMap<String, String> columnsAndTypes, List<String> primaryKey, long numberOfRows)
-			throws EPFDbException;
-
+	public void initImport(EPFExportType exportType, String tableName,
+			LinkedHashMap<String, String> columnsAndTypes, List<String> primaryKey, long numberOfRows) 
+			throws EPFDbException {
+		this.exportType = exportType;
+		this.tableName = tableName;
+		this.columnsAndTypes = columnsAndTypes;
+		this.primaryKey = primaryKey;
+		this.numberOfRows = numberOfRows;
+	}
+	
 	/**
 	 * Insert a row of data from the input String[] array. The field types are
 	 * appropriately quoted and formatted per the destination database.
@@ -196,4 +208,74 @@ public abstract class EPFDbWriter {
 	 * @return rows inserted
 	 */
 	public abstract Long getTotalRowsInserted();
+
+	/**
+	 * @return the exporType
+	 */
+	public EPFExportType getExportType() {
+		return exportType;
+	}
+
+	/**
+	 * @param exporType the exporType to set
+	 */
+	public void setExportType(EPFExportType exportType) {
+		this.exportType = exportType;
+	}
+
+	/**
+	 * @return the tableName
+	 */
+	public String getTableName() {
+		return tableName;
+	}
+
+	/**
+	 * @param tableName the tableName to set
+	 */
+	public void setTableName(String tableName) {
+		this.tableName = tableName;
+	}
+
+	/**
+	 * @return the columnsAndTypes
+	 */
+	public LinkedHashMap<String, String> getColumnsAndTypes() {
+		return columnsAndTypes;
+	}
+
+	/**
+	 * @param columnsAndTypes the columnsAndTypes to set
+	 */
+	public void setColumnsAndTypes(LinkedHashMap<String, String> columnsAndTypes) {
+		this.columnsAndTypes = columnsAndTypes;
+	}
+
+	/**
+	 * @return the primaryKey
+	 */
+	public List<String> getPrimaryKey() {
+		return primaryKey;
+	}
+
+	/**
+	 * @param primaryKey the primaryKey to set
+	 */
+	public void setPrimaryKey(List<String> primaryKey) {
+		this.primaryKey = primaryKey;
+	}
+
+	/**
+	 * @return the numberOfRows
+	 */
+	public long getNumberOfRows() {
+		return numberOfRows;
+	}
+
+	/**
+	 * @param numberOfRows the numberOfRows to set
+	 */
+	public void setNumberOfRows(long numberOfRows) {
+		this.numberOfRows = numberOfRows;
+	}
 }

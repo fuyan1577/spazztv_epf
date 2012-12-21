@@ -141,7 +141,8 @@ public class MySqlPreparedStatementTest {
 		return String
 				.format(CREATE_TABLE_STMT,
 						"epf.test",
-						"`id` integer, `field1` varchar(255), `total` integer, `create_dt_tm` timestamp");
+						"`id` integer, `field1` longtext, `total` integer, `create_dt_tm` timestamp");
+//						"`id` integer, `field1` varchar(255), `total` integer, `create_dt_tm` timestamp");
 	}
 
 	public static void main(String[] args) throws EPFDbException {

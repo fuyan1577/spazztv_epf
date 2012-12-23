@@ -31,6 +31,7 @@ public class EPFFileReader {
 	private long lastDataRecord = 0;
 	private char recordSeparatorChar;
 	private char fieldSeparatorChar;
+	private boolean endOfFile = false;
 
 	public EPFFileReader(String filePath, String fieldSeparator,
 			String recordSeparator) throws IOException,
@@ -82,7 +83,10 @@ public class EPFFileReader {
 		char[] nextChar = new char[1];
 		try {
 			// Read in the next block - read until separatorChar
-			while ((bFile.read(nextChar, 0, 1)) > 0) {
+			while (!endOfFile) {
+				if (bFile.read(nextChar, 0, 1) < 0) {
+					endOfFile = true;
+				}
 				if (nextChar[0] == fieldSeparatorChar) {
 					record.add(fieldBuffer.toString());
 					fieldBuffer.setLength(0);
@@ -129,6 +133,9 @@ public class EPFFileReader {
 			if (!record.get(0).startsWith(COMMENT_PREFIX)) {
 				break;
 			}
+		}
+		if (endOfFile) {
+			return null;
 		}
 		if (record.size() > 0) {
 			lastDataRecord++;
@@ -222,7 +229,10 @@ public class EPFFileReader {
 	}
 
 	public boolean hasNextDataRecord() {
-		return lastDataRecord < recordsWritten;
+		if (!endOfFile) {
+			return lastDataRecord < recordsWritten;
+		}
+		return false;
 	}
 
 	/**

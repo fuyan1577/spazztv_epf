@@ -32,6 +32,7 @@ public class EPFImportTranslator {
 	private List<String> dataTypes;
 	private EPFExportType exportType;
 	private List<String> primaryKey;
+	private List<String> nextRecordBuffer;
 
 	private long lastRecordNum = 0;
 
@@ -133,7 +134,8 @@ public class EPFImportTranslator {
 	 * @return true if there are more data records
 	 */
 	public boolean hasNextRecord() {
-		return epfFileReader.hasNextDataRecord();
+		nextRecordBuffer = epfFileReader.nextDataRecord();
+		return (nextRecordBuffer != null);
 	}
 
 	/**
@@ -149,12 +151,14 @@ public class EPFImportTranslator {
 		// Data rows have no prefix...
 		if (!epfFileReader.hasNextDataRecord()) {
 			return null;
+		} else if (nextRecordBuffer == null) {
+			//Doing this in case calling routine doesn't call hasNextRecord first
+			nextRecordBuffer = epfFileReader.nextDataRecord();
 		}
-		List<String> nextRecord = epfFileReader.nextDataRecord();
-		if (nextRecord != null) {
+		if (nextRecordBuffer != null) {
 			lastRecordNum++;
 		}
-		return nextRecord;
+		return nextRecordBuffer;
 	}
 
 	/**

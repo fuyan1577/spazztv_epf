@@ -17,6 +17,8 @@ import com.spazztv.epf.dao.EPFDbWriter;
 public class EPFDbWriterMySqlDao {
 
 	public static String COLUMN_NAMES_SQL = "SELECT * FROM `%s` LIMIT 1";
+	private final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+	private List<Boolean> charColumns;
 
 	private EPFDbWriter dbWriter;
 
@@ -55,12 +57,13 @@ public class EPFDbWriterMySqlDao {
 		return sqlStatus;
 	}
 
-	private final Charset UTF8_CHARSET = Charset.forName("UTF-8");
-	
 	private void setSqlValues(PreparedStatement ps,
 			List<List<String>> insertBuffer) throws SQLException {
 		if (insertBuffer == null) {
 			return;
+		}
+		if (charColumns == null) {
+			loadCharColumns();
 		}
 		int i = 1;
 		int c = 0;
@@ -70,10 +73,10 @@ public class EPFDbWriterMySqlDao {
 				ps.setString(i, null);
 				if (fieldValue != null) {
 					if (fieldValue.length() > 0) {
-						if (c != 13) {
-							ps.setString(i, fieldValue);
-						} else {
+						if (isCharColumn(c)) {
 							ps.setBytes(i, fieldValue.getBytes(UTF8_CHARSET));
+						} else {
+							ps.setString(i, fieldValue);
 						}
 					}
 				}
@@ -81,6 +84,24 @@ public class EPFDbWriterMySqlDao {
 				c++;
 			}
 		}
+	}
+	
+	private void loadCharColumns() throws SQLException {
+		if (dbWriter.getColumnsAndTypes() == null) {
+			throw new SQLException("Invalid columnsAndTypes array");
+		}
+		charColumns = new ArrayList<Boolean>();
+		for (String columnType : dbWriter.getColumnsAndTypes().values()) {
+			if (columnType.matches(".*CHAR.*") || columnType.matches(".*TEXT.*")) {
+				charColumns.add(new Boolean(true));
+			} else {
+				charColumns.add(new Boolean(false));
+			}
+		}
+	}
+	
+	private boolean isCharColumn(int c) {
+		return charColumns.get(c);
 	}
 
 	/**

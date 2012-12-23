@@ -17,7 +17,6 @@ public class EPFImportTask implements Runnable {
 
 	private EPFImportTranslator importTranslator;
 	private EPFDbWriter dbWriter;
-	private long recordCount = 0;
 	
 	public static long RECORD_GAP = 5000;
 	public long TIME_GAP = 120000; // milliseconds - 2 minutes
@@ -51,15 +50,7 @@ public class EPFImportTask implements Runnable {
 	public void importData() throws EPFDbException {
 		try {
 			while (importTranslator.hasNextRecord()) {
-				recordCount++;
 				dbWriter.insertRow(importTranslator.nextRecord());
-			}
-			if (recordCount != importTranslator.getTotalExpectedRecords()) {
-				String errMsg = String
-						.format("Incorrect number of import records. Expecting %d, found %d",
-								importTranslator.getTotalExpectedRecords(),
-								recordCount);
-				throw new EPFDbException(errMsg);
 			}
 		} catch (EPFDbException e) {
 			EPFImporterQueue.getInstance().setFailed(

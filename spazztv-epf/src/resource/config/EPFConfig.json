@@ -36,10 +36,13 @@
 		"collection_price",
 		"song_price.*",
 		"video_price",
+		"artist",
+		"artist_application"
+    ], 
+    "whiteList": [
+		"application",
 		"application_detail",
 		"application_device_type",
-		"artist",
-		"artist_application",
 		"device_type",
 		"genre_application",
 		"key_value",
@@ -47,8 +50,5 @@
 		"storefront",
 		"application_popularity_per_genre",
 		"application_price"
-    ], 
-    "whiteList": [
-		"application"
     ]
 }

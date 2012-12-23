@@ -3,6 +3,8 @@
  */
 package com.spazztv.epf.adapter;
 
+import java.util.List;
+
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
@@ -11,6 +13,7 @@ import org.aspectj.lang.annotation.Before;
 import org.slf4j.Logger;
 
 import com.spazztv.epf.EPFImporter;
+import com.spazztv.epf.dao.EPFDbWriter;
 
 /**
  * Logger advice for EPFDbWriterMySql (EPFDbWriterMySqlDao)
@@ -33,6 +36,18 @@ public class EPFDbWriterMySqlLogger {
 		Logger log = EPFImporter.getLogger();
 		if (log.isDebugEnabled()) {
 			log.debug("MySQL Exec: " + joinPoint.getArgs()[0]);
+		}
+	}
+	
+	@Before("execution(* com.spazztv.epf.adapter.EPFDbWriterMySql.insertRow(..)) && this(dbWriter)")
+	public void beforeInsertRow(JoinPoint joinPoint, EPFDbWriter dbWriter) {
+		@SuppressWarnings("unchecked")
+		List<String> rowData = (List<String>)joinPoint.getArgs()[0];
+		if (rowData != null) {
+			if (dbWriter.getColumnsAndTypes().size() != rowData.size()) {
+				Logger log = EPFImporter.getLogger();
+				log.error("Invalid import record #{}. Expected columns {}, Actual {}", dbWriter.getTotalRowsInserted() + 1, dbWriter.getColumnsAndTypes().size(), rowData.size());
+			}
 		}
 	}
 	

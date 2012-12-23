@@ -197,6 +197,12 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 
 	@Override
 	public void insertRow(List<String> rowData) throws EPFDbException {
+		if (rowData == null) {
+			return;
+		}
+		if (rowData.size() != getColumnsAndTypes().size()) {
+			return;
+		}
 		if (insertBufferCount <= 0) {
 			insertBuffer = new ArrayList<List<String>>();
 		}

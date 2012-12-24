@@ -55,15 +55,20 @@ public class EPFDbWriterMySqlLogger {
 	public void afterThrowingExecuteSqlStatementWithRetry(JoinPoint joinPoint, Throwable error) {
 		String sqlStmt = (String)joinPoint.getArgs()[0];
 		Logger log = EPFImporter.getLogger();
-		log.error("EPFImporter MySql Statement: {}", sqlStmt);
-		log.error("EPFImporter MySql Error", error);
+		log.error("MySql Statement: {}", sqlStmt);
+		log.error("MySql Error", error);
 	}
 	
 	@AfterReturning(pointcut = "call(* com.spazztv.epf.adapter.EPFDbWriterMySqlDao.executeSQLStatement(..))", returning = "sqlStatus")
-	public void afterExecuteSQLStatement(SQLReturnStatus sqlStatus) {
+	public void afterExecuteSQLStatement(JoinPoint joinPoint, SQLReturnStatus sqlStatus) {
 		if (sqlStatus.getDescription() != null) {
-			Logger log = EPFImporter.getLogger();
-			log.warn("EPFImporter MySql Error: {}", sqlStatus.getDescription());
+			@SuppressWarnings("unchecked")
+			int i = ((List<List<String>>)joinPoint.getArgs()[1]).size();
+			if (i == 1) {
+				String tableName = ((EPFDbWriterMySqlDao)joinPoint.getTarget()).getTableName();
+				Logger log = EPFImporter.getLogger();
+				log.warn("{} - MySql Error: {}", tableName, sqlStatus.getDescription());
+			}
 		}
 	}
 }

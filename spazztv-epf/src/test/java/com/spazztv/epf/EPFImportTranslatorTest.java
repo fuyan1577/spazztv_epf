@@ -94,8 +94,9 @@ public class EPFImportTranslatorTest {
 		//Testing the first 10 records to make sure they match the data patterns
 		long recordsExported = importTranslator.getTotalExpectedRecords();
 		long foundRecords = 0;
-		while (true) {
-			List<String> row = importTranslator.nextRecord();
+		List<String> row = null;
+		while (importTranslator.hasNextRecord()) {
+			row = importTranslator.nextRecord();
 			if (row == null) {
 				break;
 			}

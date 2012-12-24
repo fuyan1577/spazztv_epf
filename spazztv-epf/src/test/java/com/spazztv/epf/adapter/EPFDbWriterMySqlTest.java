@@ -658,7 +658,7 @@ public class EPFDbWriterMySqlTest {
 		SQLReturnStatus errorReturnStatus = new SQLReturnStatus();
 		errorReturnStatus.setSuccess(false);
 
-		errorReturnStatus.setSqlStateCode("23000");
+		errorReturnStatus.setSqlState("23000");
 		errorReturnStatus.setSqlExceptionCode(1205);
 
 		// Set up mySqlDao mock

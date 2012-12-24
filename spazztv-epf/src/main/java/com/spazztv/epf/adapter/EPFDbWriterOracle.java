@@ -142,7 +142,7 @@ public class EPFDbWriterOracle extends EPFDbWriter {
 				throw new EPFDbException(
 						String.format(
 								"Error dropping table %s, SQLStateCode = %s, SQLExceptionCode = %d",
-								status.getSqlStateCode(),
+								status.getSqlStateClass(),
 								status.getSqlExceptionCode()));
 			}
 		}
@@ -202,7 +202,7 @@ public class EPFDbWriterOracle extends EPFDbWriter {
 			throw new EPFDbException(
 					String.format(
 							"Error executing SQL Statement: \"%s...\", sqlStmt.substring(40), SQLState %s, MySQLError %d",
-							status.getSqlStateCode(),
+							status.getSqlStateClass(),
 							status.getSqlExceptionCode()));
 		}
 	}

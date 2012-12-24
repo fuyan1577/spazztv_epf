@@ -1,15 +1,25 @@
 package com.spazztv.epf.adapter;
 
 public class SQLReturnStatus {
-	private String sqlStateCode;
+	private String sqlState;
 	private Integer sqlExceptionCode;
 	private boolean success;
 	private String description;
-	public String getSqlStateCode() {
-		return sqlStateCode;
+	
+	public String getSqlStateClass() {
+		if (sqlState == null) {
+			return null;
+		}
+		if (sqlState.length() < 2) {
+			return sqlState;
+		}
+		return sqlState.substring(0,2);
 	}
-	public void setSqlStateCode(String sqlStateCode) {
-		this.sqlStateCode = sqlStateCode;
+	public String getSqlState() {
+		return sqlState;
+	}
+	public void setSqlState(String sqlState) {
+		this.sqlState = sqlState;
 	}
 	public Integer getSqlExceptionCode() {
 		return sqlExceptionCode;

@@ -149,9 +149,7 @@ public class EPFImportTranslator {
 	 */
 	public List<String> nextRecord() {
 		// Data rows have no prefix...
-		if (!epfFileReader.hasNextDataRecord()) {
-			return null;
-		} else if (nextRecordBuffer == null) {
+		if (nextRecordBuffer == null) {
 			//Doing this in case calling routine doesn't call hasNextRecord first
 			nextRecordBuffer = epfFileReader.nextDataRecord();
 		}

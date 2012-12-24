@@ -114,9 +114,9 @@ public class EPFDbWriterOracleDaoTest {
 				String.format(
 						"Unxpected getSQLState(), expected: %s, actual %s",
 						expectedException.getSQLState(),
-						actual.getSqlStateCode()),
+						actual.getSqlStateClass()),
 				expectedSQLState.substring(0, 2).equals(
-						actual.getSqlStateCode()));
+						actual.getSqlStateClass()));
 		Assert.assertTrue(
 				String.format(
 						"Unxpected getErrorCode(), expected: %d, actual %d",

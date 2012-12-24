@@ -11,7 +11,7 @@ import java.util.Map.Entry;
 
 public class EPFDbWriterMySqlStmt {
 	public static String DROP_TABLE_STMT = "DROP TABLE IF EXISTS %s";
-	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
+	public static String CREATE_TABLE_STMT = "CREATE TABLE %s (%s) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci";
 	public static String RENAME_TABLE_STMT = "ALTER TABLE %s RENAME %s";
 	public static String PRIMARY_KEY_STMT = "ALTER TABLE %s ADD CONSTRAINT PRIMARY KEY (%s)";
 	public static String INSERT_SQL_STMT = "%s INTO %s (%s) VALUES %s";

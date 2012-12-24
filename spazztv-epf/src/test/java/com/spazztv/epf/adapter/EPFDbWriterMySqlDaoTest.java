@@ -66,6 +66,8 @@ public class EPFDbWriterMySqlDaoTest {
 		EasyMock.reset(preparedStatement);
 		preparedStatement.execute();
 		EasyMock.expectLastCall().andReturn(true).times(1);
+		preparedStatement.close();
+		EasyMock.expectLastCall().times(1);
 		EasyMock.replay(preparedStatement);
 
 		mySqlDao.executeSQLStatement(expectedStatement, null);
@@ -101,11 +103,15 @@ public class EPFDbWriterMySqlDaoTest {
 		EasyMock.expectLastCall().andReturn(expectedSQLState).times(2);
 		expectedException.getErrorCode();
 		EasyMock.expectLastCall().andReturn(expectedErrorCode).times(2);
+		expectedException.getMessage();
+		EasyMock.expectLastCall().andReturn("Test SQL Error Message").times(1);
 		EasyMock.replay(expectedException);
 
 		EasyMock.reset(preparedStatement);
 		preparedStatement.execute();
 		EasyMock.expectLastCall().andThrow(expectedException);
+		preparedStatement.close();
+		EasyMock.expectLastCall().times(1);
 		EasyMock.replay(preparedStatement);
 
 		boolean expectedSuccess = false;
@@ -119,9 +125,9 @@ public class EPFDbWriterMySqlDaoTest {
 				String.format(
 						"Unxpected getSQLState(), expected: %s, actual %s",
 						expectedException.getSQLState(),
-						actual.getSqlStateCode()),
+						actual.getSqlStateClass()),
 				expectedSQLState.substring(0, 2).equals(
-						actual.getSqlStateCode()));
+						actual.getSqlStateClass()));
 		Assert.assertTrue(
 				String.format(
 						"Unxpected getErrorCode(), expected: %d, actual %d",

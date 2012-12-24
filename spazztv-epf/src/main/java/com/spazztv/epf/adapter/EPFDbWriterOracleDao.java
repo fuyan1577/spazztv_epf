@@ -12,13 +12,12 @@ import java.util.List;
 import com.spazztv.epf.dao.EPFDbException;
 import com.spazztv.epf.dao.EPFDbWriter;
 
-
 public class EPFDbWriterOracleDao {
 
 	public static String COLUMN_NAMES_SQL = "SELECT * FROM \"%s\" WHERE ROWNUM = 1";
 
 	private EPFDbWriter dbWriter;
-	
+
 	public EPFDbWriterOracleDao(EPFDbWriter dbWriter) {
 		super();
 		this.dbWriter = dbWriter;
@@ -38,8 +37,7 @@ public class EPFDbWriterOracleDao {
 			sqlStatus.setSuccess(true);
 		} catch (SQLException e1) {
 			sqlStatus.setSuccess(false);
-			sqlStatus.setSqlStateCode(SQL92StateCode.getSQLStateCode(e1
-					.getSQLState()));
+			sqlStatus.setSqlState(e1.getSQLState());
 			sqlStatus.setSqlExceptionCode(e1.getErrorCode());
 		}
 		dbWriter.releaseConnection(connection);

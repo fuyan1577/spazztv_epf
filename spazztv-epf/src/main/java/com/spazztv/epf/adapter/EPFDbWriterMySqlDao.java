@@ -41,8 +41,7 @@ public class EPFDbWriterMySqlDao {
 			sqlStatus.setSuccess(true);
 		} catch (SQLException e1) {
 			sqlStatus.setSuccess(false);
-			sqlStatus.setSqlStateCode(SQL92StateCode.getSQLStateCode(e1
-					.getSQLState()));
+			sqlStatus.setSqlState(e1.getSQLState());
 			sqlStatus.setSqlExceptionCode(e1.getErrorCode());
 			sqlStatus.setDescription(e1.getMessage());
 		} finally {
@@ -85,21 +84,22 @@ public class EPFDbWriterMySqlDao {
 			}
 		}
 	}
-	
+
 	private void loadCharColumns() throws SQLException {
 		if (dbWriter.getColumnsAndTypes() == null) {
 			throw new SQLException("Invalid columnsAndTypes array");
 		}
 		charColumns = new ArrayList<Boolean>();
 		for (String columnType : dbWriter.getColumnsAndTypes().values()) {
-			if (columnType.matches(".*CHAR.*") || columnType.matches(".*TEXT.*")) {
+			if (columnType.matches(".*CHAR.*")
+					|| columnType.matches(".*TEXT.*")) {
 				charColumns.add(new Boolean(true));
 			} else {
 				charColumns.add(new Boolean(false));
 			}
 		}
 	}
-	
+
 	private boolean isCharColumn(int c) {
 		return charColumns.get(c);
 	}
@@ -159,5 +159,19 @@ public class EPFDbWriterMySqlDao {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Convenience method returns the dbWriter's tableName property.
+	 * <p>
+	 * This method is used by Logger Aspects
+	 * 
+	 * @return the tableName of this object
+	 */
+	public String getTableName() {
+		if (dbWriter != null) {
+			return dbWriter.getTableName();
+		}
+		return null;
 	}
 }

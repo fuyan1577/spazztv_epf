@@ -83,8 +83,9 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			LinkedHashMap<String, String> columnsAndTypes,
 			List<String> primaryKey, long numberOfRows) throws EPFDbException {
 
-		super.initImport(exportType, tableName, columnsAndTypes, primaryKey, numberOfRows);
-		
+		super.initImport(exportType, tableName, columnsAndTypes, primaryKey,
+				numberOfRows);
+
 		this.setTableName(getTablePrefix() + tableName);
 		// Default method is to create a temporary table and append data
 		this.impTableName = getTableName() + "_tmp";
@@ -145,7 +146,7 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 				throw new EPFDbException(
 						String.format(
 								"Error dropping table %s, SQLStateCode = %s, SQLExceptionCode = %d",
-								status.getSqlStateCode(),
+								status.getSqlStateClass(),
 								status.getSqlExceptionCode()));
 			}
 		}
@@ -180,8 +181,8 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 				|| (exportType == EPFExportType.FLAT)) {
 			currentColumns = mySqlDao.getTableColumns(getTableName());
 		}
-		setColumnsAndTypes(mySqlStmt.setupColumnAndTypesMap(
-				columnsAndTypes, currentColumns));
+		setColumnsAndTypes(mySqlStmt.setupColumnAndTypesMap(columnsAndTypes,
+				currentColumns));
 	}
 
 	private void applyPrimaryKey(String tableName) throws EPFDbException {
@@ -222,7 +223,27 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 			if (rowData.get(i) != null) {
 				if ((dateFieldTypes.containsKey(colType))
 						&& (rowData.get(i).length() > 0)) {
-					rowData.set(i, rowData.get(i).replaceAll(" ", "-"));
+					if (rowData.get(i).matches(
+							"^\\d{4}[^\\d]\\d{2}[^\\d]\\d{2}$")) {
+						rowData.set(
+								i,
+								rowData.get(i)
+										.replaceAll(
+												"^(\\d{4})[^\\d](\\d{2})[^\\d](\\d{2})$",
+												"$1-$2-$3"));
+					} else if (rowData
+							.get(i)
+							.matches(
+									"^\\d{4}[^\\d]\\d{2}[^\\d]\\d{2}[^\\d]\\d{2}[^\\d]\\d{2}[^\\d]\\d{2}$")) {
+						rowData.set(
+								i,
+								rowData.get(i)
+										.replaceAll(
+												"^(\\d{4})[^\\d](\\d{2})[^\\d](\\d{2})[^\\d](\\d{2}[^\\d]\\d{2}[^\\d]\\d{2})$",
+												"$1-$2-$3 $4"));
+					} else {
+						rowData.set(i, rowData.get(i).replaceAll(" ", "-"));
+					}
 				}
 			}
 			i++;
@@ -265,15 +286,69 @@ public class EPFDbWriterMySql extends EPFDbWriter {
 				break;
 			} else if ((status.getSqlExceptionCode() == MysqlErrorNumbers.ER_TRUNCATED_WRONG_VALUE_FOR_FIELD)
 					|| (status.getSqlExceptionCode() == MysqlErrorNumbers.ER_INVALID_CHARACTER_STRING)) {
-				// Skip records with invalid characters
+				// Invalid UTF8 Chars - All rows of insert buffer are rejected
+				// together
+				// Insert rows individually
+				executeSqlStatementByRow(insertBuffer);
 				break;
 			} else if (status.getSqlExceptionCode() != MysqlErrorNumbers.ER_LOCK_WAIT_TIMEOUT) {
 				throw new EPFDbException(
 						String.format(
 								"Error executing SQL Statement: \"%s\", sqlStmt.substring(40), SQLState %s, MySQLError %d, Record %d",
-								sqlStmt, status.getSqlStateCode(),
+								sqlStmt, status.getSqlState(),
 								status.getSqlExceptionCode(),
 								this.totalRowsInserted + 1));
+			}
+		}
+	}
+
+	/**
+	 * A kluge to handle MySQL 5.1's inability to accept 4 byte UTF8 characters.
+	 * <p>
+	 * To avoid dropping all 200 records with 4 byte UTF8 chars, this routine
+	 * breaks apart an insert buffer and inserts each record one by one.
+	 * <p>
+	 * Apple's original EPFImporter.py doesn't handle this correctly and drops all
+	 * 200 records of an insert block even if only one of the records has a 4
+	 * byte UTF8 char.
+	 * 
+	 * @param insertBuffer
+	 * @throws EPFDbException
+	 */
+	private void executeSqlStatementByRow(List<List<String>> insertBuffer)
+			throws EPFDbException {
+		String insertCommand = "INSERT";
+
+		if (processMode == ProcessMode.APPEND) {
+			insertCommand = "REPLACE";
+		}
+
+		List<List<String>> oneRowBuffer = new ArrayList<List<String>>();
+
+		String insertStmt = null;
+
+		for (List<String> insertRow : insertBuffer) {
+			oneRowBuffer.clear();
+			oneRowBuffer.add(insertRow);
+			if (insertStmt == null) {
+				insertStmt = mySqlStmt.insertRowStmt(impTableName,
+						getColumnsAndTypes(), oneRowBuffer, insertCommand);
+			}
+			SQLReturnStatus status = mySqlDao.executeSQLStatement(insertStmt,
+					oneRowBuffer);
+			if (!status.isSuccess()) {
+				if ((status.getSqlExceptionCode() == MysqlErrorNumbers.ER_TRUNCATED_WRONG_VALUE_FOR_FIELD)
+						|| (status.getSqlExceptionCode() == MysqlErrorNumbers.ER_INVALID_CHARACTER_STRING)) {
+					// Ignore Records with invalid UTF8 chars - this is a mysql
+					// 5.1 bug
+				} else if (status.getSqlExceptionCode() != MysqlErrorNumbers.ER_LOCK_WAIT_TIMEOUT) {
+					throw new EPFDbException(
+							String.format(
+									"Error executing SQL Statement: \"%s\", sqlStmt.substring(40), SQLState %s, MySQLError %d, Record %d",
+									insertStmt, status.getSqlState(),
+									status.getSqlExceptionCode(),
+									this.totalRowsInserted + 1));
+				}
 			}
 		}
 	}

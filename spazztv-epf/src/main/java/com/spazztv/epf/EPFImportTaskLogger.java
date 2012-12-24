@@ -53,7 +53,7 @@ public class EPFImportTaskLogger {
 		Date endTimeStamp = new Date();
 		String elapsedTime = EPFImporterLogger.elapsedTimeFormat(endTimeStamp.getTime()
 				- startTimeStamp.getTime());
-		if (dbWriter.getTotalRowsInserted() == totalExpectedRecords) {
+		if (dbWriter.getTotalRowsInserted().equals(totalExpectedRecords)) {
 			log.info("{} - Import completed, {} of {} records imported",
 					importTranslator.getTableName(),
 					dbWriter.getTotalRowsInserted(), totalExpectedRecords);

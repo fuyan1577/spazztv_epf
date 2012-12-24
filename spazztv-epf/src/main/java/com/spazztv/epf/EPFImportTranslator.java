@@ -158,6 +158,10 @@ public class EPFImportTranslator {
 		}
 		return nextRecordBuffer;
 	}
+	
+	public void close() throws IOException {
+		epfFileReader.close();
+	}
 
 	/**
 	 * Initialize the import loading the total records and record definitions.

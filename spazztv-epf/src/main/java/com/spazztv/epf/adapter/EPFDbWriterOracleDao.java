@@ -35,6 +35,7 @@ public class EPFDbWriterOracleDao {
 			st = connection.createStatement();
 			st.execute(sqlStmt);
 			sqlStatus.setSuccess(true);
+			st.close();
 		} catch (SQLException e1) {
 			sqlStatus.setSuccess(false);
 			sqlStatus.setSqlState(e1.getSQLState());
@@ -64,6 +65,7 @@ public class EPFDbWriterOracleDao {
 			connection = dbWriter.getConnection();
 			st = connection.createStatement();
 			ResultSet resultSet = st.executeQuery(sqlStmt);
+			st.close();
 			ResultSetMetaData metaData = resultSet.getMetaData();
 			for (int i = 0; i < metaData.getColumnCount(); i++) {
 				tableColumns.add(metaData.getColumnName(i));

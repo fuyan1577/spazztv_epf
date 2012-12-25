@@ -56,13 +56,14 @@ public class EPFSpazzGameAppsFilter {
 		}
 		this.fieldSeparator = EPFConfig.EPF_FIELD_SEPARATOR_DEFAULT;
 		this.recordSeparator = EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT;
+		this.applicationIds = new ConcurrentHashMap<String, Boolean>();
 	}
-	
+
 	public static EPFSpazzGameAppsFilter getInstance(File epfDirectory) {
 		if (epfDirectory == null) {
 			return instance;
 		}
-		if (!epfDirectory.equals(instance.epfDirectory)) {
+		if ((instance == null) || !epfDirectory.equals(instance.epfDirectory)) {
 			instance = new EPFSpazzGameAppsFilter(epfDirectory);
 		}
 		return instance;
@@ -78,11 +79,10 @@ public class EPFSpazzGameAppsFilter {
 
 		File genreApplicationFile = new File(epfDirectory.getPath()
 				+ File.separatorChar + GENRE_APPLICATION_FILE);
-
-		EPFImportTranslator genreApplication = new EPFImportTranslator(
-				new SimpleEPFFileReader(genreApplicationFile.getPath(),
-						fieldSeparator, recordSeparator));
-
+		EPFFileReader fileReader = new SimpleEPFFileReader(genreApplicationFile.getPath(),
+				fieldSeparator, recordSeparator); 
+		EPFImportTranslator genreApplication = new EPFImportTranslator(fileReader);
+	
 		List<String> genreAppRecord;
 		while (genreApplication.hasNextRecord()) {
 			genreAppRecord = genreApplication.nextRecord();
@@ -97,9 +97,9 @@ public class EPFSpazzGameAppsFilter {
 
 	private void loadCheatsFromApplication() throws EPFFileFormatException,
 			IOException {
-		File applicationFile = new File(epfDirectory.getPath() + File.separatorChar
-				+ APPLICATION_FILE);
-		
+		File applicationFile = new File(epfDirectory.getPath()
+				+ File.separatorChar + APPLICATION_FILE);
+
 		EPFImportTranslator appReader = new EPFImportTranslator(
 				new SimpleEPFFileReader(applicationFile.getPath(),
 						fieldSeparator, recordSeparator));
@@ -108,19 +108,19 @@ public class EPFSpazzGameAppsFilter {
 		while (appReader.hasNextRecord()) {
 			appRecord = appReader.nextRecord();
 			if (appRecord.get(APPLICATION_TITLE).contains(CHEATS_STR)) {
-				applicationIds.put(
-						appRecord.get(APPLICATION_APPLICATION_ID), true);
+				applicationIds.put(appRecord.get(APPLICATION_APPLICATION_ID),
+						true);
 			}
 		}
 	}
-	
+
 	public synchronized boolean isIncludeApplicationId(String applicationId) {
 		if (applicationId == null) {
 			return false;
 		}
 		return applicationIds.containsKey(applicationId);
 	}
-	
+
 	public File getEpfDirectory() {
 		return epfDirectory;
 	}

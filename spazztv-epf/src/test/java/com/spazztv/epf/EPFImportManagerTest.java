@@ -22,7 +22,7 @@ import com.spazztv.epf.dao.EPFDbWriter;
 import com.spazztv.epf.dao.EPFDbWriterFactory;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ EPFImportManager.class, EPFFileReader.class,
+@PrepareForTest({ EPFImportManager.class, SimpleEPFFileReader.class,
 		EPFImportTranslator.class, EPFDbWriterFactory.class, EPFDbWriter.class,
 		EPFImportTask.class, File.class, Executors.class, ExecutorService.class })
 public class EPFImportManagerTest {

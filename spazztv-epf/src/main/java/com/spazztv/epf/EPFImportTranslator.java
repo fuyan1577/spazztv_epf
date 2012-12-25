@@ -205,8 +205,7 @@ public class EPFImportTranslator {
 			List<String> nextRecord = epfFileReader.nextHeaderRecord();
 			parseColumnNames(nextRecord);
 
-			for (int i = 0; i < 6; i++) {
-				nextRecord = epfFileReader.nextHeaderRecord();
+			while ((nextRecord = epfFileReader.nextHeaderRecord()) != null) {
 				if (nextRecord.get(0)
 						.startsWith(COMMENT_CHAR + PRIMARY_KEY_TAG)) {
 					parsePrimaryKey(nextRecord);

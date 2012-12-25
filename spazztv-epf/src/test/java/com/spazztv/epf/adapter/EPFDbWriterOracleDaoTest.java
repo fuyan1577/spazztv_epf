@@ -61,6 +61,8 @@ public class EPFDbWriterOracleDaoTest {
 		EasyMock.reset(statement);
 		statement.execute(expectedStatement);
 		EasyMock.expectLastCall().andReturn(true).times(1);
+		statement.close();
+		EasyMock.expectLastCall().times(1);
 		EasyMock.replay(statement);
 
 		mySqlDao.executeSQLStatement(expectedStatement);
@@ -150,6 +152,8 @@ public class EPFDbWriterOracleDaoTest {
 		EasyMock.reset(statement);
 		statement.executeQuery(EasyMock.eq(expectedStatement));
 		EasyMock.expectLastCall().andReturn(resultSet).times(1);
+		statement.close();
+		EasyMock.expectLastCall().times(1);
 		EasyMock.replay(statement);
 
 		List<String> expectedColumns = new ArrayList<String>();

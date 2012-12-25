@@ -23,7 +23,7 @@ public class EPFImportTask implements Runnable {
 
 	public EPFImportTask(String filePath, String fieldSeparator, String recordSeparator, EPFDbWriter dbWriter)
 			throws IOException, EPFFileFormatException {
-		importTranslator = new EPFImportTranslator(new EPFFileReader(filePath, fieldSeparator, recordSeparator));
+		importTranslator = new EPFImportTranslator(new SimpleEPFFileReader(filePath, fieldSeparator, recordSeparator));
 		this.dbWriter = dbWriter;
 	}
 

@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 import com.spazztv.epf.EPFConfig;
 import com.spazztv.epf.EPFFileFormatException;
-import com.spazztv.epf.EPFFileReader;
+import com.spazztv.epf.SimpleEPFFileReader;
 
 /**
  * @author Thomas Billingsley
@@ -20,7 +20,7 @@ import com.spazztv.epf.EPFFileReader;
  */
 public class EPFApplicationIdLoader {
 	
-	private EPFFileReader fileReader;
+	private SimpleEPFFileReader fileReader;
 	private File epfDirectory;
 	private List<String> applicationIds = null;
 	
@@ -32,7 +32,7 @@ public class EPFApplicationIdLoader {
 	public void loadGamesApplicationIds() throws IOException, EPFFileFormatException {
 		String primaryGenreId = "6014";
 		String genreApplicationPath = epfDirectory.getPath() + "/" + "genre_application";
-		fileReader = new EPFFileReader(genreApplicationPath, EPFConfig.EPF_FIELD_SEPARATOR_DEFAULT, EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT);
+		fileReader = new SimpleEPFFileReader(genreApplicationPath, EPFConfig.EPF_FIELD_SEPARATOR_DEFAULT, EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT);
 		while (fileReader.hasNextDataRecord()) {
 			List<String> record = fileReader.nextDataRecord();
 			if (record.get(1).equals(primaryGenreId) && record.get(3).equals("1")) {
@@ -43,7 +43,7 @@ public class EPFApplicationIdLoader {
 
 	public void loadCheatsApplicationIds() throws IOException, EPFFileFormatException {
 		String applicationPath = epfDirectory.getPath() + "/" + "application";
-		fileReader = new EPFFileReader(applicationPath, EPFConfig.EPF_FIELD_SEPARATOR_DEFAULT, EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT);
+		fileReader = new SimpleEPFFileReader(applicationPath, EPFConfig.EPF_FIELD_SEPARATOR_DEFAULT, EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT);
 		Pattern cheatsPat = Pattern.compile(".*cheats.*", Pattern.CASE_INSENSITIVE);
 		while (fileReader.hasNextDataRecord()) {
 			List<String> record = fileReader.nextDataRecord();

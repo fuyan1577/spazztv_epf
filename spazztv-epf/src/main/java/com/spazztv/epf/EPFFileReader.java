@@ -1,107 +1,46 @@
+/**
+ * 
+ */
 package com.spazztv.epf;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
- * This is an interface which consolidates the random and buffered access of the
- * EPF Import file.
+ * EPFFileReader interface.
+ * <p>
+ * This is the basic interface for loading a specified EPF import file.
+ * <p>
+ * Initial implementations include <i>SimpleEPFFileReader</i> and
+ * <i>FilteredGamesEPFFileReader</i>
  * 
  * @author Thomas Billingsley
  * 
  */
-public class EPFFileReader {
+public abstract class EPFFileReader {
 
-	public static String COMMENT_PREFIX = "#";
-	public static String RECORDS_WRITTEN_TAG = "recordsWritten:";
-	public static String EPF_CHARACTER_ENCODING = "UTF-8";
-
-	private BufferedReader bFile;
 	private String filePath;
-	private long recordsWritten = 0;
-	private long lastDataRecord = 0;
-	private char recordSeparatorChar;
 	private char fieldSeparatorChar;
-	private boolean endOfFile = false;
+	private char recordSeparatorChar;
 
 	public EPFFileReader(String filePath, String fieldSeparator,
-			String recordSeparator) throws IOException,
-			EPFFileFormatException {
+			String recordSeparator) throws IOException, EPFFileFormatException {
 		this.filePath = filePath;
-		openInputFile();
 		recordSeparatorChar = StringEscapeUtils.unescapeXml(recordSeparator)
 				.toCharArray()[0];
 		fieldSeparatorChar = StringEscapeUtils.unescapeXml(fieldSeparator)
 				.toCharArray()[0];
-		loadRecordsWritten();
 	}
 
 	/**
-	 * Read the next header record of data that begins with an
-	 * EPFFileReader.COMMENT_PREFIX. The reads start from the current record
-	 * position reading to the end of the line or the end of file and return the
-	 * data as a String.
-	 * <p>
-	 * This method is intended to read the header rows of an EPF Import File. If
-	 * the next row read does not match the header prefix, this routine does not
-	 * read any further and returns a null.
+	 * Return the recordWritten value as designated on the last line of the EPF
+	 * table file
 	 * 
-	 * @see java.io.RandomAccessFile#readLine()
-	 * 
-	 * @return String of data read
-	 * @throws IOException
+	 * @return
 	 */
-	public List<String> nextHeaderRecord() throws IOException {
-		List<String> record;
-		while (true) {
-			record = nextRecord();
-			if (record == null) {
-				break;
-			}
-			if (record.size() < 1) {
-				break;
-			}
-			if (record.get(0).startsWith(COMMENT_PREFIX)) {
-				break;
-			}
-		}
-		return record;
-	}
-
-	public List<String> nextRecord() {
-		StringBuffer fieldBuffer = new StringBuffer();
-		List<String> record = new ArrayList<String>();
-		char[] nextChar = new char[1];
-		try {
-			// Read in the next block - read until separatorChar
-			while (!endOfFile) {
-				if (bFile.read(nextChar, 0, 1) < 0) {
-					endOfFile = true;
-				}
-				if (nextChar[0] == fieldSeparatorChar) {
-					record.add(fieldBuffer.toString());
-					fieldBuffer.setLength(0);
-				} else if (nextChar[0] == recordSeparatorChar) {
-					record.add(fieldBuffer.toString());
-					break;
-				} else if ((fieldBuffer.length() > 0) || (nextChar[0] != '\n')) {
-					fieldBuffer.append(nextChar[0]);
-				}
-			}
-		} catch (IOException e) {
-			return null;
-		}
-		return record;
-	}
+	public abstract long getRecordsWritten();
 
 	/**
 	 * Read the next data record starting at the current record position reading
@@ -117,138 +56,40 @@ public class EPFFileReader {
 	 * @see java.io.RandomAccessFile#readLine()
 	 * 
 	 * @return String of data read
-	 * @throws IOException
 	 */
-	public List<String> nextDataRecord() {
-		List<String> record;
-		// Read the next non-comment input record
-		while (true) {
-			// Read in the next block - read until separatorChar
-			if ((record = nextRecord()) == null) {
-				break;
-			}
-			if (record.size() < 1) {
-				break;
-			}
-			if (!record.get(0).startsWith(COMMENT_PREFIX)) {
-				break;
-			}
-		}
-		if (endOfFile) {
-			return null;
-		}
-		if (record.size() > 0) {
-			lastDataRecord++;
-		}
-		return record;
-	}
+	public abstract List<String> nextDataRecord();
 
 	/**
-	 * Read the total records line from the end of the EPF Import File.
+	 * Return the next header record as List<String> or return null upon reading
+	 * reading a non-commented record.
 	 * <p>
-	 * The total records line is identified as the first row in the last 80
-	 * bytes of the file which starts with the provided totalRecordsPrefix. If
-	 * no record is found matching the pattern, a null string is returned.
+	 * Read the next header record of data that begins with an
+	 * EPFFileReader.COMMENT_PREFIX. The reads start from the current record
+	 * position reading to the end of the line or the end of file and return the
+	 * data as a String.
 	 * <p>
-	 * A total records line example: <code>#recordsWritten:1220416</code>
+	 * This method is intended to read the header rows of an EPF Import File. If
+	 * the next row read does not match the header prefix, this routine does not
+	 * read any further and returns a null.
 	 * 
-	 * @param totalRecordsPrefix
-	 *            the prefix of the totalRecords line
-	 * @return
-	 * @throws EPFFileFormatException
+	 * @see java.io.RandomAccessFile#readLine()
+	 * 
+	 * @return String of data read
 	 */
-	private String getRecordsWrittenLine() throws EPFFileFormatException {
-		String row;
-		recordsWritten = 0L;
-		RandomAccessFile rFile = null;
-
-		try {
-			rFile = new RandomAccessFile(filePath, "r");
-			rFile.seek(rFile.length() - 80);
-		} catch (IOException e1) {
-			throw new EPFFileFormatException(
-					"Invalid EPF File - missing recordsWritten row: "
-							+ filePath);
-		}
-
-		while (true) {
-			try {
-				row = rFile.readLine();
-				if (row.startsWith(COMMENT_PREFIX)) {
-					break;
-				}
-			} catch (IOException e) {
-				row = null;
-				break;
-			}
-		}
-
-		return row;
-	}
-
-	private void loadRecordsWritten() throws EPFFileFormatException {
-		recordsWritten = 0L;
-		String row = getRecordsWrittenLine();
-		recordsWritten = Long.decode(row.replaceAll("^" + COMMENT_PREFIX
-				+ RECORDS_WRITTEN_TAG + "(\\d+).+", "$1"));
-	}
-
-	public long getRecordsWritten() {
-		return recordsWritten;
-	}
-
-	public long getLastDataRecord() {
-		return lastDataRecord;
-	}
+	public abstract List<String> nextHeaderRecord();
 
 	/**
-	 * Rewind the file pointer to the beginning of the file. This is intended to
-	 * be used immediately after reading all the header rows.
+	 * Rewind the file pointer to the beginning of the file.
 	 */
-	public void rewind() throws IOException {
-		if (bFile != null) {
-			try {
-				bFile.close();
-			} catch (IOException e) {
-				// Ignore - we're about to open it again
-			}
-		}
-		openInputFile();
-		lastDataRecord = 0;
-	}
-
-	private void openInputFile() throws IOException {
-		FileInputStream fstream = new FileInputStream(filePath);
-		DataInputStream in = new DataInputStream(fstream);
-		try {
-			bFile = new BufferedReader(new InputStreamReader(in,
-					EPF_CHARACTER_ENCODING));
-		} catch (UnsupportedEncodingException e) {
-			throw new IOException(e.getMessage());
-		}
-	}
-
-	public boolean hasNextDataRecord() {
-		if (!endOfFile) {
-			return lastDataRecord < recordsWritten;
-		}
-		return false;
-	}
+	public abstract void rewind() throws IOException;
 
 	/**
-	 * Returns the length or <i>size</i> of the file.
+	 * Returns true if there are more data records or returns false when the end
+	 * of file is reached.
 	 * 
-	 * @see java.io.RandomAccessFile#length()
-	 * 
-	 * @return the length of this file, measured in bytes.
-	 * @throws IOException
+	 * @return true if at least 1 more data record is available to be read
 	 */
-	public long length() throws IOException {
-		RandomAccessFile rFile = new RandomAccessFile(filePath, "r");
-		long len = rFile.length();
-		rFile.close();
-		return len;
-	}
+	public abstract boolean hasNextDataRecord();
 
 	/**
 	 * Closes the input file.
@@ -257,16 +98,32 @@ public class EPFFileReader {
 	 * 
 	 * @throws IOException
 	 */
-	public void close() throws IOException {
-		bFile.close();
-	}
+	public abstract void close() throws IOException;
 
 	/**
-	 * Return the filePath provided on instantiation
+	 * Return the file path provided on instantiation
 	 * 
-	 * @return filePath of the input file
+	 * @return
 	 */
 	public String getFilePath() {
 		return filePath;
+	}
+
+	/**
+	 * Return the fieldSeparatorChar provided on instantiation
+	 * 
+	 * @return
+	 */
+	public char getFieldSeparatorChar() {
+		return fieldSeparatorChar;
+	}
+
+	/**
+	 * Return the recordSeparatorChar provided on instantiation
+	 * 
+	 * @return
+	 */
+	public char getRecordSeparatorChar() {
+		return recordSeparatorChar;
 	}
 }

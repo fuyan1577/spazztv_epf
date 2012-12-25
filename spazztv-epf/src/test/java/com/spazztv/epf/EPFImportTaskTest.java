@@ -37,7 +37,7 @@ public class EPFImportTaskTest {
 	public void setUp() throws IOException, EPFFileFormatException {
 		// Setting up importXlator to read the storefront data file
 		// Setting up dbWriter as a mock object
-		EPFFileReader fileReader = new EPFFileReader(storefrontEpfFile,
+		SimpleEPFFileReader fileReader = new SimpleEPFFileReader(storefrontEpfFile,
 				fieldSeparator, recordSeparator);
 		dbWriter = EasyMock.createMock(EPFDbWriter.class);
 

@@ -12,7 +12,7 @@ import org.junit.Test;
 public class EPFImportTranslatorTest {
 
 	EPFImportTranslator importTranslator;
-	EPFFileReader fileReader;
+	SimpleEPFFileReader fileReader;
 	String recordSeparator = EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT;
 	String fieldSeparator = EPFConfig.EPF_FIELD_SEPARATOR_DEFAULT;
 	String recordSeparatorFlat = EPFConfig.EPF_FLAT_RECORD_SEPARATOR_DEFAULT;
@@ -22,7 +22,7 @@ public class EPFImportTranslatorTest {
 
 	@Before
 	public void setUp() throws Exception {
-		fileReader = new EPFFileReader(genreEpfFile, fieldSeparator, recordSeparator);
+		fileReader = new SimpleEPFFileReader(genreEpfFile, fieldSeparator, recordSeparator);
 		importTranslator = new EPFImportTranslator(fileReader);
 	}
 	
@@ -46,13 +46,13 @@ public class EPFImportTranslatorTest {
 	
 	@Test
 	public void testGetTableName() throws Exception {
-		EPFFileReader localReader = new EPFFileReader(genreEpfFile, fieldSeparator, recordSeparator);
+		SimpleEPFFileReader localReader = new SimpleEPFFileReader(genreEpfFile, fieldSeparator, recordSeparator);
 		EPFImportTranslator localXlator = new EPFImportTranslator(localReader);
 		String expectedTableName = "genre";
 		String foundTableName = localXlator.getTableName();
 		Assert.assertTrue(String.format("Invalid table name, expecting %s, found %s",expectedTableName,foundTableName),expectedTableName.equals(foundTableName));
 		
-		localReader = new EPFFileReader(tvEpisodeGuide, fieldSeparatorFlat, recordSeparatorFlat);
+		localReader = new SimpleEPFFileReader(tvEpisodeGuide, fieldSeparatorFlat, recordSeparatorFlat);
 		localXlator = new EPFImportTranslator(localReader);
 		expectedTableName = "tv_episode_usa";
 		foundTableName = localXlator.getTableName();

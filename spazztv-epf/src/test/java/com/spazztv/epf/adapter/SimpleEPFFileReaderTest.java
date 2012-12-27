@@ -1,4 +1,4 @@
-package com.spazztv.epf;
+package com.spazztv.epf.adapter;
 
 import java.io.IOException;
 import java.util.List;
@@ -7,6 +7,12 @@ import junit.framework.Assert;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.spazztv.epf.EPFConfig;
+import com.spazztv.epf.EPFFileFormatException;
+import com.spazztv.epf.EPFImportTranslator;
+import com.spazztv.epf.adapter.SimpleEPFFileReader;
+import com.spazztv.epf.dao.EPFFileReader;
 
 public class SimpleEPFFileReaderTest {
 

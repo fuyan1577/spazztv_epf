@@ -1,4 +1,4 @@
-package com.spazztv.epf;
+package com.spazztv.epf.adapter;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,6 +8,12 @@ import junit.framework.Assert;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.spazztv.epf.EPFConfig;
+import com.spazztv.epf.EPFFileFormatException;
+import com.spazztv.epf.EPFImportTranslator;
+import com.spazztv.epf.adapter.EPFSpazzGameAppsFilter;
+import com.spazztv.epf.adapter.SimpleEPFFileReader;
 
 /**
  * This a JUnit test which actually loads small test files to verify the
@@ -72,7 +78,6 @@ public class EPFSpazzGameAppsFilterTest {
 		int expectedGames = 5;
 
 		appsFilter = EPFSpazzGameAppsFilter.getInstance(directoryOnly);
-		appsFilter.loadApplicationIds();
 
 		while (appReader.hasNextRecord()) {
 			List<String> record = appReader.nextRecord();

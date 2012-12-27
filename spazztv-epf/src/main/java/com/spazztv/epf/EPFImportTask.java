@@ -17,13 +17,16 @@ public class EPFImportTask implements Runnable {
 
 	private EPFImportTranslator importTranslator;
 	private EPFDbWriter dbWriter;
-	
+
+	public static String EPF_IMPORT_TYPE_FULL = "full";
+	public static String EPF_IMPORT_TYPE_INCREMENTAL = "incremental";
+
 	public static long RECORD_GAP = 5000;
 	public long TIME_GAP = 120000; // milliseconds - 2 minutes
 
-	public EPFImportTask(String filePath, String fieldSeparator, String recordSeparator, EPFDbWriter dbWriter)
-			throws IOException, EPFFileFormatException {
-		importTranslator = new EPFImportTranslator(new SimpleEPFFileReader(filePath, fieldSeparator, recordSeparator));
+	public EPFImportTask(EPFImportTranslator importTranslator,
+			EPFDbWriter dbWriter) throws IOException, EPFFileFormatException {
+		this.importTranslator = importTranslator;
 		this.dbWriter = dbWriter;
 	}
 
@@ -31,10 +34,15 @@ public class EPFImportTask implements Runnable {
 	public void run() {
 		try {
 			setupImportDataStore();
-			importData();
-			finalizeImport();
+			if (importTranslator.getExportType().equals(EPF_IMPORT_TYPE_FULL)
+					|| (importTranslator.getExportType()
+							.equals(EPF_IMPORT_TYPE_INCREMENTAL))
+					&& dbWriter.isTableInDatabase(importTranslator
+							.getTableName())) {
+				importData();
+				finalizeImport();
+			}
 		} catch (EPFDbException e) {
-			//Logger getTableName() - Import Error may not have completed
 			e.printStackTrace();
 		}
 	}
@@ -64,9 +72,10 @@ public class EPFImportTask implements Runnable {
 		EPFImporterQueue.getInstance().setCompleted(
 				importTranslator.getFilePath());
 	}
-	
+
 	/**
 	 * EPFImportTranslator Getter for logger info
+	 * 
 	 * @return EPFImportTranslator
 	 */
 	public EPFImportTranslator getImportTranslator() {
@@ -75,6 +84,7 @@ public class EPFImportTask implements Runnable {
 
 	/**
 	 * EPFDbWriter Getter for logger info
+	 * 
 	 * @return EPFDbWriter
 	 */
 	public EPFDbWriter getDbWriter() {

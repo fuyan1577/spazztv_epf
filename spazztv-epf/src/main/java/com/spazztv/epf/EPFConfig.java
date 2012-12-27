@@ -38,6 +38,8 @@ public class EPFConfig {
 	public static String EPF_TABLE_PREFIX = "tablePrefix";
 	public static String EPF_RECORD_SEPARATOR = "recordSep";
 	public static String EPF_FIELD_SEPARATOR = "fieldSep";
+	public static String EPF_FILE_READER_CLASS = "epfFileReaderClass";
+	public static String EPF_FILE_READER_CLASS_DEFAULT = "com.spazztv.epf.adapter.SimpleEPFFileReader";
 
 	public static int EPF_MAX_THREADS_DEFAULT = 8;
 	public static String EPF_FIELD_SEPARATOR_DEFAULT = "&#0001;";
@@ -55,6 +57,7 @@ public class EPFConfig {
 	private String recordSeparator = EPF_RECORD_SEPARATOR_DEFAULT;
 	private String fieldSeparator = EPF_FIELD_SEPARATOR_DEFAULT;
 	private String snapShotFile;
+	private String epfFileReaderClass;
 
 	public EPFConfig() {
 		whiteList = new ArrayList<String>();
@@ -66,6 +69,7 @@ public class EPFConfig {
 		directoryPaths.add("./");
 		allowExtensions = false;
 		tablePrefix = "epf";
+		epfFileReaderClass = EPF_FILE_READER_CLASS_DEFAULT;
 	}
 
 	public EPFConfig(File configFile) throws IOException, EPFImporterException {
@@ -137,6 +141,10 @@ public class EPFConfig {
 
 		if (configObj.get(EPF_TABLE_PREFIX) != null) {
 			tablePrefix = (String) configObj.get(EPF_TABLE_PREFIX);
+		}
+
+		if (configObj.get(EPF_FILE_READER_CLASS) != null) {
+			epfFileReaderClass = (String) configObj.get(EPF_FILE_READER_CLASS);
 		}
 
 		checkWhiteList(configObj);
@@ -264,5 +272,13 @@ public class EPFConfig {
 
 	public void setSnapShotFile(String snapShotFile) {
 		this.snapShotFile = snapShotFile;
+	}
+
+	public String getEpfFileReaderClass() {
+		return epfFileReaderClass;
+	}
+
+	public void setEpfFileReaderClass(String epfFileReaderClass) {
+		this.epfFileReaderClass = epfFileReaderClass;
 	}
 }

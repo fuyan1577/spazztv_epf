@@ -6,7 +6,7 @@ package com.spazztv.epf.dao;
 import java.lang.reflect.Constructor;
 
 import com.spazztv.epf.EPFConfig;
-import com.spazztv.epf.EPFFileReader;
+import com.spazztv.epf.EPFImporterException;
 
 /**
  * A Singleton Factory Object which creates instances of classes which implement
@@ -23,34 +23,24 @@ public class EPFFileReaderFactory {
 	private EPFFileReaderFactory() {
 	}
 	
-	public static EPFFileReaderFactory getInstance() {
+	public static EPFFileReader getFileReader(EPFConfig epfConfig, String epfFileName) throws EPFImporterException {
 		if (factory == null) {
 			factory = new EPFFileReaderFactory();
 		}
-		return factory;
-	}
-
-	public static EPFFileReaderFactory getInstance(EPFConfig epfConfig) {
-		factory = getInstance();
 		factory.setEpfConfig(epfConfig);
-		return factory;
+		return factory.newFileReader(epfFileName);
 	}
 	
-	public EPFFileReader getFileReader(String epfFileName) {
-		
-		return null;
-	}
-	
-	private EPFFileReader newFileReaderInstance(String epfFileName)
-			throws EPFDbException {
+	@SuppressWarnings("unchecked")
+	private EPFFileReader newFileReader(String epfFileName) throws EPFImporterException {
 		EPFFileReader fileReader = null;
 
 		try {
-			Class<EPFFileReader> fileReaderClass = Class.forName(epfConfig.getEpfFileReaderClass());
+			Class<EPFFileReader> fileReaderClass = (Class<EPFFileReader>)Class.forName(epfConfig.getEpfFileReaderClass());
 			Constructor<EPFFileReader> constructor = fileReaderClass.getConstructor(String.class,String.class,String.class);
 			fileReader = (EPFFileReader)constructor.newInstance(epfFileName,epfConfig.getFieldSeparator(),epfConfig.getRecordSeparator());
 		} catch (Exception e) {
-			throw new EPFDbException(e.getMessage());
+			throw new EPFImporterException(e.getMessage());
 		}
 		
 		return fileReader;
@@ -58,16 +48,9 @@ public class EPFFileReaderFactory {
 	
 	
 	/**
-	 * @return the epfConfig
-	 */
-	public EPFConfig getEpfConfig() {
-		return epfConfig;
-	}
-
-	/**
 	 * @param epfConfig the epfConfig to set
 	 */
-	public void setEpfConfig(EPFConfig epfConfig) {
+	private void setEpfConfig(EPFConfig epfConfig) {
 		this.epfConfig = epfConfig;
 	}
 

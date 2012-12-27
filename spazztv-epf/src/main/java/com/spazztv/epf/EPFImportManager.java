@@ -17,6 +17,8 @@ import com.spazztv.epf.dao.EPFDbConfig;
 import com.spazztv.epf.dao.EPFDbException;
 import com.spazztv.epf.dao.EPFDbWriter;
 import com.spazztv.epf.dao.EPFDbWriterFactory;
+import com.spazztv.epf.dao.EPFFileReader;
+import com.spazztv.epf.dao.EPFFileReaderFactory;
 
 /**
  * This is the main work manager class of the EPFImport process that queues all
@@ -122,9 +124,16 @@ public class EPFImportManager {
 		for (String filePath : fileList) {
 			try {
 				EPFDbWriter dbWriter = EPFDbWriterFactory.getDbWriter(dbConfig);
-				EPFImportTask importTask = new EPFImportTask(filePath,
-						config.getFieldSeparator(),
-						config.getRecordSeparator(), dbWriter);
+
+				EPFFileReader fileReader = EPFFileReaderFactory.getFileReader(
+						config, filePath);
+
+				EPFImportTranslator importTranslator = new EPFImportTranslator(
+						fileReader);
+
+				EPFImportTask importTask = new EPFImportTask(importTranslator,
+						dbWriter);
+
 				importThreads.add((Future<Runnable>) threadPoolService
 						.submit(importTask));
 			} catch (IOException e) {
@@ -132,6 +141,8 @@ public class EPFImportManager {
 			} catch (EPFFileFormatException e) {
 				e.printStackTrace();
 			} catch (EPFDbException e) {
+				e.printStackTrace();
+			} catch (EPFImporterException e) {
 				e.printStackTrace();
 			}
 		}

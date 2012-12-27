@@ -17,14 +17,18 @@ import org.powermock.api.easymock.PowerMock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.spazztv.epf.adapter.SimpleEPFFileReader;
 import com.spazztv.epf.dao.EPFDbConfig;
 import com.spazztv.epf.dao.EPFDbWriter;
 import com.spazztv.epf.dao.EPFDbWriterFactory;
+import com.spazztv.epf.dao.EPFFileReader;
+import com.spazztv.epf.dao.EPFFileReaderFactory;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ EPFImportManager.class, SimpleEPFFileReader.class,
 		EPFImportTranslator.class, EPFDbWriterFactory.class, EPFDbWriter.class,
-		EPFImportTask.class, File.class, Executors.class, ExecutorService.class })
+		EPFImportTask.class, File.class, Executors.class,
+		ExecutorService.class, EPFFileReaderFactory.class })
 public class EPFImportManagerTest {
 
 	private EPFImportManager importManager;
@@ -41,6 +45,10 @@ public class EPFImportManagerTest {
 	private List<String> expectedBlackList;
 	private File[] expectedFileList;
 	private List<String> expectedFinalList;
+	private EPFFileReader fileReader1;
+	private EPFFileReader fileReader2;
+	private EPFImportTranslator importTranslator1;
+	private EPFImportTranslator importTranslator2;
 
 	@SuppressWarnings("unchecked")
 	@Before
@@ -66,10 +74,16 @@ public class EPFImportManagerTest {
 		tmpFileList.add(new File("listitem1"));
 		tmpFileList.add(new File("listitem2"));
 		expectedFileList = tmpFileList.toArray(new File[0]);
-		
+
 		expectedFinalList = new ArrayList<String>();
 		expectedFinalList.add("listitem1");
 		expectedFinalList.add("listitem2");
+
+		fileReader1 = EasyMock.createMock(EPFFileReader.class);
+		fileReader2 = EasyMock.createMock(EPFFileReader.class);
+
+		importTranslator1 = EasyMock.createMock(EPFImportTranslator.class);
+		importTranslator2 = EasyMock.createMock(EPFImportTranslator.class);
 
 		config = new EPFConfig();
 		config.setAllowExtensions(false);
@@ -90,7 +104,7 @@ public class EPFImportManagerTest {
 	@Test
 	public void testEPFImportManager() throws Exception {
 		EasyMock.reset(file);
-		file.listFiles((FileFilter)EasyMock.anyObject());
+		file.listFiles((FileFilter) EasyMock.anyObject());
 		EasyMock.expectLastCall().andReturn(expectedFileList).times(1);
 		EasyMock.replay(file);
 
@@ -128,12 +142,28 @@ public class EPFImportManagerTest {
 		PowerMock.expectLastCall().times(1);
 		PowerMock.replay(EPFDbWriterFactory.class);
 
+		PowerMock.reset(EPFFileReaderFactory.class);
+		PowerMock.mockStatic(EPFFileReaderFactory.class);
+		EasyMock.expect(EPFFileReaderFactory.getFileReader(config, "listitem1"))
+				.andReturn(fileReader1).times(1);
+		EasyMock.expect(EPFFileReaderFactory.getFileReader(config, "listitem2"))
+				.andReturn(fileReader2).times(1);
+		PowerMock.replay(EPFFileReaderFactory.class);
+
+		PowerMock.reset(EPFImportTranslator.class);
+		PowerMock.expectNew(EPFImportTranslator.class, fileReader1)
+				.andReturn(importTranslator1);
+		PowerMock.expectNew(EPFImportTranslator.class, fileReader2)
+				.andReturn(importTranslator2);
+		PowerMock.replay(EPFImportTranslator.class);
+
+		PowerMock.reset(EPFImportTask.class);
 		PowerMock
-				.expectNew(EPFImportTask.class, "listitem1", "&#0001;", "&#0002;",
-						dbWriter).andReturn(importTask1).times(1);
+				.expectNew(EPFImportTask.class, EasyMock.eq(importTranslator1),
+						EasyMock.eq(dbWriter)).andReturn(importTask1).times(1);
 		PowerMock
-				.expectNew(EPFImportTask.class, "listitem2", "&#0001;", "&#0002;",
-						dbWriter).andReturn(importTask2).times(1);
+				.expectNew(EPFImportTask.class,  EasyMock.eq(importTranslator2),
+						EasyMock.eq(dbWriter)).andReturn(importTask2).times(1);
 		PowerMock.replay(EPFImportTask.class);
 
 		PowerMock.expectNew(File.class, config.getDirectoryPaths().get(0))
@@ -150,6 +180,8 @@ public class EPFImportManagerTest {
 				importManager.isRunning());
 
 		PowerMock.verify(EPFDbWriterFactory.class);
+		PowerMock.verify(EPFFileReaderFactory.class);
+		PowerMock.verify(EPFImportTranslator.class);
 		PowerMock.verify(EPFImportTask.class);
 		PowerMock.verify(Executors.class);
 		PowerMock.verify(File.class);

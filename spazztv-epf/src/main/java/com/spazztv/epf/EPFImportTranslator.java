@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import com.spazztv.epf.dao.EPFFileReader;
+
 /**
  * EPFParser object is a java port of EPFParser.py Python script.
  * <p>

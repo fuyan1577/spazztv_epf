@@ -6,8 +6,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-import com.spazztv.epf.SimpleEPFFileReader;
 import com.spazztv.epf.EPFImportTranslator;
+import com.spazztv.epf.adapter.SimpleEPFFileReader;
 
 public class MySqlUTF8Test {
 

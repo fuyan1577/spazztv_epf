@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 import com.spazztv.epf.EPFConfig;
 import com.spazztv.epf.EPFFileFormatException;
-import com.spazztv.epf.SimpleEPFFileReader;
+import com.spazztv.epf.adapter.SimpleEPFFileReader;
 
 /**
  * @author Thomas Billingsley

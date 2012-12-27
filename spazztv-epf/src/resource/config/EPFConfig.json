@@ -1,4 +1,5 @@
 {
+	"epfFileReaderClass":"com.spazztv.epf.adapter.SimpleEPFFileReader",
     "tablePrefix": "", 
     "allowExtensions": false, 
     "blackList": [

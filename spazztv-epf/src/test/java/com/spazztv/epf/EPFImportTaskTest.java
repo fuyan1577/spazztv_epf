@@ -12,6 +12,7 @@ import org.powermock.api.easymock.PowerMock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.spazztv.epf.adapter.SimpleEPFFileReader;
 import com.spazztv.epf.dao.EPFDbException;
 import com.spazztv.epf.dao.EPFDbWriter;
 
@@ -26,6 +27,7 @@ public class EPFImportTaskTest {
 	EPFImportTranslator importXlator;
 	EPFDbWriter dbWriter;
 	EPFImporterQueue importerQueue;
+	EPFImportTranslator importTranslator;
 	long recordsExpected = 0;
 
 	EPFExportType exportType;
@@ -39,10 +41,11 @@ public class EPFImportTaskTest {
 		// Setting up dbWriter as a mock object
 		SimpleEPFFileReader fileReader = new SimpleEPFFileReader(storefrontEpfFile,
 				fieldSeparator, recordSeparator);
+		
 		dbWriter = EasyMock.createMock(EPFDbWriter.class);
+		importTranslator = new EPFImportTranslator(fileReader);
 
-		importTask = new EPFImportTask(storefrontEpfFile, fieldSeparator,
-				recordSeparator, dbWriter);
+		importTask = new EPFImportTask(importTranslator, dbWriter);
 
 		importXlator = new EPFImportTranslator(fileReader);
 		recordsExpected = importXlator.getTotalExpectedRecords();

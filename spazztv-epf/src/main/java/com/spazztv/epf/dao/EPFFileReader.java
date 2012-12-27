@@ -1,12 +1,14 @@
 /**
  * 
  */
-package com.spazztv.epf;
+package com.spazztv.epf.dao;
 
 import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+
+import com.spazztv.epf.EPFFileFormatException;
 
 /**
  * EPFFileReader interface.

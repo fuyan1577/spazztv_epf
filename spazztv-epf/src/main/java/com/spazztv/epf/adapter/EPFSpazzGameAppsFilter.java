@@ -1,12 +1,17 @@
 /**
  * 
  */
-package com.spazztv.epf;
+package com.spazztv.epf.adapter;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.spazztv.epf.EPFConfig;
+import com.spazztv.epf.EPFFileFormatException;
+import com.spazztv.epf.EPFImportTranslator;
+import com.spazztv.epf.dao.EPFFileReader;
 
 /**
  * @author Thomas Billingsley
@@ -32,6 +37,8 @@ public class EPFSpazzGameAppsFilter {
 	private File epfDirectory;
 	private String fieldSeparator;
 	private String recordSeparator;
+	
+	private boolean applicationIdsLoaded = false;
 
 	private ConcurrentHashMap<String, Boolean> applicationIds;
 
@@ -69,9 +76,16 @@ public class EPFSpazzGameAppsFilter {
 		return instance;
 	}
 
-	public void loadApplicationIds() throws EPFFileFormatException, IOException {
-		loadGamesFromGenreApplication();
-		loadCheatsFromApplication();
+	private void loadApplicationIds() {
+		try {
+			loadGamesFromGenreApplication();
+			loadCheatsFromApplication();
+		} catch (EPFFileFormatException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		applicationIdsLoaded = true;
 	}
 
 	private void loadGamesFromGenreApplication() throws EPFFileFormatException,
@@ -118,6 +132,10 @@ public class EPFSpazzGameAppsFilter {
 		if (applicationId == null) {
 			return false;
 		}
+		if (!applicationIdsLoaded) {
+			loadApplicationIds();
+		}
+			
 		return applicationIds.containsKey(applicationId);
 	}
 

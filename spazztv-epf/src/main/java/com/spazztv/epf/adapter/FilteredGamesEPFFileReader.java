@@ -1,12 +1,15 @@
 /**
  * 
  */
-package com.spazztv.epf;
+package com.spazztv.epf.adapter;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+
+import com.spazztv.epf.EPFFileFormatException;
+import com.spazztv.epf.dao.EPFFileReader;
 
 /**
  * @author Thomas Billingsley
@@ -31,17 +34,19 @@ public class FilteredGamesEPFFileReader extends EPFFileReader {
 	public FilteredGamesEPFFileReader(String filePath, String fieldSeparator,
 			String recordSeparator) throws IOException, EPFFileFormatException {
 		super(filePath, fieldSeparator, recordSeparator);
+		
+		initAppIdColumns();
 
 		fileReader = new SimpleEPFFileReader(filePath, fieldSeparator,
 				recordSeparator);
 
 		checkIfFileRequiresFiltering(filePath);
+		
 		if (isRequiresFiltering()) {
-			initAppIdColumns();
 			appsFilter = EPFSpazzGameAppsFilter.getInstance(new File(filePath));
 		}
 	}
-
+	
 	private void checkIfFileRequiresFiltering(String filePath) {
 		String fileName = new File(filePath).getName();
 		requiresFiltering = appIdColumns.containsKey(fileName);
@@ -79,7 +84,7 @@ public class FilteredGamesEPFFileReader extends EPFFileReader {
 	 * <p>
 	 * For all other import files, no filters are applied.
 	 * 
-	 * @see com.spazztv.epf.EPFFileReader#nextDataRecord()
+	 * @see com.spazztv.epf.dao.EPFFileReader#nextDataRecord()
 	 */
 	@Override
 	public List<String> nextDataRecord() {
@@ -123,17 +128,15 @@ public class FilteredGamesEPFFileReader extends EPFFileReader {
 	public boolean hasNextDataRecord() {
 		boolean done = false;
 		while (!done) {
+			done = true;
 			if (fileReader.hasNextDataRecord()) {
 				nextDataRecord = fileReader.nextDataRecord();
 				if (isRequiresFiltering() && nextDataRecord != null) {
-					if (appsFilter.isIncludeApplicationId(nextDataRecord
+					if (!appsFilter.isIncludeApplicationId(nextDataRecord
 							.get(appIdColumn))) {
-						done = true;
-					} else {
+						done = false;
 						nextDataRecord = null;
 					}
-				} else {
-					done = true;
 				}
 			}
 		}

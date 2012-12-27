@@ -1,4 +1,4 @@
-package com.spazztv.epf;
+package com.spazztv.epf.adapter;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -9,6 +9,9 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.spazztv.epf.EPFFileFormatException;
+import com.spazztv.epf.dao.EPFFileReader;
 
 /**
  * This is an interface which consolidates the random and buffered access of the

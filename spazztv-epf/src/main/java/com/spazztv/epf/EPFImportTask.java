@@ -18,8 +18,8 @@ public class EPFImportTask implements Runnable {
 	private EPFImportTranslator importTranslator;
 	private EPFDbWriter dbWriter;
 
-	public static String EPF_IMPORT_TYPE_FULL = "full";
-	public static String EPF_IMPORT_TYPE_INCREMENTAL = "incremental";
+	public static EPFExportType EPF_IMPORT_TYPE_FULL = EPFExportType.FULL;
+	public static EPFExportType EPF_IMPORT_TYPE_INCREMENTAL = EPFExportType.INCREMENTAL;
 
 	public static long RECORD_GAP = 5000;
 	public long TIME_GAP = 120000; // milliseconds - 2 minutes
@@ -33,12 +33,12 @@ public class EPFImportTask implements Runnable {
 	@Override
 	public void run() {
 		try {
-			setupImportDataStore();
-			if (importTranslator.getExportType().equals(EPF_IMPORT_TYPE_FULL)
+			if (importTranslator.getExportType() == EPF_IMPORT_TYPE_FULL
 					|| (importTranslator.getExportType()
-							.equals(EPF_IMPORT_TYPE_INCREMENTAL))
+							== EPF_IMPORT_TYPE_INCREMENTAL)
 					&& dbWriter.isTableInDatabase(importTranslator
 							.getTableName())) {
+				setupImportDataStore();
 				importData();
 				finalizeImport();
 			}

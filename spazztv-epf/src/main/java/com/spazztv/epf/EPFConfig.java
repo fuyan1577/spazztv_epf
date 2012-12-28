@@ -100,7 +100,8 @@ public class EPFConfig {
 				|| key.equals(EPF_BLACKLIST) || key.equals(EPF_DIRECTORY_PATHS)
 				|| key.equals(EPF_MAX_THREADS) || key.equals(EPF_WHITELIST)
 				|| key.equals(EPF_TABLE_PREFIX)
-				|| key.equals(EPF_SKIP_KEY_VIOLATORS)) {
+				|| key.equals(EPF_SKIP_KEY_VIOLATORS)
+				|| key.equals(EPF_FILE_READER_CLASS)) {
 			return true;
 		}
 		return false;

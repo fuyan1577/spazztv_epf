@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.spazztv.epf;
+package com.spazztv.logger;
 
 import java.util.Date;
 
@@ -11,7 +11,9 @@ import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 
-import com.spazztv.epf.dao.EPFDbWriter;
+import com.spazztv.epf.EPFImportTask;
+import com.spazztv.epf.EPFImportTranslator;
+import com.spazztv.epf.EPFImporter;
 
 /**
  * @author Thomas Billingsley
@@ -38,6 +40,8 @@ public class EPFImportTaskLogger {
 		Object importTask = joinPoint.getTarget();
 		importTranslator = ((EPFImportTask) importTask).getImportTranslator();
 		totalExpectedRecords = importTranslator.getTotalExpectedRecords();
+		EPFImportTaskInfoBlock.getInstance().setTotalExportedRecords(
+				importTranslator.getTableName(), totalExpectedRecords);
 		Logger log = EPFImporter.getLogger();
 		log.info("{} - Beginning import, total records to import: {}",
 				importTranslator.getTableName(), totalExpectedRecords);
@@ -46,23 +50,24 @@ public class EPFImportTaskLogger {
 	@After("    call(void com.spazztv.epf.EPFImportTask.finalizeImport(..)) ")
 	public void afterFinalizeImport(JoinPoint joinPoint) {
 		Object importTask = joinPoint.getTarget();
-		EPFDbWriter dbWriter = ((EPFImportTask) importTask).getDbWriter();
 		importTranslator = ((EPFImportTask) importTask).getImportTranslator();
-		totalExpectedRecords = importTranslator.getTotalExpectedRecords();
+		long recordsProcessed = EPFImportTaskInfoBlock.getInstance().getRecordsProcessed(importTranslator.getTableName());
 		Logger log = EPFImporter.getLogger();
 		Date endTimeStamp = new Date();
-		String elapsedTime = EPFImporterLogger.elapsedTimeFormat(endTimeStamp.getTime()
-				- startTimeStamp.getTime());
-		if (dbWriter.getTotalRowsInserted().equals(totalExpectedRecords)) {
-			log.info("{} - Import completed, {} of {} records imported",
+		String elapsedTime = EPFImporterLogger.elapsedTimeFormat(endTimeStamp
+				.getTime() - startTimeStamp.getTime());
+		if (totalExpectedRecords.equals(recordsProcessed)) {
+			log.info("{} - Import completed, {} of {} records processed",
 					importTranslator.getTableName(),
-					dbWriter.getTotalRowsInserted(), totalExpectedRecords);
+					recordsProcessed, totalExpectedRecords);
 		} else {
-			log.error("{} - Import completed - MISSING RECORDS, Expecting {} - Actual {}",
-					importTranslator.getTableName(),  totalExpectedRecords,
-					dbWriter.getTotalRowsInserted());
+			log.error(
+					"{} - Import completed - MISSING RECORDS, Expecting {} - Actual {}",
+					importTranslator.getTableName(), totalExpectedRecords,
+					recordsProcessed);
 		}
-		log.info("{} - Import Task Elapsed Time: {}", importTranslator.getTableName(), elapsedTime);
+		log.info("{} - Import Task Elapsed Time: {}",
+				importTranslator.getTableName(), elapsedTime);
 	}
-	
+
 }

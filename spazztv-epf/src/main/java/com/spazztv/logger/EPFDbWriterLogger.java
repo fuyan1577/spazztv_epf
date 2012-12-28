@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.spazztv.epf.dao;
+package com.spazztv.logger;
 
 /**
  * @author billintj

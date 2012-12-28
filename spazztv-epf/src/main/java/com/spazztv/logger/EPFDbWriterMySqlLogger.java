@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.spazztv.epf.adapter;
+package com.spazztv.logger;
 
 import java.util.List;
 
@@ -13,6 +13,8 @@ import org.aspectj.lang.annotation.Before;
 import org.slf4j.Logger;
 
 import com.spazztv.epf.EPFImporter;
+import com.spazztv.epf.adapter.EPFDbWriterMySqlDao;
+import com.spazztv.epf.adapter.SQLReturnStatus;
 import com.spazztv.epf.dao.EPFDbWriter;
 
 /**

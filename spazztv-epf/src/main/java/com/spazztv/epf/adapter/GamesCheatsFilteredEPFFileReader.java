@@ -15,7 +15,7 @@ import com.spazztv.epf.dao.EPFFileReader;
  * @author Thomas Billingsley
  * 
  */
-public class FilteredGamesEPFFileReader extends EPFFileReader {
+public class GamesCheatsFilteredEPFFileReader extends EPFFileReader {
 
 	public static String[] APP_ID_FILES = { "application",
 			"application_detail", "application_device_type",
@@ -31,7 +31,7 @@ public class FilteredGamesEPFFileReader extends EPFFileReader {
 	private int appIdColumn = -1;
 	private List<String> nextDataRecord;
 
-	public FilteredGamesEPFFileReader(String filePath, String fieldSeparator,
+	public GamesCheatsFilteredEPFFileReader(String filePath, String fieldSeparator,
 			String recordSeparator) throws IOException, EPFFileFormatException {
 		super(filePath, fieldSeparator, recordSeparator);
 		
@@ -40,11 +40,9 @@ public class FilteredGamesEPFFileReader extends EPFFileReader {
 		fileReader = new SimpleEPFFileReader(filePath, fieldSeparator,
 				recordSeparator);
 
-		checkIfFileRequiresFiltering(filePath);
+		appsFilter = EPFSpazzGameAppsFilter.getInstance(new File(filePath));
 		
-		if (isRequiresFiltering()) {
-			appsFilter = EPFSpazzGameAppsFilter.getInstance(new File(filePath));
-		}
+		checkIfFileRequiresFiltering(filePath);
 	}
 	
 	private void checkIfFileRequiresFiltering(String filePath) {

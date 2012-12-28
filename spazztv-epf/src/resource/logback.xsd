@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<!-- Generated using Flame-Ware Solutions XML-2-XSD v2.0 at http://www.flame-ware.com/Products/XML-2-XSD/ -->
+<xs:schema id="logbackSet" xmlns="" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+  <xs:element name="configuration">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="appender" minOccurs="0" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="prudent" type="xs:string" minOccurs="0" msdata:Ordinal="0" />
+              <xs:element name="rollingPolicy" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="fileNamePattern" type="xs:string" minOccurs="0" msdata:Ordinal="0" />
+                    <xs:element name="append" type="xs:string" minOccurs="0" msdata:Ordinal="1" />
+                  </xs:sequence>
+                  <xs:attribute name="class" type="xs:string" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="encoder" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="pattern" type="xs:string" minOccurs="0" />
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="name" type="xs:string" />
+            <xs:attribute name="class" type="xs:string" />
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="root" minOccurs="0" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="appender-ref" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="ref" type="xs:string" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="level" type="xs:string" />
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="debug" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="logbackSet" msdata:IsDataSet="true" msdata:UseCurrentLocale="true">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="configuration" />
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

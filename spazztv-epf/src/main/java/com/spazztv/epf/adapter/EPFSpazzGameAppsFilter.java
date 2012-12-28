@@ -76,7 +76,7 @@ public class EPFSpazzGameAppsFilter {
 		return instance;
 	}
 
-	private void loadApplicationIds() {
+	public void loadApplicationIds() {
 		try {
 			loadGamesFromGenreApplication();
 			loadCheatsFromApplication();

@@ -12,9 +12,9 @@ import org.junit.Test;
 import com.spazztv.epf.EPFConfig;
 import com.spazztv.epf.EPFFileFormatException;
 
-public class FilteredGamesEPFFileReaderTest {
+public class GamesCheatsFilteredEPFFileReaderTest {
 
-	private FilteredGamesEPFFileReader fileReader;
+	private GamesCheatsFilteredEPFFileReader fileReader;
 
 	private String applicationFile = "testdata/epf_files/application";
 	private String genreFile = "testdata/epf_files/genre";
@@ -35,12 +35,12 @@ public class FilteredGamesEPFFileReaderTest {
 	@Test
 	public void testIsRequiresFiltering() throws IOException,
 			EPFFileFormatException {
-		FilteredGamesEPFFileReader nonFilteredReader = new FilteredGamesEPFFileReader(
+		GamesCheatsFilteredEPFFileReader nonFilteredReader = new GamesCheatsFilteredEPFFileReader(
 				genreFile, fieldSeparator, recordSeparator);
 		Assert.assertFalse(
 				"Invalid filtering status, expected no filtering required for 'genre' file",
 				nonFilteredReader.isRequiresFiltering());
-		FilteredGamesEPFFileReader filteredReader = new FilteredGamesEPFFileReader(
+		GamesCheatsFilteredEPFFileReader filteredReader = new GamesCheatsFilteredEPFFileReader(
 				applicationFile, fieldSeparator, recordSeparator);
 		Assert.assertTrue(
 				"Invalid filtering status, expected filtering required for 'application' file",
@@ -49,7 +49,7 @@ public class FilteredGamesEPFFileReaderTest {
 
 	@Test
 	public void testNextDataRecordApp() throws IOException, EPFFileFormatException {
-		fileReader = new FilteredGamesEPFFileReader(applicationFile,
+		fileReader = new GamesCheatsFilteredEPFFileReader(applicationFile,
 				fieldSeparator, recordSeparator);
 		
 		long actualDataRecords = 0;
@@ -72,7 +72,7 @@ public class FilteredGamesEPFFileReaderTest {
 
 	@Test
 	public void testNextDataRecordAppPrice() throws IOException, EPFFileFormatException {
-		fileReader = new FilteredGamesEPFFileReader(applicationPriceFile,
+		fileReader = new GamesCheatsFilteredEPFFileReader(applicationPriceFile,
 				fieldSeparator, recordSeparator);
 		
 		long actualDataRecords = 0;
@@ -95,7 +95,7 @@ public class FilteredGamesEPFFileReaderTest {
 	
 	@Test
 	public void testNextDataRecordGenreApp() throws IOException, EPFFileFormatException {
-		fileReader = new FilteredGamesEPFFileReader(genreApplicationFile,
+		fileReader = new GamesCheatsFilteredEPFFileReader(genreApplicationFile,
 				fieldSeparator, recordSeparator);
 		
 		long actualDataRecords = 0;
@@ -118,7 +118,7 @@ public class FilteredGamesEPFFileReaderTest {
 
 	@Test
 	public void testNextHeaderRecord() throws IOException, EPFFileFormatException {
-		fileReader = new FilteredGamesEPFFileReader(applicationFile,
+		fileReader = new GamesCheatsFilteredEPFFileReader(applicationFile,
 				fieldSeparator, recordSeparator);
 		
 		HashMap<String, Boolean> verifiedHeaderTypes = new HashMap<String, Boolean>();
@@ -158,7 +158,7 @@ public class FilteredGamesEPFFileReaderTest {
 
 	@Test
 	public void testRewind() throws IOException, EPFFileFormatException {
-		fileReader = new FilteredGamesEPFFileReader(applicationFile,
+		fileReader = new GamesCheatsFilteredEPFFileReader(applicationFile,
 				fieldSeparator, recordSeparator);
 		
 		List<String> firstDataRecord = null;

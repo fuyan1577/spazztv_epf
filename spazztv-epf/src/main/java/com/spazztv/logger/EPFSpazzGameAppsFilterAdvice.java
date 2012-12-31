@@ -17,7 +17,7 @@ import org.aspectj.lang.annotation.Aspect;
 @Aspect
 public class EPFSpazzGameAppsFilterAdvice {
 	
-	@After("    call(void com.spazztv.epf.adapter.EPFSpazzGameAppsFilter.loadApplicationIds(..)) ")
+	@After("    call(com.spazztv.epf.adapter.EPFSpazzGameAppsFilter.new(..)) ")
 	public void resetReaderStats(JoinPoint joinPoint) {
 		EPFImportTaskInfoBlock.getInstance().clear();
 	}

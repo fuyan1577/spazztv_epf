@@ -26,6 +26,14 @@ public class EPFDbWriterLogger {
 
 	private String tableName;
 
+	/**
+	 * Log the progress of records inserted/imported.
+	 * <p>
+	 * Wait at least 2 minutes between log messages and display counts which are
+	 * multiples of 5000 records.
+	 * 
+	 * @param dbWriter
+	 */
 	@After("    execution(* com.spazztv.epf.dao.EPFDbWriter.insertRow(..)) && this(dbWriter)")
 	public void afterInsertRow(EPFDbWriter dbWriter) {
 		if (tableName == null) {
@@ -35,13 +43,13 @@ public class EPFDbWriterLogger {
 				.getRecordsImported(dbWriter.getTableName()) + 1;
 		EPFImportTaskInfoBlock.getInstance().setRecordsImported(
 				dbWriter.getTableName(), recordsImported);
-		if (((recordsImported - lastLoggedRecord) > RECORD_LOG_COUNT)
-				|| ((System.currentTimeMillis() - lastLoggedTimestamp) > TIMESTAMP_LOG_COUNT)) {
+
+		if ((System.currentTimeMillis() - lastLoggedTimestamp) > TIMESTAMP_LOG_COUNT
+				&& ((recordsImported % RECORD_LOG_COUNT) == 0)) {
 			Logger log = EPFImporter.getLogger();
-			log.info("{} - {} records imported",
-					tableName,
-					recordsImported);
+			log.info("{} - {} records imported", tableName, recordsImported);
 			lastLoggedTimestamp = System.currentTimeMillis();
+			lastLoggedRecord = recordsImported;
 		}
 	}
 }

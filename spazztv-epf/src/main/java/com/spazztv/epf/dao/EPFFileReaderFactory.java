@@ -39,6 +39,8 @@ public class EPFFileReaderFactory {
 			Class<EPFFileReader> fileReaderClass = (Class<EPFFileReader>)Class.forName(epfConfig.getEpfFileReaderClass());
 			Constructor<EPFFileReader> constructor = fileReaderClass.getConstructor(String.class,String.class,String.class);
 			fileReader = (EPFFileReader)constructor.newInstance(epfFileName,epfConfig.getFieldSeparator(),epfConfig.getRecordSeparator());
+		} catch (ClassNotFoundException e) {
+			throw new EPFImporterException("Class Not Found: " + e.getMessage());
 		} catch (Exception e) {
 			throw new EPFImporterException(e.getMessage());
 		}

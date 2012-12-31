@@ -1,5 +1,5 @@
 {
-	"epfFileReaderClass":"com.spazztv.epf.adapter.FilteredGamesEPFFileReader",
+	"epfFileReaderClass":"com.spazztv.epf.adapter.GamesCheatsFilteredEPFFileReader",
     "tablePrefix": "", 
     "allowExtensions": false, 
     "blackList": [

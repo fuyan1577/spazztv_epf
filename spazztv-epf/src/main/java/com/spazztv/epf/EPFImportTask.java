@@ -34,8 +34,7 @@ public class EPFImportTask implements Runnable {
 	public void run() {
 		try {
 			if (importTranslator.getExportType() == EPF_IMPORT_TYPE_FULL
-					|| (importTranslator.getExportType()
-							== EPF_IMPORT_TYPE_INCREMENTAL)
+					|| (importTranslator.getExportType() == EPF_IMPORT_TYPE_INCREMENTAL)
 					&& dbWriter.isTableInDatabase(importTranslator
 							.getTableName())) {
 				setupImportDataStore();
@@ -64,6 +63,12 @@ public class EPFImportTask implements Runnable {
 			EPFImporterQueue.getInstance().setFailed(
 					importTranslator.getFilePath());
 			throw e;
+		} finally {
+			try {
+				importTranslator.close();
+			} catch (IOException e) {
+				//Ignore close errors
+			}
 		}
 	}
 

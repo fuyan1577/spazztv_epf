@@ -38,8 +38,6 @@ public class EPFSpazzGameAppsFilter {
 	private String fieldSeparator;
 	private String recordSeparator;
 	
-	private boolean applicationIdsLoaded = false;
-
 	private ConcurrentHashMap<String, Boolean> applicationIds;
 
 	/**
@@ -64,19 +62,25 @@ public class EPFSpazzGameAppsFilter {
 		this.fieldSeparator = EPFConfig.EPF_FIELD_SEPARATOR_DEFAULT;
 		this.recordSeparator = EPFConfig.EPF_RECORD_SEPARATOR_DEFAULT;
 		this.applicationIds = new ConcurrentHashMap<String, Boolean>();
+		loadApplicationIds();
 	}
 
-	public static EPFSpazzGameAppsFilter getInstance(File epfDirectory) {
+	public synchronized static EPFSpazzGameAppsFilter getInstance(File epfDirectory) {
 		if (epfDirectory == null) {
 			return instance;
 		}
-		if ((instance == null) || !epfDirectory.equals(instance.epfDirectory)) {
-			instance = new EPFSpazzGameAppsFilter(epfDirectory);
+		//Get the directory part of the epfDirectory parameter
+		File epfDir = epfDirectory;
+		if (!epfDir.isDirectory()) {
+			epfDir = epfDirectory.getParentFile();
+		}
+		if ((instance == null) || !epfDir.equals(instance.epfDirectory)) {
+			instance = new EPFSpazzGameAppsFilter(epfDir);
 		}
 		return instance;
 	}
 
-	public void loadApplicationIds() {
+	private void loadApplicationIds() {
 		try {
 			loadGamesFromGenreApplication();
 			loadCheatsFromApplication();
@@ -85,7 +89,6 @@ public class EPFSpazzGameAppsFilter {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		applicationIdsLoaded = true;
 	}
 
 	private void loadGamesFromGenreApplication() throws EPFFileFormatException,
@@ -107,6 +110,8 @@ public class EPFSpazzGameAppsFilter {
 						genreAppRecord.get(GENRE_APP_APPLICATION_ID), true);
 			}
 		}
+		
+		genreApplication.close();
 	}
 
 	private void loadCheatsFromApplication() throws EPFFileFormatException,
@@ -126,16 +131,15 @@ public class EPFSpazzGameAppsFilter {
 						true);
 			}
 		}
+		
+		appReader.close();
 	}
 
 	public synchronized boolean isIncludeApplicationId(String applicationId) {
 		if (applicationId == null) {
 			return false;
 		}
-		if (!applicationIdsLoaded) {
-			loadApplicationIds();
-		}
-			
+
 		return applicationIds.containsKey(applicationId);
 	}
 

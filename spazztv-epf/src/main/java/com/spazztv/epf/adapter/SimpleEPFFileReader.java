@@ -157,6 +157,12 @@ public class SimpleEPFFileReader extends EPFFileReader {
 				break;
 			}
 		}
+		
+		try {
+			rFile.close();
+		} catch (IOException e) {
+			//Ignore
+		}
 
 		return row;
 	}
